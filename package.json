@@ -1,0 +1,22 @@
+{
+  "name": "utilities-discord-bot",
+  "version": "1.0.0",
+  "description": "A simple discord providing additional utilities.",
+  "main": "bot.js",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/sirknightj/utilities-discord-bot.git"
+  },
+  "author": "Jeremy Gunawan <sirknightj@gmail.com> (https://sirknightj.com)",
+  "license": "MIT",
+  "bugs": {
+    "url": "https://github.com/sirknightj/utilities-discord-bot/issues"
+  },
+  "homepage": "https://github.com/sirknightj/utilities-discord-bot#readme",
+  "dependencies": {
+    "discord.js": "^12.2.0"
+  }
+}
