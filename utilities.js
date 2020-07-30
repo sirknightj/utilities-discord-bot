@@ -11,14 +11,14 @@ module.exports = {
             return;
         }
 
-        // First, we search for an exact name.
+        // First, we check if the input is a User ID.
         let target = message.guild.members.cache.get(lookingFor);
 
         // Next, we look for a mention.
         if (!target && lookingFor.startsWith('<@') && lookingFor.endsWith('>')) {
             lookingFor = lookingFor.slice(2, -1);
 
-            // Checks if the mentioned user has a nickname. If so, removes the beginning !.
+            // Checks if the mentioned user has a nickname. If so, removes the beginning '!'.
             if (lookingFor.startsWith('!')) {
                 lookingFor = lookingFor.slice(1);
             }
@@ -29,7 +29,7 @@ module.exports = {
         // the first user it finds that contains 'bob' in their name.
         if (!target && lookingFor) {
             target = message.guild.members.cache.find(member => {
-                return member.displayName.toLowerCase().includes(lookingFor) || member.user.tag.toLowerCase().includes(lookingFor);
+                return (member.displayName.toLowerCase().includes(lookingFor) || member.user.tag.toLowerCase().includes(lookingFor)) && !member.bot;
             });
         }
         return target;
