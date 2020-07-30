@@ -34,7 +34,7 @@ With very simple fun and useful commands!
 #### `!hello`
 * Says `Hello <message-sender>!`
 
-#### `ghostping <user> (optional: channel-name) `
+#### `!ghostping <user> (optional: channel-name) `
 * Pings the user, and then deletes the message as fast as possible. Also deletes your command as fast as possible.
 * If `<channel-name>` is unspecified, then it will default to *this* channel.
 * Note: `<user>` can be a mention `@spartan` or all or part of the user's name `spar`. Do note that the bot will find the first user that has `spar` in their name, so using a `@mention` is preferred when multiple users have `spar` in their name, such as `jealousparkingspot`.
