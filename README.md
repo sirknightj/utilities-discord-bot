@@ -36,4 +36,5 @@ With very simple fun and useful commands!
 
 #### `!ghostping <user> <channel-name>`
 * Pings the user, and then deletes the message as fast as possible. Also deletes your command as fast as possible.
+* Note: Requires the message author to have `ADMINISTRATOR` permissions.
 * Note: `<user>` can be a mention `@spartan` or all or part of the user's name `spar`. Do note that the bot will find the first user that has `spar` in their name, so using a `@mention` is preferred when multiple users have `spar` in their name, such as `jealousparkingspot`.
