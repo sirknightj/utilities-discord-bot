@@ -31,7 +31,7 @@ bot.on('message', message => {
         var helpMessage = `**Here are all of my commands:**\n`;
         for (commandName of commandList) {
             var commands = bot.commands.get(commandName);
-            if(!commands.hiddenFromHelp) {
+            if (!commands.hiddenFromHelp) {
                 helpMessage += `\`${config.prefix}${commands.usage}\`\t${commands.description}\n`;
             }
         }
@@ -49,8 +49,8 @@ bot.on('message', message => {
 
         // Checks if the command requires a user to be mentioned.
         if (bot.commands.get(command).requiresTarget) {
-            const user = getUserFromMention(args.shift());
-            if (user === null) {
+            const user = util.getUserFromMention(message, args.shift());
+            if (!user) {
                 message.channel.send(`Invalid usage. ${config.prefix}${bot.commands.get(command).usage}`);
                 return;
             }
@@ -63,38 +63,5 @@ bot.on('message', message => {
         message.channel.send('i dont have that command programmed in yet');
     }
 })
-
-/**
- * Returns the user that is mentioned. Returns null if the user is not found, or if the mention is incorrectly formatted.
- * @param {string} mention 
- */
-function getUserFromMention(mention) {
-    if (!mention) {
-        return null;
-    }
-    // Checks if mention is formatted correctly.
-    if (mention.startsWith('<@') && mention.endsWith('>')) {
-        mention = mention.slice(2, -1);
-
-        // Checks if the mentioned user has a nickname. If so, removes the beginning !.
-        if (mention.startsWith('!')) {
-            mention = mention.slice(1);
-        }
-        return bot.users.cache.get(mention);
-    }
-    return null;
-}
-
-/**
- * Returns the channel. Returns null if the channel is not found.
- * @param {Discord.Client()} bot
- * @param {string} check 
- */
-function findChannel(bot, check) {
-    if (!message) {
-        return null;
-    }
-    return bot.channels.find(check, channelName);
-}
 
 bot.login(config.token);
