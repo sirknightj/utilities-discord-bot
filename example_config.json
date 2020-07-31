@@ -9,6 +9,8 @@
     "channel_ids_to_not_accept_commands_from": ["CHANNEL_ID", "CHANNEL_ID", "CHANNEL_ID"],
     "channel_ids_to_bother": ["CHANNEL_ID"],
 
+    "greeting_messages_to_say": ["Hello, good to see you today.", "How's it going?", "I'm a cool bot, right?"],
+
     "user_ids_to_always_praise": ["USER_ID", "USER_ID"],
     "praising_messages_to_send": ["Yay!", "GG!", "Wow... I'm super jealous."],
     "praising_reactions": ["👀", "🍴", "🍞"],

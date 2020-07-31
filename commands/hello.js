@@ -1,10 +1,11 @@
+const config = require('../config.json');
+
 module.exports = {
     name: ['hello', 'hi'],
     description: 'says hello',
     usage: ``,
     execute(bot, message, args) {
-        message.channel.send(`Hi ${message.author.username}!`)
-            .then(msg => msg.delete({ timeout: 5000 })
-                .catch(error => message.reply(`Error: ${error}`)));
+        message.reply(config.greeting_messages_to_say[Math.floor(Math.random() * config.greeting_messages_to_say.length)])
+            .catch(error => message.reply(`Error: ${error}`));
     }
 }
