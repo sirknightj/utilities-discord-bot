@@ -21,15 +21,12 @@ module.exports = {
 
             var messageToBeSent = ` ${args.join(" ")}`;
             sendingChannel.send(`${user} This is a warning.${messageToBeSent}`)
-                .catch(error => message.channel.send(`Error: ${error.message}`))
-                .then(msg => msg.delete({ timeout: config.delete_delay })
-                    .catch(error => message.reply(`Error: ${error}`)));
+                .catch(error => message.reply(`Error: ${error}`));
 
         } else {
             message.delete();
             message.channel.send(`${user} This is a warning.`)
-                .then(msg => msg.delete({ timeout: config.delete_delay })
-                    .catch(error => message.reply(`Error: ${error}`)));
+                .catch(error => message.reply(`Error: ${error}`));
         }
     }
 }

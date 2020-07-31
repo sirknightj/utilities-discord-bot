@@ -22,7 +22,7 @@ for (command of require('fs').readdirSync('./commands').filter(file => file.ends
 }
 
 bot.once('ready', () => {
-    bot.user.setStatus('invisible');
+    // bot.user.setStatus('invisible');
     console.log('online!');
 })
 

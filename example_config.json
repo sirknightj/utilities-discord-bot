@@ -1,0 +1,19 @@
+{
+    "token": "YOUR_TOKEN_HERE",
+    "prefix": "!",
+    "unknown_command_message": "i dont have that command programmed in yet",
+    "purge_limit": 20,
+    "delete_delay": 5000,
+    "log_channel_identifier": "LOG_CHANNEL_ID_HERE",
+
+    "channel_ids_to_not_accept_commands_from": ["CHANNEL_ID", "CHANNEL_ID", "CHANNEL_ID"],
+    "channel_ids_to_bother": ["CHANNEL_ID"],
+
+    "user_ids_to_always_praise": ["USER_ID", "USER_ID"],
+    "praising_messages_to_send": ["Yay!", "GG!", "Wow... I'm super jealous."],
+    "praising_reactions": ["👀", "🍴", "🍞"],
+
+    "user_ids_to_always_annoy": ["USER_ID", "USER_ID", "USER_ID", "USER_ID"],
+    "annoying_messages_to_send": ["I don't believe you.", "NO U", "Well guess what? No one cares.", "Bad."],
+    "annoying_reactions": ["👎", "😒"]
+}

@@ -32,7 +32,6 @@ module.exports = {
         }
 
         sendingChannel.send(args.join(" "))
-            .then(msg => msg.delete({ timeout: config.delete_delay })
-                .catch(error => message.reply(`Error: ${error}`)));
+            .catch(error => message.reply(`Error: ${error}`));
     }
 }
