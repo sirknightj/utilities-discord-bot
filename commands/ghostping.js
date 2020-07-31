@@ -10,7 +10,7 @@ module.exports = {
     execute(bot, message, args, userFromMention) {
 
         if (!message.member.hasPermission('ADMINISTRATOR')) {
-            message.channel.send(`i dont have that command programmed in yet`);
+            message.channel.send(config.unknown_command_message);
             return;
         }
 
@@ -21,16 +21,22 @@ module.exports = {
 
         var sendingChannel = util.getChannelFromMention(message, args[1]);
         if (!sendingChannel) {
-            message.channel.send(`Error: Cannot find ${args[1]}!`);
+            message.channel.send(`Error: Cannot find ${args[1]}!`)
+                .then(msg => msg.delete({ timeout: config.delete_delay }))
+                .catch(error => message.reply(`Error: ${error}`));
+            return;
         }
 
         var target = util.getUserFromMention(message, args[0]);
         if (!target) {
-            message.channel.send(`Error: Cannot find ${args[0]}`);
+            message.channel.send(`Error: Cannot find ${args[0]}`)
+                .then(msg => msg.delete({ timeout: config.delete_delay }))
+                .catch(error => message.reply(`Error: ${error}`))
+            return;
         }
 
-        sendingChannel.send(`<@${target.user.id}>`).then(msg => msg.delete())
-            .then(msg => msg.delete({ timeout: 5000 })
-                .catch(error => message.reply(`Error: ${error}`)));
+        sendingChannel.send(`<@${target.user.id}>`)
+            .then(msg => msg.delete())
+            .catch(error => message.reply(`Error: ${error}`));
     }
 }

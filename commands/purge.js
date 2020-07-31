@@ -3,8 +3,7 @@ const util = require('../utilities');
 
 module.exports = {
     name: ['purge', 'nuke', 'clear', 'delete'],
-    description: 'Deletes a specified number of messages from a specified channel, in addition to the commmand you entered to purge. Only available to users with MANAGE_MESSAGES permission.',
-    usage: `(optional: channel-name) <number-of-messages>`,
+    description: 'Deletes a specified number of messages from a specified channel, in addition to the commmand you entered to purge.',
     requiredPermissions: ['MANAGE_MESSAGES'],
 
     execute(bot, message, args) {
