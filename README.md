@@ -13,6 +13,12 @@ With very simple fun and useful commands!
 #### `!avatar <user>`
 * Prints a link to the `user`'s profile photo. 
 
+#### `!ping <user> (optional: channel-name) (optional: message)`
+* Pings the user, and includes your message.
+* If `<channel-name>` is unspecified, then it will default to *this* channel.
+* Note: `<user>` can be a mention `@spartan` or all or part of the user's name `spar`. Do note that the bot will find the first user that has `spar` in their name, so using a `@mention` is preferred when multiple users have `spar` in their name, such as `jealousparkingspot`.
+* Note: `<channel-name>` can either be a mention `#general` or just the channel's name in plain text `general`.
+
 ## Moderation Commands
 
 #### `!announce <channel-name> <message>`
