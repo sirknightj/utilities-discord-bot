@@ -3,18 +3,23 @@ const config = require('../config.json');
 const util = require('../utilities');
 
 module.exports = {
-    name: 'ghostping',
+    name: ['ghostping', 'gp', 'ghostp'],
     description: 'Pings the specified user then deletes the message. Also deletes your command.',
-    usage: `ghostping <user> <channel>`,
+    usage: `<user> <channel>`,
     hiddenFromHelp: true,
     execute(bot, message, args, userFromMention) {
-        message.delete();
-        if (args.length !== 2) {
-            message.channel.send(`Invalid usage: ${config.prefix}${this.usage}`);
+
+        if (!message.member.hasPermission('ADMINISTRATOR')) {
+            message.channel.send(`i dont have that command programmed in yet`);
             return;
         }
 
-        var sendingChannel = util.getChannelFromMention(bot, args[1]);
+        message.delete();
+        if (args.length !== 2) {
+            throw new InvalidUsageException();
+        }
+
+        var sendingChannel = util.getChannelFromMention(message, args[1]);
         if (!sendingChannel) {
             message.channel.send(`Error: Cannot find ${args[1]}!`);
         }
@@ -24,6 +29,8 @@ module.exports = {
             message.channel.send(`Error: Cannot find ${args[0]}`);
         }
 
-        sendingChannel.send(`<@${target.user.id}>`).then(msg => msg.delete()).catch(error => message.channel.send(`Error: ${error.message}`));
+        sendingChannel.send(`<@${target.user.id}>`).then(msg => msg.delete())
+            .then(msg => msg.delete({ timeout: 5000 })
+                .catch(error => message.reply(`Error: ${error}`)));
     }
 }

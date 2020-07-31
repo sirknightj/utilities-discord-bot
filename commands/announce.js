@@ -5,27 +5,27 @@ const config = require('../config.json');
 module.exports = {
     name: 'announce',
     description: 'Says a message in a specified channel.',
-    usage: `announce <channel-name> <message>`,
+    usage: `<channel-name> <message>`,
 
     execute(bot, message, args, userFromMention) {
         var lookingFor = args.shift();
 
         if (!lookingFor) {
-            message.channel.send(`Invalid usage: ${config.prefix}${this.usage}`);
-            return;
+            throw new InvalidUsageException();
         }
 
-        sendingChannel = util.getChannelFromMention(bot, lookingFor);
+        sendingChannel = util.getChannelFromMention(message, lookingFor);
         if (!sendingChannel) {
             message.channel.send(`Invalid channel: ${lookingFor}`);
             return;
         }
 
         if (args.length < 1) {
-            message.channel.send(`Invalid usage: ${config.prefix}${this.usage}`);
-            return;
+            throw new InvalidUsageException();
         }
 
-        sendingChannel.send(args.join(" ")).catch(error => message.channel.send(`Error: ${error.message}`));
+        sendingChannel.send(args.join(" "))
+            .then(msg => msg.delete({ timeout: config.delete_delay })
+                .catch(error => message.reply(`Error: ${error}`)));
     }
 }

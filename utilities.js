@@ -1,4 +1,4 @@
-const discord = require('discord.js');
+const Discord = require('discord.js');
 
 module.exports = {
     /**
@@ -29,7 +29,7 @@ module.exports = {
         // the first user it finds that contains 'bob' in their name.
         if (!target && lookingFor) {
             target = message.guild.members.cache.find(member => {
-                return (member.displayName.toLowerCase().includes(lookingFor) || member.user.tag.toLowerCase().includes(lookingFor)) && !member.bot;
+                return (member.displayName.toLowerCase().includes(lookingFor) || member.user.tag.toLowerCase().includes(lookingFor)) && !member.user.bot;
             });
         }
         return target;
@@ -37,10 +37,10 @@ module.exports = {
 
     /**
      * Returns the channel. Returns null or undefined if the channel is not found.
-     * @param {Discord.Client()} bot the Discord client
+     * @param {message} message the message object being sent.
      * @param {string} lookingFor the string to be checked for a channel mention.
      */
-    getChannelFromMention: function (bot, lookingFor) {
+    getChannelFromMention: function (message, lookingFor) {
         if (!lookingFor) {
             return;
         }
@@ -48,16 +48,20 @@ module.exports = {
         // First, we have to make sure that the input is lowercase.
         lookingFor = lookingFor.toLowerCase();
 
-        // Looks for the channel by name first.
-        var sendingChannel = bot.channels.cache.find(channel => channel.name.toLowerCase() === lookingFor);
+        // Next, we shall see if a channel ID was directly inputted.
+        var sendingChannel = message.guild.channels.cache.get(lookingFor);
 
-        if (sendingChannel === null || sendingChannel === undefined) {
-            // If the name doesn't match, then it must be a mention. Looks for the channel id from a mention.
-            if (lookingFor.startsWith('<#') && lookingFor.endsWith('>')) {
-                lookingFor = lookingFor.slice(2, -1);
-                return bot.channels.cache.get(lookingFor);
-            }
+        // If not, then, we look for the channel by name.
+        if (!sendingChannel) {
+            sendingChannel = message.guild.channels.cache.find(channel => channel.name.toLowerCase() === lookingFor && channel.type === 'text');
         }
+
+        // If the name doesn't match, then it must be a mention. Looks for the channel id from a mention.
+        if (!sendingChannel && lookingFor.startsWith('<#') && lookingFor.endsWith('>')) {
+            lookingFor = lookingFor.slice(2, -1);
+            return message.guild.channels.cache.get(lookingFor);
+        }
+
         return sendingChannel;
     }
 }

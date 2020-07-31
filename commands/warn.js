@@ -5,13 +5,15 @@ const config = require('../config.json');
 module.exports = {
     name: 'warn',
     description: 'Warns the user.',
-    usage: `warn <@user> (optional: channel) (optional: message)`,
+    usage: `<user> (optional: channel-name) (optional: message)`,
     requiresTarget: true,
+    requiredPermissions: ['KICK_MEMBERS'],
+
     execute(bot, message, args, user) {
         if (args.length != 0) {
-
-            var sendingChannel = util.getChannelFromMention(bot, args[0]);
-            if(sendingChannel) {
+            message.delete();
+            var sendingChannel = util.getChannelFromMention(message, args[0]);
+            if (sendingChannel) {
                 args.shift();
             } else {
                 sendingChannel = message.channel;
@@ -19,10 +21,15 @@ module.exports = {
 
             var messageToBeSent = ` ${args.join(" ")}`;
             sendingChannel.send(`${user} This is a warning.${messageToBeSent}`)
-            message.delete();
+                .catch(error => message.channel.send(`Error: ${error.message}`))
+                .then(msg => msg.delete({ timeout: config.delete_delay })
+                    .catch(error => message.reply(`Error: ${error}`)));
+
         } else {
-            message.channel.send(`${user} This is a warning.`)
             message.delete();
+            message.channel.send(`${user} This is a warning.`)
+                .then(msg => msg.delete({ timeout: config.delete_delay })
+                    .catch(error => message.reply(`Error: ${error}`)));
         }
     }
 }

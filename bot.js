@@ -10,8 +10,15 @@ const commandList = [];
 // Read all of the command files from the ./commands folder.
 for (command of require('fs').readdirSync('./commands').filter(file => file.endsWith('.js'))) {
     const botCommand = require(`./commands/${command}`);
-    commandList.push(botCommand.name);
-    bot.commands.set(botCommand.name, botCommand);
+
+    if (typeof botCommand.name === 'string') {
+        botCommand.name = [botCommand.name];
+    }
+
+    for (commandAlias of botCommand.name) {
+        commandList.push(commandAlias);
+        bot.commands.set(commandAlias, botCommand);
+    }
 }
 
 bot.once('ready', () => {
@@ -40,9 +47,29 @@ bot.on('message', message => {
     }
 
     if (commandList.includes(command)) {
+        // If the requiredPermissions property is a string, turn it into an array.
+        if (typeof bot.commands.get(command).requiredPermissions === 'string') {
+            bot.commands.get(command).requiredPermissions = [bot.commands.get(command).requiredPermissions];
+        }
+
+        // If a command has the requiredPermissions property, then check that the sender has the all of the requiredPermissions.
+        if (bot.commands.get(command).requiredPermissions && bot.commands.get(command).requiredPermissions.length) {
+            for(var permission of bot.commands.get(command).requiredPermissions) {
+                if(!message.member.hasPermission(permission)) {
+                    message.delete().catch(error => message.reply(`Error: ${error}`));
+                    message.channel.send(`You do not have permission to use this command.`)
+                    .then(msg => msg.delete({ timeout: config.delete_delay })
+                    .catch(error => message.reply(`Error: ${error}`)));
+                    return;
+                }
+            }
+        }
+
         if (bot.commands.get(command).requiresArgs) {
             if (args.length == 0) {
-                message.channel.send(`Invalid usage. ${config.prefix}${bot.commands.get(command).usage}`);
+                message.channel.send(`Invalid usage. ${config.prefix}${command} ${bot.commands.get(command).usage}`)
+                .then(msg => msg.delete({ timeout: config.delete_delay })
+                .catch(error => message.reply(`Error: ${error}`)));
                 return;
             }
         }
@@ -51,16 +78,33 @@ bot.on('message', message => {
         if (bot.commands.get(command).requiresTarget) {
             const user = util.getUserFromMention(message, args.shift());
             if (!user) {
-                message.channel.send(`Invalid usage. ${config.prefix}${bot.commands.get(command).usage}`);
+                message.channel.send(`Invalid usage. ${config.prefix}${command} ${bot.commands.get(command).usage}`)
+                .then(msg => msg.delete({ timeout: config.delete_delay })
+                .catch(error => message.reply(`Error: ${error}`)));
                 return;
             }
-            bot.commands.get(command).execute(bot, message, args, user);
+            try {
+                bot.commands.get(command).execute(bot, message, args, user);
+            } catch (error) {
+                message.channel.send(`Invalid usage. ${config.prefix}${command} ${bot.commands.get(command).usage}`)
+                .then(msg => msg.delete({ timeout: config.delete_delay })
+                .catch(error => message.reply(`Error: ${error}`)));
+                return;
+            }
             return
         }
         // Executes the command, if a mention isn't required.
-        bot.commands.get(command).execute(bot, message, args);
+        try {
+            bot.commands.get(command).execute(bot, message, args);
+        } catch (error) {
+            message.channel.send(`Invalid usage. ${config.prefix}${command} ${bot.commands.get(command).usage}`)
+            .then(msg => msg.delete({ timeout: config.delete_delay })
+            .catch(error => message.reply(`Error: ${error}`)));
+            return;
+        }
     } else {
         message.channel.send('i dont have that command programmed in yet');
+        return;
     }
 })
 

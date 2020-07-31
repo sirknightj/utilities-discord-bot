@@ -2,47 +2,52 @@ const config = require('../config.json');
 const util = require('../utilities');
 
 module.exports = {
-    name: 'purge',
-    description: 'Purges a specified number of messages from a specified channel. Only available to users with Administrator permission.',
-    usage: `purge (optional: channel-name) <number of messages, 2-${config.purge_limit}>`,
+    name: ['purge', 'nuke', 'clear', 'delete'],
+    description: 'Deletes a specified number of messages from a specified channel, in addition to the commmand you entered to purge. Only available to users with MANAGE_MESSAGES permission.',
+    usage: `(optional: channel-name) <number-of-messages>`,
+    requiredPermissions: ['MANAGE_MESSAGES'],
 
     execute(bot, message, args) {
-        if (!args[0] || args.length > 1) {
-            message.channel.send(`Invalid usage: ${config.prefix}${this.usage}`);
-            return;
+        message.delete();
+        if (!args[0] || args.length > 2) {
+            throw new InvalidUsageException();
         }
-        console.log('got here');
 
-        console.log(args[0]);
-        console.log(isNaN(args[0]));
-        console.log(Number.isInteger(args[0]));
+        const logChannel = message.guild.channels.cache.get(`${config.log_channel_identifier}`);
 
         var targetChannel;
-        if (isNaN(args[0]) || !Number.isInteger(args[0])) {
+        if (isNaN(args[0])) {
             // Then it means that the optional purge was mentioned.
             var lookingFor = args.shift();
-            console.log(lookingFor)
-            targetChannel = util.getChannelFromMention(bot, lookingFor);
+
+            targetChannel = util.getChannelFromMention(message, lookingFor);
             if (!targetChannel) {
-                message.channel.send(`Invalid usage: ${config.prefix}${this.usage}`);
-                return;
+                throw new InvalidUsageException();
             }
         }
 
-        console.log('got here2');
-
-        if (isNaN(args[0]) || !Number.isInteger(args[0]) || args[0] > config.purge_limit) {
-            message.channel.send(`Invalid usage: ${config.prefix}${this.usage}`);
-            return;
+        if (parseInt(args[0]) <= 0 || parseInt(args[0]) > config.purge_limit) {
+            throw new InvalidUsageException();
         }
 
-        console.log('got here3');
-
-        if(!targetChannel) {
+        if (!targetChannel) {
             targetChannel = message.channel;
         }
 
-        targetChannel.bulkDelete(args[0]);
-        message.channel.send(`Deleted ${arg[0]} messages in ${targetChannel.name}.`).then(msg => msg.delete(3000));
+        if (targetChannel.id === logChannel.id) {
+            message.channel.send(`You cannot purge the logs!`)
+                .then(msg => msg.delete({ timeout: config.delete_delay })
+                    .catch(error => message.channel.send(`Error: ${error}`)));
+            return;
+        }
+
+        targetChannel.bulkDelete(parseInt(args[0]));
+        message.channel.send(`Deleted ${args[0]} messages in ${targetChannel.name}.`)
+            .then(msg => msg.delete({ timeout: config.delete_delay })
+                .catch(error => message.channel.send(`Error: ${error}`)));
+
+        if (config.log_channel_identifier) {
+            logChannel.send(`${message.author.username} deleted ${args[0]} messages in ${targetChannel.name}!`);
+        }
     }
 }

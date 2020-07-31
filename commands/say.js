@@ -5,16 +5,16 @@ const config = require('../config.json');
 module.exports = {
     name: 'say',
     description: 'Says a message in a specified channel, and deletes the message you sent.',
-    usage: `say (optional: channel-name) <message>`,
+    usage: `(optional: channel-name) <message>`,
 
     execute(bot, message, args, userFromMention) {
+        message.delete();
         var lookingFor = args[0];
         var shifted = true;
-        var sendingChannel = util.getChannelFromMention(bot, args[0]);
+        var sendingChannel = util.getChannelFromMention(message, args[0]);
 
         if (!lookingFor) {
-            message.channel.send(`Invalid usage: ${config.prefix}${this.usage}`);
-            return;
+            throw new InvalidUsageException();
         }
 
         if (!sendingChannel) {
@@ -27,10 +27,11 @@ module.exports = {
         }
 
         if (args.length < 1) {
-            message.channel.send(`Invalid usage: ${config.prefix}${this.usage}`);
-            return;
+            throw new InvalidUsageException();
         }
 
-        sendingChannel.send(args.join(" ")).then(() => message.delete()).catch(error => message.channel.send(`Error: ${error.message}`));
+        sendingChannel.send(args.join(" "))
+            .then(msg => msg.delete({ timeout: config.delete_delay })
+                .catch(error => message.reply(`Error: ${error}`)));
     }
 }
