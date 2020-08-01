@@ -9,8 +9,8 @@ module.exports = {
     requiresTarget: true,
 
     execute(bot, message, args, user) {
+        message.delete();
         if (args.length != 0) {
-            message.delete();
             var sendingChannel = util.getChannelFromMention(message, args[0]);
             if (sendingChannel) {
                 args.shift();
@@ -18,11 +18,16 @@ module.exports = {
                 sendingChannel = message.channel;
             }
 
-            var messageToBeSent = ` ${args.join(" ")}`;
-            sendingChannel.send(`${user} ${message.author.username} says ${messageToBeSent.trim()}`).catch(error => message.channel.send(`Error: I am ${error.message}`));
+            if (args.length != 0) {
+                sendingChannel.send(`${user} ${message.author.username} says ${args.join(" ").trim()}`)
+                    .catch(error => message.channel.send(`Error: I am ${error.message}`));
+            } else {
+                sendingChannel.send(`${user} ${message.author.username} pinged you!`)
+                    .catch(error => message.channel.send(`Error: I am ${error.message}`));
+            }
         } else {
-            message.delete();
-            message.channel.send(`${user} ${message.author.username} pinged you!`).catch(error => message.channel.send(`Error: I am ${error.message}`));
+            message.channel.send(`${user} ${message.author.username} pinged you!`)
+                .catch(error => message.channel.send(`Error: I am ${error.message}`));
         }
     }
 }

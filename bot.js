@@ -6,6 +6,7 @@ const util = require('./utilities');
 bot.commands = new Discord.Collection();
 
 const commandList = [];
+const allAliases = [];
 
 // Read all of the command files from the ./commands folder.
 for (command of require('fs').readdirSync('./commands').filter(file => file.endsWith('.js'))) {
@@ -18,6 +19,7 @@ for (command of require('fs').readdirSync('./commands').filter(file => file.ends
     commandList.push(botCommand.name[0]);
     for (commandAlias of botCommand.name) {
         bot.commands.set(commandAlias, botCommand);
+        allAliases.push(commandAlias);
     }
 }
 
@@ -52,7 +54,7 @@ bot.on('message', message => {
             return;
         }
 
-        if (commandList.includes(command)) {
+        if (allAliases.includes(command)) {
             // If the requiredPermissions property is a string, turn it into an array.
             if (typeof bot.commands.get(command).requiredPermissions === 'string') {
                 bot.commands.get(command).requiredPermissions = [bot.commands.get(command).requiredPermissions];
@@ -132,16 +134,21 @@ bot.on('message', message => {
                         if (config.user_ids_to_always_praise.includes("" + message.author.id)) {
                             message_to_send = config.praising_messages_to_send[Math.floor((Math.random() * config.praising_messages_to_send.length))];
                             reaction = config.praising_reactions[Math.floor((Math.random() * config.praising_reactions.length))];
+                            // Checks if the user is on the "naughty" list.
                         } else if (config.user_ids_to_always_annoy.includes("" + message.author.id)) {
                             message_to_send = config.annoying_messages_to_send[Math.floor((Math.random() * config.annoying_messages_to_send.length))];
                             reaction = config.annoying_reactions[Math.floor((Math.random() * config.annoying_reactions.length))];
                         } else {
-                            message_to_send = (Math.floor(Math.random() * 2) === 1) ?
-                                config.praising_messages_to_send[Math.floor((Math.random() * config.praising_messages_to_send.length))] :
-                                config.annoying_messages_to_send[Math.floor((Math.random() * config.annoying_messages_to_send.length))];
-                            reaction = (Math.floor(Math.random() * 2) === 1) ?
-                                config.praising_reactions[Math.floor((Math.random() * config.praising_reactions.length))] :
-                                config.annoying_reactions[Math.floor((Math.random() * config.annoying_reactions.length))];
+                            // The user isn't on either list.
+                            if (Math.floor(Math.random() * 10) === 1) {
+                                // Be mean. 1/10 of being mean.
+                                message_to_send = config.annoying_messages_to_send[Math.floor((Math.random() * config.annoying_messages_to_send.length))];
+                                reaction = config.annoying_reactions[Math.floor((Math.random() * config.annoying_reactions.length))];
+                            } else {
+                                // Be nice. 9/10 of being nice.
+                                message_to_send = config.praising_messages_to_send[Math.floor((Math.random() * config.praising_messages_to_send.length))];
+                                reaction = config.praising_reactions[Math.floor((Math.random() * config.praising_reactions.length))];
+                            }
                         }
                     }
                     message.channel.send(message_to_send).catch(error => message.reply(`Error: ${error}`));

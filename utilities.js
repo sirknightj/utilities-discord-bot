@@ -1,4 +1,5 @@
 const Discord = require('discord.js');
+const config = require('./config.json');
 
 module.exports = {
     /**
@@ -63,5 +64,17 @@ module.exports = {
         }
 
         return sendingChannel;
+    },
+
+    /**
+     * Sends a message in the channel, and deletes after config.delete_delay milliseconds.
+     * Catches any errors with the request, such as the bot not having permissions to speak in that channel.
+     * @param {Discord.channel} channel the channel to send the message in. 
+     * @param {string} content 
+     */
+    sendTimedMessage: function (channel, content) {
+        channel.send(content)
+            .then(msg => msg.delete({ timeout: config.delete_delay })
+                .catch(error => channel.send(`Error: ${error}`)));
     }
 }
