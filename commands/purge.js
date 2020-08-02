@@ -10,9 +10,9 @@ module.exports = {
     execute(bot, message, args) {
         message.delete();
 
-        const logChannel = message.guild.channels.cache.get(`${config.log_channel_identifier}`);
+        const logChannel = message.guild.channels.cache.get(`${config.log_channel_id}`);
         if (!logChannel) {
-            util.sendTimedMessage(message.channel, "Your config file's log_channel_identifier is not set up correctly.");
+            util.sendTimedMessage(message.channel, "Your config file's log_channel_id is not set up correctly.");
             return;
         }
 
@@ -31,27 +31,32 @@ module.exports = {
             }
         }
 
+        // Turns the user input into a number.
+        const numberToDelete = parseInt(args[0]);
+
         // Checks for a valid number input, and makes sure that it's below the purge limit.
-        if (parseInt(args[0]) <= 0 || parseInt(args[0]) > config.purge_limit) {
+        if (numberToDelete <= 0 || numberToDelete > config.purge_limit) {
             throw new InvalidUsageException();
         }
 
+        // Defaults to this channel, if no target channel is specified.
         if (!targetChannel) {
             targetChannel = message.channel;
         }
 
+        // Does not allow purging of the logs.
         if (targetChannel.id === logChannel.id) {
             util.sendTimedMessage(message.channel, "You can't purge the logs!");
             return;
         }
 
-        targetChannel.bulkDelete(parseInt(args[0]));
-        message.channel.send(`Deleted ${args[0]} messages in ${targetChannel.name}.`)
-            .then(msg => msg.delete({ timeout: config.delete_delay })
-                .catch(error => message.channel.send(`Error: ${error}`)));
+        // Delete the messages. This will appear in the audit logs.
+        targetChannel.bulkDelete(numberToDelete).catch(error => util.sendMessage(`Error: ${error.message}`));
 
-        if (config.log_channel_identifier) {
-            logChannel.send(`${message.author.username} deleted ${args[0]} messages in ${targetChannel.name}!`);
-        }
+        // Tells the user that the deleting went well.
+        util.sendTimedMessage(message.channel, `Successfully deleted ${numberToDelete} messages in ${targetChannel.name}.`)
+
+        // Logs the action of who used this command.
+        util.sendMessage(logChannel, `${message.author.username} has deleted ${numberToDelete} messages in ${targetChannel.name}!`);
     }
 }
