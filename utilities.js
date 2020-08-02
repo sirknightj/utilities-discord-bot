@@ -76,5 +76,16 @@ module.exports = {
         channel.send(content)
             .then(msg => msg.delete({ timeout: config.delete_delay })
                 .catch(error => channel.send(`Error: ${error}`)));
+    },
+
+    /**
+     * Sends a message in the channel.
+     * Catches any errors with the request, such as the bot not having permissions to speak in that channel.
+     * @param {Discord.channel} channel the channel to send the message in. 
+     * @param {string} content 
+     */
+    sendMessage: function (channel, content) {
+        channel.send(content)
+            .catch(error => console.log(error + " " + error.message));
     }
 }

@@ -8,7 +8,7 @@ bot.commands = new Discord.Collection();
 const commandList = [];
 const allAliases = [];
 
-// Read all of the command files from the ./commands folder.
+// Read all of the command files from the './commands' folder.
 for (command of require('fs').readdirSync('./commands').filter(file => file.endsWith('.js'))) {
     const botCommand = require(`./commands/${command}`);
 
@@ -23,18 +23,25 @@ for (command of require('fs').readdirSync('./commands').filter(file => file.ends
     }
 }
 
+// Makes sure that the config.channel_ids_not_to_accept_commands_from is a string.
+if (typeof config.channel_ids_to_not_accept_commands_from === 'string') {
+    config.channel_ids_to_not_accept_commands_from = [config.channel_ids_to_not_accept_commands_from];
+}
+
 bot.once('ready', () => {
     // bot.user.setStatus('invisible');
     console.log('online!');
 })
 
 bot.on('message', message => {
+    // Make sure that the message is not from another bot, and only from a text channel.
     if (message.author.bot || message.channel.type !== 'text') {
         return;
     }
 
-    // if the message starts with the prefix...
+    // Checks if the message starts with a prefix.
     if (message.content.startsWith(config.prefix)) {
+        // Makes sure that the bot is allowed to accept commands from this channel.
         if (config.channel_ids_to_not_accept_commands_from.includes(message.channel.id)) {
             return;
         }
@@ -54,75 +61,83 @@ bot.on('message', message => {
             return;
         }
 
+        var requiredPerms = bot.commands.get(command).requiredPermissions;
+
+        // If the command exists...
         if (allAliases.includes(command)) {
             // If the requiredPermissions property is a string, turn it into an array.
-            if (typeof bot.commands.get(command).requiredPermissions === 'string') {
-                bot.commands.get(command).requiredPermissions = [bot.commands.get(command).requiredPermissions];
+            const botCommand = bot.commands.get(command);
+            if (requiredPerms && typeof requiredPerms === 'string') {
+                requiredPerms = [requiredPerms];
             }
 
             // If a command has the requiredPermissions property, then check that the sender has the all of the requiredPermissions.
-            if (bot.commands.get(command).requiredPermissions && bot.commands.get(command).requiredPermissions.length) {
-                for (var permission of bot.commands.get(command).requiredPermissions) {
+            if (requiredPerms && requiredPerms.length) {
+                // Loop through all required permissions. If the user is missing any of them, then don't perform the command.
+                for (var permission of requiredPerms) {
                     if (!message.member.hasPermission(permission)) {
                         message.delete().catch(error => message.reply(`Error: ${error}`));
-                        message.channel.send(`You do not have permission to use this command.`)
-                            .then(msg => msg.delete({ timeout: config.delete_delay })
-                                .catch(error => message.reply(`Error: ${error}`)));
+                        util.sendMessage(message.channel, "You do not have permission to use this command.");
                         return;
                     }
                 }
             }
 
-            if (bot.commands.get(command).requiresArgs) {
+            // Checks if the command requires arguments to be inputted. If the user did not put any, say the correct usage.
+            if (botCommand.requiresArgs) {
                 if (args.length == 0) {
-                    message.channel.send(`Invalid usage. ${config.prefix}${command} ${bot.commands.get(command).usage}`)
-                        .then(msg => msg.delete({ timeout: config.delete_delay })
-                            .catch(error => message.reply(`Error: ${error}`)));
+                    util.sendTimedMessage(message.channel, `Invalid usage. ${config.prefix}${command} ${botCommand.usage}`);
                     return;
                 }
             }
 
             // Checks if the command requires a user to be mentioned.
-            if (bot.commands.get(command).requiresTarget) {
+            if (botCommand.requiresTarget) {
+                
+                // Attempts to find the user from the first argument args[0].
                 const user = util.getUserFromMention(message, args.shift());
+                
+                // Throws an error if there is no user found.
                 if (!user) {
-                    message.channel.send(`Invalid usage. ${config.prefix}${command} ${bot.commands.get(command).usage}`)
-                        .then(msg => msg.delete({ timeout: config.delete_delay })
-                            .catch(error => message.reply(`Error: ${error}`)));
+                    util.sendTimedMessage(message.channel, `Invalid usage. ${config.prefix}${command} ${botCommand.usage}`);
                     return;
                 }
+
+                // Attempts to execute the message, while catching any missing bot permission errors.
                 try {
-                    bot.commands.get(command).execute(bot, message, args, user);
+                    botCommand.execute(bot, message, args, user);
                 } catch (error) {
-                    message.channel.send(`Invalid usage. ${config.prefix}${command} ${bot.commands.get(command).usage}`)
-                        .then(msg => msg.delete({ timeout: config.delete_delay })
-                            .catch(error => message.reply(`Error: ${error}`)));
-                    return;
+                    util.sendTimedMessage(message.channel, `Invalid usage. ${config.prefix}${command} ${botCommand.usage}`);
                 }
-                return
-            }
-            // Executes the command, if a mention isn't required.
-            try {
-                bot.commands.get(command).execute(bot, message, args);
-            } catch (error) {
-                message.channel.send(`Invalid usage. ${config.prefix}${command} ${bot.commands.get(command).usage}`)
-                    .then(msg => msg.delete({ timeout: config.delete_delay })
-                        .catch(error => message.reply(`Error: ${error}`)));
                 return;
             }
+            // Executes the command, if a mention isn't required, while catching any missing bot permission errors.
+            try {
+                botCommand.execute(bot, message, args);
+            } catch (error) {
+                util.sendTimedMessage(message.channel, `Invalid usage. ${config.prefix}${command} ${botCommand.usage}`);
+            }
+        // If the command doesn't exist...
         } else {
-            message.channel.send(config.unknown_command_message);
-            return;
+            util.sendMessage(message.channel, `${config.unknown_command_message}`);
         }
-
-        // if the message doesn't start with the prefix...
+        return;
+    // If the message doesn't start with the prefix...
     } else {
-        // Then, annoy the user, if they send a message.
+        // Then, annoy the user, if they attach a photo in their message.
+
+        // Makes sure that the message came from a channel that is OK to bother.
         if (config.channel_ids_to_bother) {
+            
+            // Makes sure that the channels to bother is in an array so we can loop through all of them.
             if (typeof config.channel_ids_to_bother === 'string') {
                 config.channel_ids_to_bother = [config.channel_ids_to_bother];
             }
+
+            // If this channel is in the OK to bother list, then...
             if (config.channel_ids_to_bother.includes("" + message.channel.id)) {
+
+                // Checks that the user has sent a message with more than one attachment.
                 if (message.attachments.size > 0) {
                     // This means they have sent a message with a photo as a "show-off" gesture.
                     // This means we can criticize, or praise them for their photo.
@@ -151,6 +166,7 @@ bot.on('message', message => {
                             }
                         }
                     }
+                    // Send the praise or criticism message, and also react.
                     message.channel.send(message_to_send).catch(error => message.reply(`Error: ${error}`));
                     message.react(reaction).catch(error => message.reply(`Error: ${error}`));
                 }

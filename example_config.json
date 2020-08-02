@@ -4,7 +4,7 @@
     "unknown_command_message": "i dont have that command programmed in yet",
     "purge_limit": 20,
     "delete_delay": 5000,
-    "log_channel_identifier": "LOG_CHANNEL_ID_HERE",
+    "log_channel_id": "LOG_CHANNEL_ID_HERE",
 
     "channel_ids_to_not_accept_commands_from": ["CHANNEL_ID", "CHANNEL_ID", "CHANNEL_ID"],
     "channel_ids_to_bother": ["CHANNEL_ID"],
