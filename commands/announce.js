@@ -6,6 +6,7 @@ module.exports = {
     name: 'announce',
     description: 'Says a message in a specified channel.',
     usage: `<channel-name> <message>`,
+    requiresArgs: true,
     requiredPermissions: ['MANAGE_MESSAGES'],
 
     execute(bot, message, args, userFromMention) {

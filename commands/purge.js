@@ -5,7 +5,8 @@ module.exports = {
     name: ['purge', 'nuke', 'clear', 'delete'],
     description: 'Deletes a specified number of messages from a specified channel, in addition to the commmand you entered to purge.',
     usage: '(optional: channel-name) <number>',
-    requiredPermissions: ['MANAGE_MESSAGES'],
+    requiresArgs: true,
+    requiredPermissions: 'MANAGE_MESSAGES',
 
     execute(bot, message, args) {
         message.delete();

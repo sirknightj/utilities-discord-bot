@@ -7,11 +7,12 @@ module.exports = {
     description: 'Warns the user.',
     usage: `<user> (optional: channel-name) (optional: message)`,
     requiresTarget: true,
-    requiredPermissions: ['KICK_MEMBERS'],
+    requiredPermissions: 'KICK_MEMBERS',
 
     execute(bot, message, args, user) {
+        message.delete();
         if (args.length != 0) {
-            message.delete();
+
             var sendingChannel = util.getChannelFromMention(message, args[0]);
             if (sendingChannel) {
                 args.shift();
@@ -19,14 +20,10 @@ module.exports = {
                 sendingChannel = message.channel;
             }
 
-            var messageToBeSent = ` ${args.join(" ")}`;
-            sendingChannel.send(`${user} This is a warning.${messageToBeSent}`)
-                .catch(error => message.reply(`Error: ${error}`));
-
+            var messageToBeSent = args.join(" ");
+            util.sendMessage(sendingChannel, `${user} This is a warning. ${messageToBeSent}`);
         } else {
-            message.delete();
-            message.channel.send(`${user} This is a warning.`)
-                .catch(error => message.reply(`Error: ${error}`));
+            util.sendMessage(message.channel, `${user} This is a warning.`);
         }
     }
 }

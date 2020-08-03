@@ -6,6 +6,7 @@ module.exports = {
     name: 'say',
     description: 'Says a message in a specified channel, and deletes the message you sent.',
     usage: `(optional: channel-name) <message>`,
+    requiresArgs: true,
     requiredPermissions: 'MANAGE_MESSAGES',
 
     execute(bot, message, args, userFromMention) {

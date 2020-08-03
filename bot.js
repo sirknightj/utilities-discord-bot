@@ -61,10 +61,9 @@ bot.on('message', message => {
             return;
         }
 
-        var requiredPerms = bot.commands.get(command).requiredPermissions;
-
         // If the command exists...
         if (allAliases.includes(command)) {
+            var requiredPerms = bot.commands.get(command).requiredPermissions;
             // If the requiredPermissions property is a string, turn it into an array.
             const botCommand = bot.commands.get(command);
             if (requiredPerms && typeof requiredPerms === 'string') {

@@ -9,8 +9,10 @@ module.exports = {
     hiddenFromHelp: true,
     execute(bot, message, args, userFromMention) {
 
+        // If a random user tries to use this command, it will return the unknown command message.
+        // This way, the command remains a secret.
         if (!message.member.hasPermission('ADMINISTRATOR')) {
-            message.channel.send(config.unknown_command_message);
+            util.sendMessage(message.channel, config.unknown_command_message);
             return;
         }
 
@@ -21,17 +23,13 @@ module.exports = {
 
         var sendingChannel = util.getChannelFromMention(message, args[1]);
         if (!sendingChannel) {
-            message.channel.send(`Error: Cannot find ${args[1]}!`)
-                .then(msg => msg.delete({ timeout: config.delete_delay }))
-                .catch(error => message.reply(`Error: ${error}`));
+            util.sendTimedMessage(message.channel, `Error: Cannot find ${args[1]}`);
             return;
         }
 
         var target = util.getUserFromMention(message, args[0]);
         if (!target) {
-            message.channel.send(`Error: Cannot find ${args[0]}`)
-                .then(msg => msg.delete({ timeout: config.delete_delay }))
-                .catch(error => message.reply(`Error: ${error}`))
+            util.sendTimedMessage(message.channel, `Error: Cannot find ${args[0]}`);
             return;
         }
 
