@@ -85,6 +85,7 @@ bot.on('message', message => {
             // Checks if the command requires arguments to be inputted. If the user did not put any, say the correct usage.
             if (botCommand.requiresArgs) {
                 if (args.length == 0) {
+                    message.delete();
                     util.sendTimedMessage(message.channel, `Invalid usage. ${config.prefix}${command} ${botCommand.usage}`);
                     return;
                 }
@@ -98,6 +99,7 @@ bot.on('message', message => {
                 
                 // Throws an error if there is no user found.
                 if (!user) {
+                    message.delete();
                     util.sendTimedMessage(message.channel, `Invalid usage. ${config.prefix}${command} ${botCommand.usage}`);
                     return;
                 }
@@ -106,6 +108,7 @@ bot.on('message', message => {
                 try {
                     botCommand.execute(bot, message, args, user);
                 } catch (error) {
+                    message.delete();
                     util.sendTimedMessage(message.channel, `Invalid usage. ${config.prefix}${command} ${botCommand.usage}`);
                 }
                 return;
@@ -114,10 +117,12 @@ bot.on('message', message => {
             try {
                 botCommand.execute(bot, message, args);
             } catch (error) {
+                message.delete();
                 util.sendTimedMessage(message.channel, `Invalid usage. ${config.prefix}${command} ${botCommand.usage}`);
             }
         // If the command doesn't exist...
         } else {
+            message.delete();
             util.sendMessage(message.channel, `${config.unknown_command_message}`);
         }
         return;
