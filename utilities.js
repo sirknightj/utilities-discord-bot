@@ -6,6 +6,7 @@ module.exports = {
     * Returns the user that is mentioned. Returns null or undefined if the user is not found, or if the mention is incorrectly formatted.
     * @param {message} message the message object being sent.
     * @param {string} lookingFor the string to be checked for a member mention.
+    * @returns {Discord.GuildMember} the guild member to be found. Null or undefined if not found.
     */
     getUserFromMention: function (message, lookingFor) {
         if (!lookingFor) {
@@ -40,6 +41,7 @@ module.exports = {
      * Returns the channel. Returns null or undefined if the channel is not found.
      * @param {message} message the message object being sent.
      * @param {string} lookingFor the string to be checked for a channel mention.
+     * @returns {Discord.Channel} the channel lookingFor represents. Null or undefined if not found.
      */
     getChannelFromMention: function (message, lookingFor) {
         if (!lookingFor) {
@@ -70,11 +72,12 @@ module.exports = {
      * Sends a message in the channel, and deletes after config.delete_delay milliseconds.
      * Catches any errors with the request, such as the bot not having permissions to speak in that channel.
      * @param {Discord.channel} channel the channel to send the message in. 
-     * @param {string} content 
+     * @param {string} content the message to send.
+     * @param {int} millis_before_delete how many milliseconds before deletion.
      */
-    sendTimedMessage: function (channel, content) {
+    sendTimedMessage: function (channel, content, millis_before_delete) {
         channel.send(content)
-            .then(msg => msg.delete({ timeout: config.delete_delay })
+            .then(msg => msg.delete({ timeout: (millis_before_delete || config.delete_delay) })
                 .catch(error => channel.send(`Error: ${error}`)));
     },
 
@@ -82,7 +85,7 @@ module.exports = {
      * Sends a message in the channel.
      * Catches any errors with the request, such as the bot not having permissions to speak in that channel.
      * @param {Discord.channel} channel the channel to send the message in. 
-     * @param {string} content 
+     * @param {string} content the message to send.
      */
     sendMessage: function (channel, content) {
         channel.send(content)

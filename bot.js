@@ -31,7 +31,7 @@ if (typeof config.channel_ids_to_not_accept_commands_from === 'string') {
 bot.once('ready', () => {
     // bot.user.setStatus('invisible');
     console.log('online!');
-})
+});
 
 bot.on('message', message => {
     // Make sure that the message is not from another bot, and only from a text channel.
@@ -46,6 +46,8 @@ bot.on('message', message => {
             return;
         }
 
+        console.log(`${message.author.username} ${message.content}`); // for debugging purposes.
+
         const args = message.content.trim().slice(config.prefix.length).split(/ +/);
         const command = args.shift().toLowerCase();
 
@@ -57,7 +59,7 @@ bot.on('message', message => {
                     helpMessage += `\`${config.prefix}${commandName} ${commands.usage}\`\t${commands.description}\n`;
                 }
             }
-            message.channel.send(helpMessage);
+            util.sendMessage(message.channel, helpMessage);
             return;
         }
 
@@ -75,7 +77,7 @@ bot.on('message', message => {
                 // Loop through all required permissions. If the user is missing any of them, then don't perform the command.
                 for (var permission of requiredPerms) {
                     if (!message.member.hasPermission(permission)) {
-                        message.delete().catch(error => message.reply(`Error: ${error}`));
+                        message.delete().catch(error => message.reply(`Error 80: ${error}`));
                         util.sendMessage(message.channel, "You do not have permission to use this command.");
                         return;
                     }
@@ -85,7 +87,7 @@ bot.on('message', message => {
             // Checks if the command requires arguments to be inputted. If the user did not put any, say the correct usage.
             if (botCommand.requiresArgs) {
                 if (args.length == 0) {
-                    message.delete();
+                    message.delete().catch(error => message.reply(`Error 90: ${error}`));
                     util.sendTimedMessage(message.channel, `Invalid usage. ${config.prefix}${command} ${botCommand.usage}`);
                     return;
                 }
@@ -99,7 +101,7 @@ bot.on('message', message => {
                 
                 // Throws an error if there is no user found.
                 if (!user) {
-                    message.delete();
+                    message.delete().catch(error => message.reply(`Error 104: ${error}`));
                     util.sendTimedMessage(message.channel, `Invalid usage. ${config.prefix}${command} ${botCommand.usage}`);
                     return;
                 }
@@ -108,7 +110,8 @@ bot.on('message', message => {
                 try {
                     botCommand.execute(bot, message, args, user);
                 } catch (error) {
-                    message.delete();
+                    console.log(error.stack);
+                    message.delete().catch(error => message.reply(`Error 114: ${error}`));
                     util.sendTimedMessage(message.channel, `Invalid usage. ${config.prefix}${command} ${botCommand.usage}`);
                 }
                 return;
@@ -117,12 +120,13 @@ bot.on('message', message => {
             try {
                 botCommand.execute(bot, message, args);
             } catch (error) {
-                message.delete();
+                message.delete().catch(error => message.reply(`Error 123: ${error}`));
                 util.sendTimedMessage(message.channel, `Invalid usage. ${config.prefix}${command} ${botCommand.usage}`);
             }
+            return;
         // If the command doesn't exist...
         } else {
-            message.delete();
+            message.delete().catch(error => message.reply(`Error 129: ${error}`));
             util.sendMessage(message.channel, `${config.unknown_command_message}`);
         }
         return;
@@ -171,12 +175,12 @@ bot.on('message', message => {
                         }
                     }
                     // Send the praise or criticism message, and also react.
-                    message.channel.send(message_to_send).catch(error => message.reply(`Error: ${error}`));
-                    message.react(reaction).catch(error => message.reply(`Error: ${error}`));
+                    util.sendMessage(message.channel, message_to_send);
+                    message.react(reaction).catch(error => message.reply(`Error 179: ${error}`));
                 }
             }
         }
     }
-})
+});
 
 bot.login(config.token);
