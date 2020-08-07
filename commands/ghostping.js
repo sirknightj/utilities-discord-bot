@@ -12,14 +12,16 @@ module.exports = {
         // If a random user tries to use this command, it will return the unknown command message.
         // This way, the command remains a secret.
         if (!message.member.hasPermission('ADMINISTRATOR')) {
+            util.safeDelete(message);
             util.sendMessage(message.channel, config.unknown_command_message);
             return;
         }
 
-        message.delete();
         if (args.length !== 2) {
             throw new InvalidUsageException();
         }
+
+        util.safeDelete(message);
 
         var sendingChannel = util.getChannelFromMention(message, args[1]);
         if (!sendingChannel) {

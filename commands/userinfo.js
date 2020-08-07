@@ -8,7 +8,7 @@ module.exports = {
     usage: `<user>`,
     requiresTarget: true,
     execute(bot, message, args, target) {
-        message.delete();
+        util.safeDelete(message);
         const embed = new MessageEmbed()
             .setThumbnail(target.user.displayAvatarURL({ dynamic: true }))
             .addField('User', [
@@ -24,6 +24,6 @@ module.exports = {
             ]);
 
         util.sendTimedMessage(message.channel, embed, config.userinfo_and_myperms_delete_delay);
-        util.sendTimedMessage(message.channel, `The above message will be deleted after ${config.userinfo_and_myperms_delete_delay/1000} seconds.`);
+        util.sendTimedMessage(message.channel, `The above message will be deleted after ${config.userinfo_and_myperms_delete_delay / 1000} seconds.`);
     }
 }

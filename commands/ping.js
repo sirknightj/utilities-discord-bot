@@ -1,35 +1,17 @@
-const discord = require("discord.js");
 const config = require('../config.json');
 const util = require('../utilities');
 
 module.exports = {
-    name: 'ping',
-    description: 'Pings the user.',
-    usage: `<user> (optional: channel-name) (optional: message)`,
-    requiresTarget: true,
+    name: ['ping', 'bing', 'pingpong', 'bingbong'],
+    description: 'Replies with pong. And also gives you the response time.',
+    usage: '',
 
-    execute(bot, message, args, user) {
-        message.delete();
-        var sendingChannel;
-
-        if (args.length !== 0) {
-            // Attempts to resolve the first argument into a channel name.
-            sendingChannel = util.getChannelFromMention(message, args[0]);
-        }
-
-        // If a channel is found, then remove it from the arguments.
-        if (sendingChannel) {
-            args.shift();
-
-        // Otherwise, default to the channel this message was sent in.
-        } else {
-            sendingChannel = message.channel;
-        }
-
-        if (args.length !== 0) {
-            util.sendMessage(sendingChannel, `${user} ${message.author.username} says ${args.join(" ").trim()}`);
-        } else {
-            util.sendMessage(sendingChannel, `${user} ${message.author.username} pinged you!`);
-        }
+    execute(bot, message, args) {
+        message.channel.send(`${message.content.charAt(1)}inging...`)
+            .then(msg => {
+                util.sendMessage(message.channel, `${message.content.charAt(1)}ong.\nPing is ${msg.createdTimestamp - message.createdTimestamp} ms.`)
+                util.safeDelete(msg);
+            })
+            .catch(error => message.reply(`Error: ${error.message}`));
     }
 }

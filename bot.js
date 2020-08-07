@@ -77,7 +77,7 @@ bot.on('message', message => {
                 // Loop through all required permissions. If the user is missing any of them, then don't perform the command.
                 for (var permission of requiredPerms) {
                     if (!message.member.hasPermission(permission)) {
-                        message.delete().catch(error => message.reply(`Error 80: ${error}`));
+                        util.safeDelete(message);
                         util.sendMessage(message.channel, "You do not have permission to use this command.");
                         return;
                     }
@@ -87,7 +87,7 @@ bot.on('message', message => {
             // Checks if the command requires arguments to be inputted. If the user did not put any, say the correct usage.
             if (botCommand.requiresArgs) {
                 if (args.length == 0) {
-                    message.delete().catch(error => message.reply(`Error 90: ${error}`));
+                    util.safeDelete(message);
                     util.sendTimedMessage(message.channel, `Invalid usage. ${config.prefix}${command} ${botCommand.usage}`);
                     return;
                 }
@@ -101,7 +101,7 @@ bot.on('message', message => {
                 
                 // Throws an error if there is no user found.
                 if (!user) {
-                    message.delete().catch(error => message.reply(`Error 104: ${error}`));
+                    util.safeDelete(message);
                     util.sendTimedMessage(message.channel, `Invalid usage. ${config.prefix}${command} ${botCommand.usage}`);
                     return;
                 }
@@ -110,8 +110,7 @@ bot.on('message', message => {
                 try {
                     botCommand.execute(bot, message, args, user);
                 } catch (error) {
-                    console.log(error.stack);
-                    message.delete().catch(error => message.reply(`Error 114: ${error}`));
+                    util.safeDelete(message);
                     util.sendTimedMessage(message.channel, `Invalid usage. ${config.prefix}${command} ${botCommand.usage}`);
                 }
                 return;
@@ -120,13 +119,13 @@ bot.on('message', message => {
             try {
                 botCommand.execute(bot, message, args);
             } catch (error) {
-                message.delete().catch(error => message.reply(`Error 123: ${error}`));
+                util.safeDelete(message);
                 util.sendTimedMessage(message.channel, `Invalid usage. ${config.prefix}${command} ${botCommand.usage}`);
             }
             return;
         // If the command doesn't exist...
         } else {
-            message.delete().catch(error => message.reply(`Error 129: ${error}`));
+            util.safeDelete(message);
             util.sendMessage(message.channel, `${config.unknown_command_message}`);
         }
         return;

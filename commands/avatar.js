@@ -12,8 +12,6 @@ module.exports = {
         if (!avatarURL) {
             avatarURL = `Default`;
         }
-        message.channel.send(`${target.user.username}'s avatar: ${target.user.avatarURL({ dynamic: true })}\nUser ID: ${target.user.id}`)
-            .then(msg => msg.delete({ timeout: config.delete_delay })
-                .catch(error => message.reply(`Error: ${error}`)));
+        util.sendTimedMessage(message.channel, `${target.user.username}'s avatar: ${target.user.avatarURL({ dynamic: true })}\nUser ID: ${target.user.id}`);
     }
 }

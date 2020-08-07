@@ -13,6 +13,11 @@ module.exports = {
             return;
         }
 
+        // First, we check if the mention is an incomplete mention.
+        if (lookingFor.startsWith('@')) {
+            lookingfor = lookingFor.substr(1);
+        }
+
         // First, we check if the input is a User ID.
         let target = message.guild.members.cache.get(lookingFor);
 
@@ -87,8 +92,18 @@ module.exports = {
      * @param {Discord.channel} channel the channel to send the message in. 
      * @param {string} content the message to send.
      */
-    sendMessage: function (channel, content) {
-        channel.send(content)
+    sendMessage: function (channel, content, messageArgs) {
+        channel.send(content, messageArgs)
             .catch(error => console.log(error + " " + error.message));
+    },
+
+    /**
+     * Deletes the message, catching any errors, such as lack of permissions, or if the message is already deleted.
+     * @param {Discord.Message} message the message to be deleted
+     */
+    safeDelete: function (message) {
+        if (message) {
+            message.delete().catch(error => channel.send(`Error: ${error.message}`));
+        }
     }
 }

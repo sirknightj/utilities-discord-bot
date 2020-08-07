@@ -1,12 +1,12 @@
 const config = require('../config.json');
-const utilities = require('../utilities');
+const util = require('../utilities');
 
 module.exports = {
     name: ['hello', 'hi'],
-    description: 'says hello',
+    description: 'Says a randomized hello message.',
     usage: "",
     execute(bot, message, args) {
-        utilities.sendMessage(message.channel,
+        util.sendMessage(message.channel,
             `${message.member.nickname || message.member.user.username}, ${config.greeting_messages_to_say[Math.floor(Math.random() * config.greeting_messages_to_say.length)]}`);
     }
 }

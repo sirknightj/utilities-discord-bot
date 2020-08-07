@@ -9,8 +9,6 @@ module.exports = {
     requiredPermissions: 'MANAGE_MESSAGES',
 
     execute(bot, message, args) {
-        message.delete();
-
         const logChannel = message.guild.channels.cache.get(`${config.log_channel_id}`);
         if (!logChannel) {
             util.sendTimedMessage(message.channel, "Your config file's log_channel_id is not set up correctly.");
@@ -39,6 +37,7 @@ module.exports = {
         if (numberToDelete <= 0 || numberToDelete > config.purge_limit) {
             throw new InvalidUsageException();
         }
+        util.safeDelete(message);
 
         // Defaults to this channel, if no target channel is specified.
         if (!targetChannel) {

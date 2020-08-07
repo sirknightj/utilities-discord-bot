@@ -10,7 +10,6 @@ module.exports = {
     requiredPermissions: 'MANAGE_MESSAGES',
 
     execute(bot, message, args, userFromMention) {
-        message.delete();
         var lookingFor = args[0];
         var shifted = true;
         var sendingChannel = util.getChannelFromMention(message, args[0]);
@@ -31,7 +30,7 @@ module.exports = {
         if (args.length < 1) {
             throw new InvalidUsageException();
         }
-
+        util.safeDelete(message);
         sendingChannel.send(args.join(" "))
             .catch(error => message.reply(`Error: ${error}`));
     }

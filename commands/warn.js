@@ -10,7 +10,6 @@ module.exports = {
     requiredPermissions: 'KICK_MEMBERS',
 
     execute(bot, message, args, user) {
-        message.delete();
         if (args.length != 0) {
 
             var sendingChannel = util.getChannelFromMention(message, args[0]);
@@ -25,5 +24,6 @@ module.exports = {
         } else {
             util.sendMessage(message.channel, `${user} This is a warning.`);
         }
+        util.safeDelete(message);
     }
 }

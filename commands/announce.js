@@ -26,7 +26,6 @@ module.exports = {
             throw new InvalidUsageException();
         }
 
-        sendingChannel.send(args.join(" "))
-            .catch(error => message.reply(`Error: ${error}`));
+        util.sendMessage(sendingChannel, args.join(" "));
     }
 }

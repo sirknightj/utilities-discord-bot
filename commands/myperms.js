@@ -15,18 +15,17 @@ module.exports = {
         var target, targetChannel;
 
         if (args.length === 2) {
-            console.log('top');
             //This means args[0] = user, and args[1] = channel-name;
             let lookingFor = args.shift();
             target = util.getUserFromMention(message, lookingFor);
             if (!target) {
-                message.delete();
+                util.safeDelete(message);
                 util.sendTimedMessage(message.channel, `Error: Cannot find user ${lookingFor}.`);
                 return;
             }
             targetChannel = util.getChannelFromMention(message, args[0]);
             if (!targetChannel) {
-                message.delete();
+                util.safeDelete(message);
                 util.sendTimedMessage(message.channel, `Error: Cannot find channel ${args[0]}.`);
                 return;
             }
@@ -35,7 +34,7 @@ module.exports = {
             target = util.getUserFromMention(message, lookingFor);
             targetChannel = util.getChannelFromMention(message, lookingFor);
             if (!target && !targetChannel) {
-                message.delete();
+                util.safeDelete(message);
                 util.sendTimedMessage(message.channel, `Error: Cannot find user or channel ${lookingFor}.`);
                 return;
             }
@@ -45,7 +44,7 @@ module.exports = {
             target = message.member;
         }
 
-        message.delete();
+        util.safeDelete(message);
         const embed = new MessageEmbed()
             .setThumbnail(target.user.displayAvatarURL({ dynamic: true }))
             .addField('User Info', [
