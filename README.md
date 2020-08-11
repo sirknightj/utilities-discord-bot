@@ -10,6 +10,7 @@ With very simple, fun, and useful commands that are very easy-tu-use and intuiti
 ** Required arguments are given in angle brackets `<required>`, while optional arguments are in parenthesis `(optional)`.
 * `<user>` doesn't have to be a mention! Can be a mention `@spartan` or all or part of the user's name `spar`. Do note that the bot will find the first user that has `spar` in their name, so using a `@mention` is preferred when multiple users have `spar` in their name, such as `jealousparkingspot`.
 * Note: `<channel-name>` can either be a mention `#general` or just the channel's name in plain text `general`. This will not search for channels containing your input such as `gen` for `#general`.
+* Note: `<voice-channel-name>` however, can be partial, since it is very difficult to mention a voice channel. For example, `music` can find the voice channel `♬ Music Channel`.
 
 ## Helpful Commands
 
@@ -57,8 +58,19 @@ With very simple, fun, and useful commands that are very easy-tu-use and intuiti
 * If `(playing/streaming/listening/watching)` is unspecified, defaults to playing.
 * If `(activity-name)` is unspecified, clears the activity.
 
+#### `!annoy (optional: voice-channel-name)`
+* Joins and immediately leaves the specified voice channel.
+* If `(voice-channel-name)` is unspecified, defaults to the voice channel the message author is in.
+
 #### `!hello`
 * Says a randomized hello message, from the `config.json` file.
+
+#### `!join (optional: voice-channel-name)`
+* Joins and chills in the specified voice channel.
+* If `(voice-channel-name)` is unspecified, defaults to the voice channel the message author is in.
+
+#### `!leave`
+* Disconnects from the current voice channel the bot is in.
 
 #### `!say (optional: channel-name) <message>`
 * Says `<message>` in the specified channel.
