@@ -4,7 +4,7 @@ const config = require('./config.json');
 module.exports = {
     /**
     * Returns the user that is mentioned. Returns null or undefined if the user is not found, or if the mention is incorrectly formatted.
-    * @param {message} message the message object being sent.
+    * @param {Discord.Message} message the message object being sent.
     * @param {string} lookingFor the string to be checked for a member mention.
     * @returns {Discord.GuildMember} the guild member to be found. Null or undefined if not found.
     */
@@ -34,6 +34,16 @@ module.exports = {
 
         // Finally, we look for partial names. For example, if you want to ping @bobthebuilder and only type in bob, it will return 
         // the first user it finds that contains 'bob' in their name.
+        // First case: checks for exact capitalization.
+        if (!target && lookingFor) {
+            target = message.guild.members.cache.find(member => {
+                return (member.displayName.includes(lookingFor) || member.user.tag.includes(lookingFor)) && !member.user.bot;
+            });
+        }
+
+        lookingFor = lookingFor.toLowerCase();
+
+        // Then: checks for all lowercase.
         if (!target && lookingFor) {
             target = message.guild.members.cache.find(member => {
                 return (member.displayName.toLowerCase().includes(lookingFor) || member.user.tag.toLowerCase().includes(lookingFor)) && !member.user.bot;
@@ -43,8 +53,8 @@ module.exports = {
     },
 
     /**
-     * Returns the channel. Returns null or undefined if the channel is not found.
-     * @param {message} message the message object being sent.
+     * Returns the channel. Returns null or undefined if the channel is not found or invalid.
+     * @param {Discord.Message} message the message object being sent.
      * @param {string} lookingFor the string to be checked for a channel mention.
      * @returns {Discord.Channel} the channel lookingFor represents. Null or undefined if not found.
      */
@@ -67,16 +77,66 @@ module.exports = {
         // If the name doesn't match, then it must be a mention. Looks for the channel id from a mention.
         if (!sendingChannel && lookingFor.startsWith('<#') && lookingFor.endsWith('>')) {
             lookingFor = lookingFor.slice(2, -1);
-            return message.guild.channels.cache.get(lookingFor);
+            sendingChannel = message.guild.channels.cache.get(lookingFor);
+        }
+
+        if (sendingChannel) {
+            if (sendingChannel.type !== 'text') {
+                return;
+            }
         }
 
         return sendingChannel;
     },
 
     /**
+     * 
+     * @param {Discord.Message} message the message object being sent.
+     * @param {string} lookingFor the string to be checked for a channel mention
+     * @returns {Discord.Channel} the channel lookingFor represents. Null or undefined if not found, or invalid.
+     */
+    getVoiceChannelFromMention: function (message, lookingFor) {
+        if (!lookingFor) {
+            return;
+        }
+
+        // First, we shall see if a channel ID was directly inputted.
+        let voiceChannel = message.guild.channels.cache.get(lookingFor);
+
+        // Next, we try to search for an exact match, including capitalization.
+        if (!voiceChannel) {
+            voiceChannel = message.guild.channels.cache.find(channel => channel.name === lookingFor && channel.type === 'voice');
+        }
+
+        // Next, we try to find a match, ignoring capitalization.
+        if (!voiceChannel) {
+            voiceChannel = message.guild.channels.cache.find(channel => channel.name.toLowerCase() === lookingFor.toLowerCase() && channel.type === 'voice');
+        }
+
+        // Next, we try to search for an "includes", including capitalization.
+        if (!voiceChannel) {
+            voiceChannel = message.guild.channels.cache.find(channel => channel.name.includes(lookingFor) && channel.type === 'voice');
+        }
+
+        // Finally, we try to search for an "includes", ignoring capitalization.
+        if (!voiceChannel) {
+            voiceChannel = message.guild.channels.cache.find(channel => channel.name.toLowerCase().includes(lookingFor.toLowerCase()) && channel.type === 'voice');
+        }
+
+        // Additionally, checks if the channel mentioned was a voice channel. If not, then returns null.
+        if (voiceChannel) {
+            if (voiceChannel.type !== 'voice') {
+                return;
+            }
+        }
+
+        return voiceChannel;
+    },
+
+    /**
      * Sends a message in the channel, and deletes after config.delete_delay milliseconds.
      * Catches any errors with the request, such as the bot not having permissions to speak in that channel.
-     * @param {Discord.channel} channel the channel to send the message in. 
+     * @param {Discord.Channel} channel the channel to send the message in. 
      * @param {string} content the message to send.
      * @param {int} millis_before_delete how many milliseconds before deletion.
      */
@@ -89,12 +149,15 @@ module.exports = {
     /**
      * Sends a message in the channel.
      * Catches any errors with the request, such as the bot not having permissions to speak in that channel.
-     * @param {Discord.channel} channel the channel to send the message in. 
+     * @param {Discord.Channel} channel the channel to send the message in. 
      * @param {string} content the message to send.
      */
     sendMessage: function (channel, content, messageArgs) {
         channel.send(content, messageArgs)
-            .catch(error => console.log(error + " " + error.message));
+            .catch(error => {
+                console.log(error + " " + error.message);
+                channel.send(`Error: ${error.message}`);
+            });
     },
 
     /**

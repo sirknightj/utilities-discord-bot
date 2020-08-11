@@ -12,6 +12,6 @@ module.exports = {
         if (!avatarURL) {
             avatarURL = `Default`;
         }
-        util.sendTimedMessage(message.channel, `${target.user.username}'s avatar: ${target.user.avatarURL({ dynamic: true })}\nUser ID: ${target.user.id}`);
+        util.sendMessage(message.channel, `${target.user.username}'s avatar: ${target.user.avatarURL({ dynamic: true })}\nUser ID: ${target.user.id}`);
     }
 }

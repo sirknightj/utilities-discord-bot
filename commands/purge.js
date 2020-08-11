@@ -51,7 +51,7 @@ module.exports = {
         }
 
         // Delete the messages. This will appear in the audit logs.
-        targetChannel.bulkDelete(numberToDelete).catch(error => util.sendMessage(`Error: ${error.message}`));
+        targetChannel.bulkDelete(numberToDelete).catch(error => util.sendMessage(message.channel, `Error: ${error.message}`));
 
         // Tells the user that the deleting went well.
         util.sendTimedMessage(message.channel, `Successfully deleted ${numberToDelete} messages in ${targetChannel.name}.`)
