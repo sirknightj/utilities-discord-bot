@@ -267,7 +267,7 @@ bot.on('voiceStateUpdate', (oldState, newState) => {
         // util.sendMessage(logChannel, `${target.displayName} has left VC! ${new Date(Date.now())}.`);
         LogsEmbed.setColor("#cc271f")
         LogsEmbed.setTitle("Left Voice Channel")
-        LogsEmbed.setAuthor(`${target.displayName}`)
+        LogsEmbed.setAuthor(`${target.displayName}`,`${target.user.avatarURL({ dynamic: true })}\nUser ID: ${target.user.id}`)
         LogsEmbed.setDescription(`${target.displayName} left a Voice Channel.`)
         LogsEmbed.addFields(
             { name: 'Date Left:', value: `${new Date(Date.now())}`}
@@ -280,7 +280,7 @@ bot.on('voiceStateUpdate', (oldState, newState) => {
             userStats.vc_session_started = 0;
             LogsEmbed.setColor("#e3e027")
             LogsEmbed.setTitle("Earned Points")
-            LogsEmbed.setAuthor(`${target.displayName}`)
+            LogsEmbed.setAuthor(`${target.displayName}`,`${target.user.avatarURL({ dynamic: true })}\nUser ID: ${target.user.id}`)
             LogsEmbed.setDescription(`Awarded ${pointsToAdd} points for being in a VC`)
             LogsEmbed.addFields(
                 { name: 'Date Awarded:', value: `${new Date(Date.now())}`}
@@ -291,7 +291,7 @@ bot.on('voiceStateUpdate', (oldState, newState) => {
         // util.sendMessage(logChannel, `${target.displayName} has joined VC! ${new Date(Date.now())}.`);
         LogsEmbed.setColor(embedJSON.EmbedColors[2])
         LogsEmbed.setTitle(embedJSON.EmbedLogTitles[1])
-        LogsEmbed.setAuthor(`${target.displayName}`)
+        LogsEmbed.setAuthor(`${target.displayName}`,`${target.user.avatarURL({ dynamic: true })}\nUser ID: ${target.user.id}`)
         LogsEmbed.setDescription(`${target.displayName} joined a Voice Channel.`)
         LogsEmbed.addFields(
             { name: 'Date Joined:', value: `${new Date(Date.now())}`}
@@ -327,7 +327,15 @@ function manageStats(message) {
     if (Date.now() - userStats.last_message >= 900000) { // 15 minutes
         userStats.points += 1;
         userStats.last_message = Date.now();
-        util.sendMessage(message.guild.channels.cache.get(config.log_channel_id), `${message.member.displayName} has been awarded 1 point for sending a message in discord. ${message.createdAt}.`);
+        // util.sendMessage(message.guild.channels.cache.get(config.log_channel_id), `${message.member.displayName} has been awarded 1 point for sending a message in discord. ${message.createdAt}.`);
+        LogsEmbed.setColor("#e3e027")
+        LogsEmbed.setTitle("Earned Points")
+        LogsEmbed.setAuthor(`${target.displayName}`, `${target.user.avatarURL({ dynamic: true })}\nUser ID: ${target.user.id}`)
+        LogsEmbed.setDescription(`Awarded ${pointsToAdd} points for speaking in the Discord.`)
+        LogsEmbed.addFields(
+            { name: 'Date Awarded:', value: `${new Date(Date.now())}`}
+        )
+        logChannel.send(LogsEmbed)
     }
 
     jsonFile.writeFileSync(fileLocation, allStats);
