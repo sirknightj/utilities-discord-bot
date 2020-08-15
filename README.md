@@ -1,5 +1,5 @@
 # Extra Utilities Discord Bot
-With very simple, fun, and useful commands that are very easy-tu-use and intuitive!
+With very simple, fun, and useful commands that are very easy-to-use and intuitive!
 
 ## Instructions
 * Set edit your configurations in the `example_config.json` file and rename it to `config.json`.
