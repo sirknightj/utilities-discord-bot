@@ -1,8 +1,8 @@
-const util = require('../utilities');
+/* const util = require('../utilities');
 const config = require('../config.json');
 
 module.exports = {
-    name = ["roll", "dice"],
+    name = "roll",
     description = "Rolls a dice. Minimum 4, maximum 20.",
     usage = "",
 
@@ -16,4 +16,4 @@ module.exports = {
             return
         }
     }
-}
+} */
