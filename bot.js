@@ -265,8 +265,8 @@ bot.on('voiceStateUpdate', (oldState, newState) => {
     const LogsEmbed = new Discord.MessageEmbed()
     if ((oldState.channel && !newState.channel) || newState.channel.id === config.afk_channel_id) {
         // util.sendMessage(logChannel, `${target.displayName} has left VC! ${new Date(Date.now())}.`);
-        LogsEmbed.setColor(embedJSON.EmbedColors[1])
-        LogsEmbed.setTitle(embedJSON.EmbedLogTitles[2])
+        LogsEmbed.setColor("#cc271f")
+        LogsEmbed.setTitle("Left Voice Channel")
         LogsEmbed.setAuthor(`${target.displayName}`)
         LogsEmbed.setDescription(`${target.displayName} left a Voice Channel.`)
         LogsEmbed.addFields(
@@ -278,13 +278,12 @@ bot.on('voiceStateUpdate', (oldState, newState) => {
             userStats.points += pointsToAdd;
             // util.sendMessage(logChannel, `${target.displayName} has been awarded ${pointsToAdd} points for participating in VC for a total of ${userStats.points}! ${new Date(Date.now())}`);
             userStats.vc_session_started = 0;
-            LogsEmbed.setColor(embedJSON.EmbedColors[3])
-            LogsEmbed.setTitle(embedJSON.EmbedLogTitles[3])
+            LogsEmbed.setColor("#e3e027")
+            LogsEmbed.setTitle("Earned Points")
             LogsEmbed.setAuthor(`${target.displayName}`)
-            LogsEmbed.setDescription('Awarded Points for being in a VC')
+            LogsEmbed.setDescription(`Awarded ${pointsToAdd} points for being in a VC`)
             LogsEmbed.addFields(
-                { name: 'Date Awarded:', value: `${new Date(Date.now())}`},
-                { name: 'Amount Awarded:', value: `${pointsToAdd}`}
+                { name: 'Date Awarded:', value: `${new Date(Date.now())}`}
             )
             logChannel.send(LogsEmbed)
         }
