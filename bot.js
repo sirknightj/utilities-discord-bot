@@ -238,7 +238,8 @@ bot.on('voiceStateUpdate', (oldState, newState) => {
     if ((oldState.channel === newState.channel) || (oldState.channel === newState.guild.channels.cache.get(config.afk_channel_id) && !newState.channel) || (!oldState.channel && newState.channel === newState.guild.channels.cache.get(config.afk_channel_id))) {
         return;
     }
-    let target = oldState.member;
+    let target, oldUserChannel = oldState.member;
+    let newUserChannel = newState.member
 
     var allStats = {};
     const fileLocation = `${config.resources_folder_file_path}stats.json`;
@@ -265,7 +266,7 @@ bot.on('voiceStateUpdate', (oldState, newState) => {
     const logChannel = newState.guild.channels.cache.get(config.log_channel_id);
     // Start an embed for logs.
 
-    if ((oldState.channel && !newState.channel) || newState.channel.id === config.afk_channel_id) {
+    if ((newUserChannel === undefined) || newState.channel.id === config.afk_channel_id) {
         // util.sendMessage(logChannel, `${target.displayName} has left VC! ${new Date(Date.now())}.`);
         LogsEmbed.setColor("#cc271f")
         LogsEmbed.setTitle("Left Voice Channel")
@@ -289,7 +290,7 @@ bot.on('voiceStateUpdate', (oldState, newState) => {
             )
             logChannel.send(LogsEmbed)
         }
-    } else if (newState.channel && (!oldState.channel || oldState.channel.id === config.afk_channel_id)) {
+    } else if (oldUserChannel === undefined && newUserChannel !== undefined) {
         // util.sendMessage(logChannel, `${target.displayName} has joined VC! ${new Date(Date.now())}.`);
         LogsEmbed.setColor(embedJSON.EmbedColors[2])
         LogsEmbed.setTitle(embedJSON.EmbedLogTitles[1])
