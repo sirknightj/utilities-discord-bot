@@ -59,7 +59,7 @@ module.exports = {
             voiceChannel = target.voice.channel;
             if (!voiceChannel) {
                 util.safeDelete(message);
-                util.sendTimedMessage(`${target.displayName} is not in any voice channels right now.`);
+                util.sendTimedMessage(message.channel, `${target.displayName} is not in any voice channels right now. Tell them to get in one!`);
                 return;
             }
         }

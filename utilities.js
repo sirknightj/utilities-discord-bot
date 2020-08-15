@@ -1,5 +1,7 @@
 const Discord = require('discord.js');
 const config = require('./config.json');
+const fs = require('fs');
+const jsonFile = require('jsonfile');
 
 module.exports = {
     /**
@@ -180,6 +182,51 @@ module.exports = {
      * @returns {string} the fully-formatted of the command. 
      */
     getUsage: function (fun, message) {
-        return `\`${message.content.substring(0, (`${message.content} `).indexOf(' '))} ${fun.usage}\``.trim(); 
+        return `\`${message.content.substring(0, (`${message.content} `).indexOf(' '))} ${fun.usage}\``.trim();
+    },
+
+    /**
+     * Adds points to the target's point total.
+     * @param {Discord.GuildMember} target the target whose points need updating.
+     * @param {int} number the number of points to award.
+     */
+    addPoints: function (message, target, number) {
+        if (!target) {
+            throw new InvalidUsageException();
+        }
+        if (!number) {
+            throw new InvalidUsageException();
+        }
+
+        var allStats = {};
+        const fileLocation = `${config.resources_folder_file_path}stats.json`;
+
+        if (fs.existsSync(fileLocation)) {
+            allStats = jsonFile.readFileSync(fileLocation);
+        } else {
+            message.channel.send("stats.json has not been properly configured.")
+                .then(msg => msg.delete({ timeout: (config.delete_delay) })
+                    .catch(error => channel.send(`Error: ${error}`)));
+        }
+
+        const guildStats = allStats[message.guild.id];
+        let oldStats = 0;
+
+        if (!(target.user.id in guildStats)) {
+            guildStats[target.user.id] = {
+                id: target.user.id,
+                points: 0,
+                last_message: 0,
+                vc_session_started: 0
+            };
+        } else {
+            oldStats = guildStats[target.user.id].points;
+            guildStats[target.user.id].points += number;
+        }
+
+        jsonFile.writeFileSync(fileLocation, allStats);
+        message.channel.send(`Updated ${target.displayName}'s points from ${oldStats} to ${guildStats[target.user.id].points}.`)
+            .then(msg => msg.delete({ timeout: (config.delete_delay) })
+                .catch(error => channel.send(`Error: ${error}`)));
     }
 }

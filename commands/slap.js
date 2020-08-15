@@ -27,7 +27,7 @@ module.exports = {
                     target = user;
                 }
 
-                if (target.id === message.author.id || slapper.id === target.id) {
+                if (target.user.id === message.author.id || slapper.id === target.id) {
                      util.safeDelete(message);
                      util.sendTimedMessage(message.channel, `${slapper} cannot ${action} themselves!`);
                      return;
@@ -47,11 +47,11 @@ module.exports = {
                 playNoiseInVoiceChannel(target.voice.channel, message);
             } else {
                 // Prevents the user from slapping themselves.
-                // if (user.id === message.author.id) {
-                //     util.safeDelete(message);
-                //     util.sendTimedMessage(message.channel, `You cannot ${action} yourself.`);
-                //     return;
-                // }
+                if (user.user.id === message.author.id) {
+                    util.safeDelete(message);
+                    util.sendTimedMessage(message.channel, `You cannot ${action} yourself.`);
+                    return;
+                }
                 if (action === 'slap') {
                     action = 'slapp';
                 }
