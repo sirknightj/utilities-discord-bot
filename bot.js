@@ -336,7 +336,7 @@ function manageStats(message) {
         const LogsEmbed = new Discord.MessageEmbed()
         LogsEmbed.setColor("#e3e027")
         LogsEmbed.setTitle("Earned Points")
-        LogsEmbed.setAuthor(`${message.member.displayName}`, `${message.author.avatarURL({ dynamic: true })}\nUser ID: ${message.author.id}`)
+        // LogsEmbed.setAuthor(`${message.member.displayName}`, `${message.author.avatarURL({ dynamic: true })}\nUser ID: ${message.author.id}`)
         LogsEmbed.setDescription(`Awarded ${1} point for speaking in the Discord.`)
         LogsEmbed.addFields(
             { name: 'Date Awarded:', value: `${new Date(Date.now())}` }

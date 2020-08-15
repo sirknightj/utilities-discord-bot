@@ -15,7 +15,7 @@ module.exports = {
         util.safeDelete(message);
 
         try {
-            new LeaderboardEmbed = new Discord.MessageEmbed()
+            let LeaderboardEmbed = new Discord.MessageEmbed()
             LeaderboardEmbed.setColor("#ffb236")
             LeaderboardEmbed.setTitle("Points Leaderboard")
             LeaderboardEmbed.setAuthor("Leaderboard")
