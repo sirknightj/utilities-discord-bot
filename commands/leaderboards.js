@@ -2,6 +2,7 @@ const util = require('../utilities');
 const config = require('../config.json');
 const jsonFile = require('jsonfile');
 const fs = require('fs');
+const Discord = require('discord.js');
 const LeaderboardEmbed = new Discord.MessageEmbed()
 
 //Set up the embed for the leaderboard, as it looks cluttered without it.
@@ -36,8 +37,7 @@ module.exports = {
                 sortedArray.push(userIDs);
             }
 
-            //sortedArray.sort((o1, o2) => guildStats[o1].points < guildStats[o2].points);
-            sortedArray.sort(function(o1, o2){return o2-o1}); // This should fix the array from not properly sorting.
+            sortedArray.sort((o1, o2) => guildStats[o2].points - guildStats[o1].points);
 
             let pointBoard = "";
 

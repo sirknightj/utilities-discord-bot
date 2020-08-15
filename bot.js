@@ -11,8 +11,6 @@ const commandList = [];
 const allAliases = [];
 const pointMap = new Map();
 
-const LogsEmbed = new Discord.MessageEmbed()
-
 // Read all of the command files from the './commands' folder.
 for (command of fs.readdirSync('./commands').filter(file => file.endsWith('.js'))) {
     const botCommand = require(`./commands/${command}`);
@@ -238,9 +236,8 @@ bot.on('voiceStateUpdate', (oldState, newState) => {
     if ((oldState.channel === newState.channel) || (oldState.channel === newState.guild.channels.cache.get(config.afk_channel_id) && !newState.channel) || (!oldState.channel && newState.channel === newState.guild.channels.cache.get(config.afk_channel_id))) {
         return;
     }
-    let target, oldUserChannel = oldState.member;
-    let newUserChannel = newState.member
 
+    let target = oldState.member;
     var allStats = {};
     const fileLocation = `${config.resources_folder_file_path}stats.json`;
 
@@ -266,45 +263,49 @@ bot.on('voiceStateUpdate', (oldState, newState) => {
     const logChannel = newState.guild.channels.cache.get(config.log_channel_id);
     // Start an embed for logs.
 
-    if ((newUserChannel === undefined) || newState.channel.id === config.afk_channel_id) {
-        // util.sendMessage(logChannel, `${target.displayName} has left VC! ${new Date(Date.now())}.`);
+    // Alert for leaving VC
+    let LogsEmbed = new Discord.MessageEmbed()
+    if ((oldState.channel && !newState.channel) || newState.channel.id === config.afk_channel_id) {
         LogsEmbed.setColor("#cc271f")
         LogsEmbed.setTitle("Left Voice Channel")
-        LogsEmbed.setAuthor(`${target.displayName}`,`${target.user.avatarURL({ dynamic: true })}\nUser ID: ${target.user.id}`)
+        LogsEmbed.setAuthor(target.displayName, target.user.avatarURL());
         LogsEmbed.setDescription(`${target.displayName} left a Voice Channel.`)
         LogsEmbed.addFields(
-            { name: 'Date Left:', value: `${new Date(Date.now())}`}
+            { name: 'Date Left:', value: `${new Date(Date.now())}` }
         )
         logChannel.send(LogsEmbed)
         if (userStats.vc_session_started > 0) {
-            let pointsToAdd = Math.floor((Date.now() - userStats.vc_session_started) / 300000);
+            let pointsToAdd = Math.floor((Date.now() - userStats.vc_session_started) / 300000); // 1 point per 5 minutes
             userStats.points += pointsToAdd;
             // util.sendMessage(logChannel, `${target.displayName} has been awarded ${pointsToAdd} points for participating in VC for a total of ${userStats.points}! ${new Date(Date.now())}`);
             userStats.vc_session_started = 0;
             LogsEmbed.setColor("#e3e027")
             LogsEmbed.setTitle("Earned Points")
-            LogsEmbed.setAuthor(`${target.displayName}`,`${target.user.avatarURL({ dynamic: true })}\nUser ID: ${target.user.id}`)
+            LogsEmbed.setAuthor(target.displayName, target.user.avatarURL());
             LogsEmbed.setDescription(`Awarded ${pointsToAdd} points for being in a VC`)
             LogsEmbed.addFields(
-                { name: 'Date Awarded:', value: `${new Date(Date.now())}`}
+                { name: 'Date Awarded:', value: `${new Date(Date.now())}` }
             )
             logChannel.send(LogsEmbed)
         }
-    } else if (oldUserChannel === undefined && newUserChannel !== undefined) {
+    // Alert for joining VC
+    } else {
         // util.sendMessage(logChannel, `${target.displayName} has joined VC! ${new Date(Date.now())}.`);
-        LogsEmbed.setColor(embedJSON.EmbedColors[2])
-        LogsEmbed.setTitle(embedJSON.EmbedLogTitles[1])
-        LogsEmbed.setAuthor(`${target.displayName}`,`${target.user.avatarURL({ dynamic: true })}\nUser ID: ${target.user.id}`)
+        LogsEmbed.setColor(embedJSON.EmbedColors[1])
+        LogsEmbed.setTitle(embedJSON.EmbedLogTitles[0])
+        // LogsEmbed.setAuthor(target.displayName, target.user.avatarURL());
         LogsEmbed.setDescription(`${target.displayName} joined a Voice Channel.`)
         LogsEmbed.addFields(
-            { name: 'Date Joined:', value: `${new Date(Date.now())}`}
+            { name: 'Date Joined:', value: `${new Date(Date.now())}` }
         )
         userStats.vc_session_started = Date.now();
+        logChannel.send(LogsEmbed)
     }
     jsonFile.writeFileSync(fileLocation, allStats);
 });
 
 function manageStats(message) {
+    const logChannel = message.guild.channels.cache.get(config.log_channel_id);
     var allStats = {};
     const fileLocation = `${config.resources_folder_file_path}stats.json`;
 
@@ -327,18 +328,20 @@ function manageStats(message) {
     }
 
     const userStats = guildStats[message.author.id];
+    
     if (Date.now() - userStats.last_message >= 900000) { // 15 minutes
         userStats.points += 1;
         userStats.last_message = Date.now();
         // util.sendMessage(message.guild.channels.cache.get(config.log_channel_id), `${message.member.displayName} has been awarded 1 point for sending a message in discord. ${message.createdAt}.`);
+        const LogsEmbed = new Discord.MessageEmbed()
         LogsEmbed.setColor("#e3e027")
         LogsEmbed.setTitle("Earned Points")
-        LogsEmbed.setAuthor(`${target.displayName}`, `${target.user.avatarURL({ dynamic: true })}\nUser ID: ${target.user.id}`)
-        LogsEmbed.setDescription(`Awarded ${pointsToAdd} points for speaking in the Discord.`)
+        LogsEmbed.setAuthor(`${message.member.displayName}`, `${message.author.avatarURL({ dynamic: true })}\nUser ID: ${message.author.id}`)
+        LogsEmbed.setDescription(`Awarded ${1} point for speaking in the Discord.`)
         LogsEmbed.addFields(
-            { name: 'Date Awarded:', value: `${new Date(Date.now())}`}
+            { name: 'Date Awarded:', value: `${new Date(Date.now())}` }
         )
-        logChannel.send(LogsEmbed)
+        util.sendMessage(logChannel, LogsEmbed);
     }
 
     jsonFile.writeFileSync(fileLocation, allStats);
