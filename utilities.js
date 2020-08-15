@@ -141,8 +141,11 @@ module.exports = {
      * @param {int} millis_before_delete how many milliseconds before deletion.
      */
     sendTimedMessage: function (channel, content, millis_before_delete) {
+        if (!millis_before_delete || millis_before_delete === 0) {
+            millis_before_delete = config.delete_delay;
+        }
         channel.send(content)
-            .then(msg => msg.delete({ timeout: (millis_before_delete || config.delete_delay) })
+            .then(msg => msg.delete({ timeout: (millis_before_delete) })
                 .catch(error => channel.send(`Error: ${error}`)));
     },
 
@@ -168,5 +171,15 @@ module.exports = {
         if (message) {
             message.delete().catch(error => channel.send(`Error: ${error.message}`));
         }
+    },
+
+    /**
+     * Gets the fully-formatted command usage, including the prefix and command name.
+     * @param {Command} fun a command that has a usage.
+     * @param {Discord.Message} alias the alias you want displayed.
+     * @returns {string} the fully-formatted of the command. 
+     */
+    getUsage: function (fun, message) {
+        return `\`${message.content.substring(0, (`${message.content} `).indexOf(' '))} ${fun.usage}\``.trim(); 
     }
 }

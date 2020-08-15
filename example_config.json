@@ -21,5 +21,8 @@
 
     "user_ids_to_always_annoy": ["USER_ID", "USER_ID", "USER_ID", "USER_ID", "USER_ID"],
     "annoying_messages_to_send": ["Hooray! Not that impressive.", "Boo!", "OOF."],
-    "annoying_reactions": ["👎", "😒", "🦶"]
+    "annoying_reactions": ["👎", "😒", "🦶"],
+
+    "default_bother_amount": 5,
+    "bother_amount_limit": 10
 }

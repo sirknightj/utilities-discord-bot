@@ -7,12 +7,16 @@ module.exports = {
     usage: '',
 
     execute(bot, message, args) {
-        const voiceChannel = bot.voice.connections.first();
-        if (!voiceChannel) {
-            message.reply("I'm not in any voice channels!");
-            return;
+        try {
+            const voiceChannel = message.guild.me.voice.channel;
+            if (!voiceChannel) {
+                message.reply("I'm not in any voice channels!");
+                return;
+            }
+            voiceChannel.leave();
+            util.sendMessage(message.channel, `Ok, I'm leaving.`);
+        } catch (err) {
+            console.log(err)
         }
-        voiceChannel.disconnect();
-        util.sendMessage(message.channel, `Ok, I'm leaving.`);
     }
 }

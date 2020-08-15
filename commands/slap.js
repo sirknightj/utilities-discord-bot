@@ -10,13 +10,12 @@ module.exports = {
     requiresTarget: true,
 
     execute(bot, message, args, user) {
-        var action = message.content.substring(1, message.content.indexOf(' '));
+        var action = message.content.substring(config.prefix.length, message.content.indexOf(' ')).toLowerCase();
 
         try {
             if (args.length != 0) {
-
                 if (args.length > 2) {
-                    throw new InvalidUsageException();
+                    throw new InvalidUsageException('Too many arguments provided.');
                 }
                 var slapper;
                 var target = util.getUserFromMention(message, args[0]);
@@ -47,6 +46,7 @@ module.exports = {
                 util.sendMessage(sendingChannel, `<@${target.id}>, ${slapper} ${action}ed you!`);
                 playNoiseInVoiceChannel(target.voice.channel, message);
             } else {
+                // Prevents the user from slapping themselves.
                 // if (user.id === message.author.id) {
                 //     util.safeDelete(message);
                 //     util.sendTimedMessage(message.channel, `You cannot ${action} yourself.`);

@@ -65,6 +65,7 @@ bot.on('message', message => {
 
         // If the command exists...
         if (allAliases.includes(command)) {
+
             var requiredPerms = bot.commands.get(command).requiredPermissions;
             // If the requiredPermissions property is a string, turn it into an array.
             const botCommand = bot.commands.get(command);
@@ -84,6 +85,14 @@ bot.on('message', message => {
                 }
             }
 
+            if (args[0]) {
+                if (args[0].toLowerCase() === 'help' || args[0].toLowerCase() === 'usage') {
+                    util.safeDelete(message);
+                    util.sendTimedMessage(message.channel, `Usage: \`${config.prefix}${command} ${botCommand.usage}\``);
+                    return;
+                }
+            }
+
             // Checks if the command requires arguments to be inputted. If the user did not put any, say the correct usage.
             if (botCommand.requiresArgs) {
                 if (args.length == 0) {
@@ -95,10 +104,10 @@ bot.on('message', message => {
 
             // Checks if the command requires a user to be mentioned.
             if (botCommand.requiresTarget) {
-                
+
                 // Attempts to find the user from the first argument args[0].
                 const user = util.getUserFromMention(message, args.shift());
-                
+
                 // Throws an error if there is no user found.
                 if (!user) {
                     util.safeDelete(message);
@@ -123,19 +132,19 @@ bot.on('message', message => {
                 util.sendTimedMessage(message.channel, `Invalid usage. ${config.prefix}${command} ${botCommand.usage}`);
             }
             return;
-        // If the command doesn't exist...
+            // If the command doesn't exist...
         } else {
             util.safeDelete(message);
             util.sendMessage(message.channel, `${config.unknown_command_message}`);
         }
         return;
-    // If the message doesn't start with the prefix...
+        // If the message doesn't start with the prefix...
     } else {
         // Then, annoy the user, if they attach a photo in their message.
 
         // Makes sure that the message came from a channel that is OK to bother.
         if (config.channel_ids_to_bother) {
-            
+
             // Makes sure that the channels to bother is in an array so we can loop through all of them.
             if (typeof config.channel_ids_to_bother === 'string') {
                 config.channel_ids_to_bother = [config.channel_ids_to_bother];

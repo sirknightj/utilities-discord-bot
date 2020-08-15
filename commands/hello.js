@@ -2,7 +2,7 @@ const config = require('../config.json');
 const util = require('../utilities');
 
 module.exports = {
-    name: ['hello', 'hi'],
+    name: ['hello', 'hi', 'hewwo'],
     description: 'Says a randomized hello message.',
     usage: "",
     execute(bot, message, args) {
