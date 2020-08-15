@@ -1,5 +1,5 @@
 # Extra Utilities Discord Bot
-With very simple, fun, and useful commands that are very easy-tu-use and intuitive!
+With very simple, fun, and useful commands that are very easy-to-use and intuitive!
 
 ## Instructions
 * Set edit your configurations in the `example_config.json` file and rename it to `config.json`.
@@ -58,9 +58,13 @@ With very simple, fun, and useful commands that are very easy-tu-use and intuiti
 * If `(playing/streaming/listening/watching)` is unspecified, defaults to playing.
 * If `(activity-name)` is unspecified, clears the activity.
 
-#### `!annoy (optional: voice-channel-name)`
+#### `!annoy (optional: user or "voice channel name") (optional: number-of-times) (optional: slow/normal/fast/instant)`
 * Joins and immediately leaves the specified voice channel.
+* Double quotes around "voice channel name" are optional, but in case you have voice channels with numbers in them, this helps to differentiate.
 * If `(voice-channel-name)` is unspecified, defaults to the voice channel the message author is in.
+* If `(number-of-times)` is unspecified, defaults to the config option in the `config.json` file (default: 5).
+* The maximum `(number-of-times)` can be specified in the `config.json` file (default: 10).
+* If `(slow/normal/fast/instant)` is unspecified, defaults to `normal`.
 
 #### `!hello`
 * Says a randomized hello message, from the `config.json` file.
