@@ -3,14 +3,8 @@ const config = require('../config.json');
 const jsonFile = require('jsonfile');
 const fs = require('fs');
 const Discord = require('discord.js');
-const LeaderboardEmbed = new Discord.MessageEmbed()
 
 //Set up the embed for the leaderboard, as it looks cluttered without it.
-
-LeaderboardEmbed.setColor("#ffb236")
-LeaderboardEmbed.setTitle("Points Leaderboard")
-LeaderboardEmbed.setAuthor("Leaderboard")
-LeaderboardEmbed.setFooter(`This message will be automatically deleted in ${config.userinfo_and_myperms_delete_delay / 1000} seconds.`)
 
 module.exports = {
     name: ['leaderboards', 'leaderboard', 'pointtotals'],
@@ -21,6 +15,11 @@ module.exports = {
         util.safeDelete(message);
 
         try {
+            new LeaderboardEmbed = new Discord.MessageEmbed()
+            LeaderboardEmbed.setColor("#ffb236")
+            LeaderboardEmbed.setTitle("Points Leaderboard")
+            LeaderboardEmbed.setAuthor("Leaderboard")
+            LeaderboardEmbed.setFooter(`This message will be automatically deleted in ${config.userinfo_and_myperms_delete_delay / 1000} seconds.`)
             var allStats = {};
             const fileLocation = `${config.resources_folder_file_path}stats.json`;
 
