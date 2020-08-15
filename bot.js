@@ -11,6 +11,8 @@ const commandList = [];
 const allAliases = [];
 const pointMap = new Map();
 
+const LogsEmbed = new Discord.MessageEmbed()
+
 // Read all of the command files from the './commands' folder.
 for (command of fs.readdirSync('./commands').filter(file => file.endsWith('.js'))) {
     const botCommand = require(`./commands/${command}`);
@@ -262,7 +264,7 @@ bot.on('voiceStateUpdate', (oldState, newState) => {
     const userStats = guildStats[target.user.id];
     const logChannel = newState.guild.channels.cache.get(config.log_channel_id);
     // Start an embed for logs.
-    const LogsEmbed = new Discord.MessageEmbed()
+
     if ((oldState.channel && !newState.channel) || newState.channel.id === config.afk_channel_id) {
         // util.sendMessage(logChannel, `${target.displayName} has left VC! ${new Date(Date.now())}.`);
         LogsEmbed.setColor("#cc271f")
