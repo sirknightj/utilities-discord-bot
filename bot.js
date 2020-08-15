@@ -289,7 +289,7 @@ bot.on('voiceStateUpdate', (oldState, newState) => {
             logChannel.send(LogsEmbed)
         }
     } else if (newState.channel && (!oldState.channel || oldState.channel.id === config.afk_channel_id)) {
-        util.sendMessage(logChannel, `${target.displayName} has joined VC! ${new Date(Date.now())}.`);
+        // util.sendMessage(logChannel, `${target.displayName} has joined VC! ${new Date(Date.now())}.`);
         LogsEmbed.setColor(embedJSON.EmbedColors[2])
         LogsEmbed.setTitle(embedJSON.EmbedLogTitles[1])
         LogsEmbed.setAuthor(`${target.displayName}`)
