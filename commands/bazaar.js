@@ -1,6 +1,5 @@
 const util = require('../utilities');
 const config = require('../config.json');
-const { sendTimedMessage, sendMessage } = require('../utilities');
 const Discord = require('discord.js');
 const fetch = require('node-fetch');
 
@@ -15,7 +14,6 @@ module.exports = {
             fetch(`https://api.hypixel.net/skyblock/bazaar/product?key=${config.API_KEY}&productId=${args.join('_').toUpperCase()}`)
                 .then(response => response.json())
                 .then(data => {
-                    console.log(data.product_info.quick_status);
                     const BazaarEmbed = new Discord.MessageEmbed()
                         .setColor("#cc271f")
                         .setTitle(`${data.product_info.quick_status.productId}`)
