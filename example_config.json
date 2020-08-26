@@ -1,5 +1,5 @@
 {
-    "token": "YOUR_BOT_TOKEN",
+    "token": "YOUR_BOT_TOKEN_HERE",
     "prefix": "!",
     "unknown_command_message": "i dont have that command programmed in yet",
     "purge_limit": 50,
@@ -11,7 +11,7 @@
     "points_earning_channel_id": "CHANNEL_ID",
     "point_earnings": [["hello", 10], ["congrats", 12], ["win", 24]],
 
-    "API_KEY": "YOUR_HYPIXEL_API_KEY",
+    "API_KEY": "YOUR_HYPIXEL_API_KEY_HERE",
 
     "resources_folder_file_path": "C:/Users/......./utilities-discord-bot/resources/",
 

@@ -58,7 +58,7 @@ module.exports = {
      * Returns the channel. Returns null or undefined if the channel is not found or invalid.
      * @param {Discord.Message} message the message object being sent.
      * @param {string} lookingFor the string to be checked for a channel mention.
-     * @returns {Discord.Channel} the channel lookingFor represents. Null or undefined if not found.
+     * @returns {Discord.TextChannel} the channel lookingFor represents. Null or undefined if not found.
      */
     getChannelFromMention: function (message, lookingFor) {
         if (!lookingFor) {
@@ -95,7 +95,7 @@ module.exports = {
      * 
      * @param {Discord.Message} message the message object being sent.
      * @param {string} lookingFor the string to be checked for a channel mention
-     * @returns {Discord.Channel} the channel lookingFor represents. Null or undefined if not found, or invalid.
+     * @returns {Discord.VoiceChannel} the channel lookingFor represents. Null or undefined if not found, or invalid.
      */
     getVoiceChannelFromMention: function (message, lookingFor) {
         if (!lookingFor) {
@@ -138,7 +138,7 @@ module.exports = {
     /**
      * Sends a message in the channel, and deletes after config.delete_delay milliseconds.
      * Catches any errors with the request, such as the bot not having permissions to speak in that channel.
-     * @param {Discord.Channel} channel the channel to send the message in. 
+     * @param {Discord.TextChannel} channel the channel to send the message in. 
      * @param {string} content the message to send.
      * @param {int} millis_before_delete how many milliseconds before deletion.
      */
@@ -154,7 +154,7 @@ module.exports = {
     /**
      * Sends a message in the channel.
      * Catches any errors with the request, such as the bot not having permissions to speak in that channel.
-     * @param {Discord.Channel} channel the channel to send the message in. 
+     * @param {Discord.TextChannel} channel the channel to send the message in. 
      * @param {string} content the message to send.
      */
     sendMessage: function (channel, content, messageArgs) {
@@ -192,10 +192,10 @@ module.exports = {
      */
     addPoints: function (message, target, number) {
         if (!target) {
-            throw new InvalidUsageException();
+            throw new InvalidUsageException('Missing target.');
         }
         if (!number) {
-            throw new InvalidUsageException();
+            throw new InvalidUsageException('Missing number of points.');
         }
 
         var allStats = {};
@@ -207,6 +207,7 @@ module.exports = {
             message.channel.send("stats.json has not been properly configured.")
                 .then(msg => msg.delete({ timeout: (config.delete_delay) })
                     .catch(error => channel.send(`Error: ${error}`)));
+            return;
         }
 
         const guildStats = allStats[message.guild.id];
@@ -242,8 +243,49 @@ module.exports = {
     /**
      * Gets the channel to send the bot logs to.
      * @param {Discord.Message} message the message sent in the guild.
+     * @returns {Discord.TextChannel} the log channel. Undefined if not found.
      */
     getLogChannel: function (message) {
-        return message.guild.channels.cache.get(config.log_channel_id);
+        getLogChannel(message.guild);
+    },
+
+    /**
+     * Removes the member's entry on the leaderboards.
+     * Mainly to be used in case someone leaves, because then they won't have a displayName.
+     * @param {Discord.Message} message the message containing the command used to initiate this.
+     * @param {Discord.GuildMember} memberToDelete the member to be deleted
+     */
+    deleteEntry: function (message, memberToDelete) {
+        const logChannel = this.getLogChannel(message);
+        var allStats = {};
+        const fileLocation = `${config.resources_folder_file_path}stats.json`;
+
+        if (fs.existsSync(fileLocation)) {
+            allStats = jsonFile.readFileSync(fileLocation);
+        } else {
+            this.sendTimedMessage(message.channel, "stats.json has not been properly configured.");
+            return;
+        }
+
+        const guildStats = allStats[memberToDelete.guild.id];
+        if (guildStats[memberToDelete.id]) {
+            delete guildStats[memberToDelete.id];
+
+            if (logChannel) {
+                this.sendMessage(logChannel, `User ID: ${memberToDelete.id} has been removed from the leaderboards.`)
+            }
+            jsonFile.writeFileSync(fileLocation, allStats);
+        } else {
+            throw new InvalidArgumentException(`Member ${memberToDelete.id} does not exist.`);
+        }
     }
+}
+
+/**
+ * Returns the channel to send logs to.
+ * @param {Discord.Guild} guild the guild the Log Channel is in. 
+ * @returns the Log Channel. Undefined if not found.
+ */
+function getLogChannel(guild) {
+    return guild.channels.cache.get(config.log_channel_id);
 }

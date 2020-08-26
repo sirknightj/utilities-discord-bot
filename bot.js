@@ -355,6 +355,7 @@ bot.on('guildMemberRemove', (memberAffected) => {
             `User ID: ${memberAffected.id}`,
             `Left: ${new Date(Date.now())}`,
         ]));
+        util.deleteEntry()
     } else {
         console.log(`Your log channel has not been configured properly.\n${memberAffected.displayName} has left/been removed from the server.\nUser ID: ${memberAffected.id}.\nTimestamp: ${new Date(Date.now())}`);
     }
