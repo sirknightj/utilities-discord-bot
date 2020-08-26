@@ -171,7 +171,7 @@ module.exports = {
      */
     safeDelete: function (message) {
         if (message) {
-            message.delete().catch(error => channel.send(`Error: ${error.message}`));
+            message.delete().catch(error => message.channel.send(`Error: ${error.message}`).then(msg => msg.delete({ timeout: config.delete_delay })));
         }
     },
 
@@ -222,11 +222,28 @@ module.exports = {
         } else {
             oldStats = guildStats[target.user.id].points;
             guildStats[target.user.id].points += number;
+            guildStats[target.user.id].points = Math.round(guildStats[target.user.id].points * 100) / 100;
+
+            if (guildStats[target.user.id].points < 0) {
+                guildStats[target.user.id].points = 0;
+            }
         }
 
         jsonFile.writeFileSync(fileLocation, allStats);
         message.channel.send(`Updated ${target.displayName}'s points from ${oldStats} to ${guildStats[target.user.id].points}.`)
             .then(msg => msg.delete({ timeout: (config.delete_delay) })
                 .catch(error => channel.send(`Error: ${error}`)));
+        return {
+            oldPoints: Math.round(oldStats * 100) / 100,
+            newPoints: Math.round(guildStats[target.user.id].points * 100) / 100
+        };
+    },
+
+    /**
+     * Gets the channel to send the bot logs to.
+     * @param {Discord.Message} message the message sent in the guild.
+     */
+    getLogChannel: function (message) {
+        return message.guild.channels.cache.get(config.log_channel_id);
     }
 }

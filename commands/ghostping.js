@@ -5,9 +5,9 @@ const util = require('../utilities');
 module.exports = {
     name: ['ghostping', 'gp', 'ghostp'],
     description: 'Pings the specified user then deletes the message. Also deletes your command.',
-    usage: `<user> <channel>`,
+    usage: `<user> (optional: number-of-pings) <channel>`,
     hiddenFromHelp: true,
-    execute(bot, message, args, userFromMention) {
+    async execute(bot, message, args, userFromMention) {
 
         // If a random user tries to use this command, it will return the unknown command message.
         // This way, the command remains a secret.
@@ -17,26 +17,42 @@ module.exports = {
             return;
         }
 
-        if (args.length !== 2) {
+        let targetChannelName = args.pop();
+        var sendingChannel = util.getChannelFromMention(message, targetChannelName);
+        if (!sendingChannel) {
+            util.sendTimedMessage(message.channel, `Error: Cannot find ${targetChannelName}`);
+            return;
+        }
+
+        let numberOfPings = 1;
+        if (!isNaN(args[args.length - 1])) {
+            numberOfPings = parseInt(args.pop());
+        }
+
+        if (numberOfPings < 1) {
             throw new InvalidUsageException();
         }
 
-        util.safeDelete(message);
-
-        var sendingChannel = util.getChannelFromMention(message, args[1]);
-        if (!sendingChannel) {
-            util.sendTimedMessage(message.channel, `Error: Cannot find ${args[1]}`);
+        if (numberOfPings > config.ghost_ping_limit) {
+            util.sendTimedMessage(message.channel, `Error: Too many times. Limit: ${config.ghost_ping_limit}.`);
             return;
         }
 
-        var target = util.getUserFromMention(message, args[0]);
+        var target = util.getUserFromMention(message, args.join(' '));
         if (!target) {
-            util.sendTimedMessage(message.channel, `Error: Cannot find ${args[0]}`);
+            util.sendTimedMessage(message.channel, `Error: Cannot find ${args.join(' ')}`);
             return;
         }
 
-        sendingChannel.send(`<@${target.user.id}>`)
-            .then(msg => msg.delete())
-            .catch(error => message.reply(`Error: ${error}`));
+        if (numberOfPings > 10) {
+            util.sendTimedMessage(message.channel, `Requested ${numberOfPings}.\nEstimated time to finish: ${numberOfPings * 1.2} seconds.`);
+        }
+
+        util.safeDelete(message);
+        for (var i = 0; i < numberOfPings; i++) {
+            await sendingChannel.send(`<@${target.user.id}>`)
+                .then(msg => msg.delete())
+                .catch(error => message.reply(`Error: ${error}`));
+        }
     }
 }

@@ -17,6 +17,8 @@ module.exports = {
         var voiceChannel, speed;
         var times = config.default_bother_amount;
 
+        // Attempts to parse the optional speed argument first.
+        // Defaults to 'normal' if none specified.
         let lookingFor = args[args.length - 1];
         if (!lookingFor || !speeds.has(lookingFor.toLowerCase())) {
             speed = speeds.get('normal');
@@ -25,6 +27,8 @@ module.exports = {
             args.pop();
         }
 
+        // Next, attempts to parse the optional number-of-times argument.
+        // Defaults to 1 if not specified.
         lookingFor = args[args.length - 1];
         if (!isNaN(lookingFor)) {
             times = parseInt(lookingFor);
@@ -68,6 +72,24 @@ module.exports = {
         if (speed > 500) {
             util.sendTimedMessage(message.channel, `${message.content.substring(config.prefix.length, message.content.indexOf(' ')).toLowerCase()}ing ${voiceChannel.name} ${times} times...`);
         }
+
+        // times = 5;
+        // let dab = voiceChannel;
+        // for (var i = 0; i < times; i++) {
+        //     console.log('here')
+        //     await dab.join()
+        //         .then(async connection => {
+        //             console.log('here2')
+        //             let x = new Promise(resolve => connection.once('disconnect', resolve));
+        //             dab.leave();
+        //             await x;
+        //         });
+
+        //     // await new Promise((resolve, reject) => {
+        //     //     setTimeout(() => resolve(), speed);
+        //     // });
+        // }
+
         try {
             var interval = setInterval(() => {
                 try {
@@ -85,4 +107,5 @@ module.exports = {
             console.log(err.stack);
         }
     }
+
 }

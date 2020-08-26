@@ -2,17 +2,19 @@ const util = require('../utilities');
 const config = require('../config.json');
 const jsonFile = require('jsonfile');
 const fs = require('fs');
+const Colors = require('../resources/colors.json');
+const Discord = require('discord.js');
 
 module.exports = {
-    name: ['removestats', 'subtractpoints', 'subpoints'],
+    name: ['removestats', 'removepoints', 'subtractpoints', 'minus'],
     description: "Removes a set number of a user's points. Only available to users with the ADMINISTRATOR permission.",
     usage: `<user> <points-to-subtract>`,
     requiredPermissions: 'ADMINISTRATOR',
     hiddenFromHelp: true,
 
     execute(bot, message, args) {
-        let newPointNumber = parseInt(args.pop());
-        if (newPointNumber < 0) {
+        let pointsToSub = parseFloat(args.pop());
+        if (pointsToSub < 0) {
             throw new InvalidUsageException('Points cannot be negative.');
         }
 
@@ -23,39 +25,24 @@ module.exports = {
             target = message.member;
         }
 
-        util.safeDelete(message);
         if (!target) {
             util.sendTimedMessage(message.channel, `Error: Cannot find user ${args.join(' ')}`);
             return;
         }
 
         try {
-            var allStats = {};
-            const fileLocation = `${config.resources_folder_file_path}stats.json`;
+            let result = util.addPoints(message, target, -pointsToSub);
 
-            if (fs.existsSync(fileLocation)) {
-                allStats = jsonFile.readFileSync(fileLocation);
-            } else {
-                util.sendTimedMessage(message.channel, "stats.json has not been properly configured.");
-                return;
-            }
-
-            const guildStats = allStats[message.guild.id];
-            let oldStats = 0;
-
-            if (!(target.user.id in guildStats)) {
-                guildStats[target.user.id] = {
-                    points: 0,
-                    last_message: 0,
-                    vc_session_started: 0
-                };
-            } else {
-                oldStats = guildStats[target.user.id].points;
-                guildStats[target.user.id].points = Math.max(0, guildStats[target.user.id].points - newPointNumber);
-            }
-
-            jsonFile.writeFileSync(fileLocation, allStats);
-            util.sendTimedMessage(message.channel, `Updated ${target.displayName}'s points from ${oldStats} to ${guildStats[target.user.id].points}.`);
+            util.sendMessage(util.getLogChannel(message), new Discord.MessageEmbed()
+                .setColor(Colors.GOLD)
+                .setTitle("Manually Revoked Points")
+                .setAuthor(target.displayName, target.user.displayAvatarURL({ dynamic: true }))
+                .setDescription(`${message.member.displayName} manually took away ${pointsToSub} points from ${target.displayName}!`)
+                .addField('Additional Info', [
+                    `Before: ${result.oldPoints} points`,
+                    `After: ${result.newPoints} points`,
+                    `Date Removed: ${new Date(Date.now())}`
+                ]));
         } catch (err) {
             util.sendTimedMessage(message.channel, "Error fetching stats.json.")
             console.log(err);

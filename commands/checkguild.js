@@ -1,12 +1,11 @@
 const util = require('../utilities');
 const config = require('../config.json');
 const fetch = require('node-fetch');
-
-
+const { sendTimedMessage } = require('../utilities');
 
 module.exports = {
-    name: ["checkguild","guildstatus"],
-    description: "Check the time the guild was created, the amount of exp the guild is at and the current owner.",
+    name: ["checkguild", "guildstatus", "guildstats"],
+    description: "Checks the time the guild was created, the amount of exp the guild is at, and the current owner.",
     usage: ``,
 
     execute(bot,message,args) {
@@ -34,7 +33,8 @@ module.exports = {
                     )
                     sendTimedMessage(message.channel, guildEmbed)
                 } else {
-                    message.channel, "An unknown error has occured running this command."
+                    sendTimedMessage(message.channel, `Error: ${error.message}`);
+                    console.log(err.stack);
                 }
             });
         } catch (err) {

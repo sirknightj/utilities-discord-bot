@@ -64,14 +64,19 @@ bot.on('message', message => {
         const command = args.shift().toLowerCase();
 
         if (command === 'help') {
-            var helpMessage = `**Here are all of my commands:**\n`;
+            util.safeDelete(message);
+            var helpMessage = '';
             for (commandName of commandList) {
                 var commands = bot.commands.get(commandName);
                 if (!commands.hiddenFromHelp) {
-                    helpMessage += `\`${config.prefix}${commandName} ${commands.usage}\`\t${commands.description}\n`;
+                    helpMessage += `\`${config.prefix}${commandName} help\` ${commands.description}\n`;
                 }
             }
-            util.sendMessage(message.channel, helpMessage);
+            util.sendTimedMessage(message.channel, new Discord.MessageEmbed()
+                .setTitle('Here are all of my commands:')
+                .setDescription(helpMessage)
+                .setFooter(`This message will be automatically deleted in ${config.userinfo_and_myperms_delete_delay / 1000} seconds.`),
+                config.userinfo_and_myperms_delete_delay);
             return;
         }
 
@@ -100,7 +105,7 @@ bot.on('message', message => {
             if (args[0]) {
                 if (args[0].toLowerCase() === 'help' || args[0].toLowerCase() === 'usage') {
                     util.safeDelete(message);
-                    util.sendTimedMessage(message.channel, `Usage: \`${config.prefix}${command} ${botCommand.usage}\``);
+                    util.sendTimedMessage(message.channel, `\`!${command}\`\nDescription: ${botCommand.description}\nUsage: \`${config.prefix}${command} ${botCommand.usage}\`\n_This message will automatically be deleted in ${config.userinfo_and_myperms_delete_delay / 1000} seconds_`, config.userinfo_and_myperms_delete_delay);
                     return;
                 }
             }
@@ -218,9 +223,20 @@ bot.on('message', message => {
                 if (pointsToEarn > 0) {
                     util.sendMessage(message.channel, `${message.member.displayName} has been awarded ${pointsToEarn} points.`);
                     if (!message.attachments.first()) {
-
+                        util.sendTimedMessage(message.channel, '**REMEMBER TO UPLOAD A SCREENSHOT OF THE WARP OR YOUR POINTS MAY BE INVALIDATED.**');
                     }
-                    util.addPoints(message, message.member, pointsToEarn);
+                    let result = util.addPoints(message, message.member, pointsToEarn);
+
+                    util.sendMessage(util.getLogChannel(message), new Discord.MessageEmbed()
+                        .setColor(Colors.GOLD)
+                        .setTitle("Awarded Points")
+                        .setAuthor(message.member.displayName, message.author.displayAvatarURL({ dynamic: true }))
+                        .setDescription(`${bot.user.username} (bot) manually awarded ${target.displayName} ${pointsToEarn} points!`)
+                        .addField('Additional Info', [
+                            `Before: ${result.oldPoints} points`,
+                            `After: ${result.newPoints} points`,
+                            `Date Awarded: ${new Date(Date.now())}`
+                        ]));
                 } else {
                     if (!message.attachments.first()) {
                         util.safeDelete(message);
@@ -232,11 +248,24 @@ bot.on('message', message => {
     }
 });
 
-bot.on('voiceStateUpdate', (oldState, newState) => {
+bot.on('voiceStateUpdate', async (oldState, newState) => {
     if (newState.member.user.bot) {
         return;
     }
-    if ((oldState.channel === newState.channel) || (oldState.channel === newState.guild.channels.cache.get(config.afk_channel_id) && !newState.channel) || (!oldState.channel && newState.channel === newState.guild.channels.cache.get(config.afk_channel_id))) {
+
+    const afkChannel = newState.guild.channels.cache.get(config.afk_channel_id);
+    const logChannel = newState.guild.channels.cache.get(config.log_channel_id);
+
+    if (newState.selfDeaf && afkChannel && newState.channel !== afkChannel) { // if the member is self-deafened, move them to the AFK channel
+        await newState.setChannel(afkChannel);
+        await util.sendMessage(logChannel, `I have moved <@${newState.member.id}> to AFK for self-deafening.`);
+        return;
+    }
+
+    if ((oldState.channel === newState.channel) ||
+        (oldState.channel === afkChannel && !newState.channel) ||
+        (!oldState.channel && newState.channel === afkChannel) ||
+        (oldState.channel && newState.channel && oldState.channel != afkChannel && newState.channel != afkChannel)) {
         return;
     }
 
@@ -249,7 +278,7 @@ bot.on('voiceStateUpdate', (oldState, newState) => {
     }
 
     if (!(newState.guild.id in allStats)) {
-        allStats[message.guild.id] = {};
+        allStats[oldState.guild.id] = {};
     }
 
     const guildStats = allStats[newState.guild.id];
@@ -263,7 +292,6 @@ bot.on('voiceStateUpdate', (oldState, newState) => {
     }
 
     const userStats = guildStats[target.user.id];
-    const logChannel = newState.guild.channels.cache.get(config.log_channel_id);
 
     // Alert for leaving VC
     if ((oldState.channel && !newState.channel) || newState.channel.id === config.afk_channel_id) {
@@ -279,20 +307,25 @@ bot.on('voiceStateUpdate', (oldState, newState) => {
         // Awards points for every 5 minutes spent in VC.
         if (userStats.vc_session_started > 0) {
             let now = Date.now();
-            let minutesSpent = Math.floor((now - userStats.vc_session_started) / 60000);
-            let pointsToAdd = Math.floor(minutesSpent / 5); // 1 point per 5 minutes
+            let secondsSpent = Math.floor((now - userStats.vc_session_started) / 1000);
+            let minutesSpent = Math.floor(secondsSpent / 60);
+            let pointsToAdd = Math.floor(secondsSpent / 3) / 100; // 1 point per 5 minutes. Equivalent is 0.01 pts per 3 seconds.
+            let beforePoints = userStats.points;
             userStats.points += pointsToAdd;
+            userStats.points = Math.round(userStats.points * 100) / 100; // Rounds to the nearest 0.01 because of floating-point errors.
 
             util.sendMessage(logChannel, new Discord.MessageEmbed()
                 .setColor(Colors.YELLOW)
                 .setTitle("Earned Points")
                 .setAuthor(target.displayName, target.user.displayAvatarURL({ dynamic: true }))
-                .setDescription(`Awarded ${target.displayName} ${pointsToAdd} points for being in a VC for ${minutesSpent} minutes.`)
-                .addField('Timestamps', [ 
+                .setDescription(`Awarded ${target.displayName} ${pointsToAdd} points for being in a VC for ${Math.floor(minutesSpent / 60)}h ${minutesSpent % 60}m ${secondsSpent % 60}s.`)
+                .addField('Timestamps', [
                     `Joined: ${new Date(userStats.vc_session_started)}`,
-                    `Left: ${new Date(now)}`
+                    `Left: ${new Date(now)}`,
+                    `Before: ${beforePoints} points`,
+                    `Now: ${userStats.points} points`
                 ]));
-                userStats.vc_session_started = 0;
+            userStats.vc_session_started = 0;
         }
         // Alert for joining VC
     } else {
@@ -307,6 +340,24 @@ bot.on('voiceStateUpdate', (oldState, newState) => {
             ]));
     }
     jsonFile.writeFileSync(fileLocation, allStats);
+});
+
+bot.on('guildMemberRemove', (memberAffected) => {
+    const logChannel = memberAffected.guild.channels.cache.get(config.log_channel_id);
+    if (logChannel) {
+        util.sendMessage(logChannel, new Discord.MessageEmbed()
+        .setColor(Colors.PINK)
+        .setTitle('Is No Longer In The Discord Server')
+        .setAuthor(memberAffected.displayName, memberAffected.user.displayAvatarURL({ dynamic: true }))
+        .setDescription(`${memberAffected.displayName} left or was kicked from this Discord Server.`)
+        .addField('Timestamps', [
+            `Discord Tag: ${memberAffected.user.tag}`,
+            `User ID: ${memberAffected.id}`,
+            `Left: ${new Date(Date.now())}`,
+        ]));
+    } else {
+        console.log(`Your log channel has not been configured properly.\n${memberAffected.displayName} has left/been removed from the server.\nUser ID: ${memberAffected.id}.\nTimestamp: ${new Date(Date.now())}`);
+    }
 });
 
 function manageStats(message) {
@@ -342,15 +393,16 @@ function manageStats(message) {
     if (Date.now() - userStats.last_message >= 900000) {
         userStats.points += 1;
         userStats.last_message = Date.now();
-        const LogsEmbed = new Discord.MessageEmbed()
+        util.sendMessage(logChannel, new Discord.MessageEmbed()
             .setColor(Colors.YELLOW)
             .setTitle("Earned Points")
             .setAuthor(target.displayName, target.user.displayAvatarURL({ dynamic: true }))
             .setDescription(`Awarded ${target.displayName} 1 point for sending a message in the Discord.`)
-            .addFields(
-                { name: 'Date Awarded:', value: `${new Date(Date.now())}` }
-            );
-        util.sendMessage(logChannel, LogsEmbed);
+            .addField('Timestamps', [
+                `Date Awarded: ${new Date(Date.now())}`,
+                `Before: ${userStats.points - 1} points`,
+                `Now: ${userStats.points} points`
+            ]));
     }
 
     jsonFile.writeFileSync(fileLocation, allStats);

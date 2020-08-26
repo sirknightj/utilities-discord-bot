@@ -23,7 +23,6 @@ module.exports = {
             target = message.member;
         }
 
-        util.safeDelete(message);
         if (!target) {
             util.sendTimedMessage(message.channel, `Error: Cannot find user ${args.join(' ')}`);
             return;
