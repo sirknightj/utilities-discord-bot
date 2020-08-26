@@ -246,7 +246,7 @@ module.exports = {
      * @returns {Discord.TextChannel} the log channel. Undefined if not found.
      */
     getLogChannel: function (message) {
-        getLogChannel(message.guild);
+        return getLogChannel(message.guild);
     },
 
     /**
