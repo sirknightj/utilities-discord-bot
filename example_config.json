@@ -1,0 +1,35 @@
+{
+    "token": "YOUR_BOT_TOKEN",
+    "prefix": "!",
+    "unknown_command_message": "i dont have that command programmed in yet",
+    "purge_limit": 50,
+    "delete_delay": 8000,
+    "userinfo_and_myperms_delete_delay": 30000,
+
+    "log_channel_id": "0000000000000",
+    "afk_channel_id": "0000000000000",
+    "points_earning_channel_id": "CHANNEL_ID",
+    "point_earnings": [["hello", 10], ["congrats", 12], ["win", 24]],
+
+    "API_KEY": "YOUR_HYPIXEL_API_KEY",
+
+    "resources_folder_file_path": "C:/Users/......./utilities-discord-bot/resources/",
+
+    "channel_ids_to_not_accept_commands_from": [],
+    "channel_ids_to_bother": ["CHANNEL_ID", "CHANNEL_ID"],
+
+    "greeting_messages_to_say": ["Hi! You're the best!", "Hello, good to see you today.", "Yo, what's up?"],
+
+    "user_ids_to_always_praise": [],
+    "praising_messages_to_send": ["gg", "GG!", "pog!!!!!!!!!!!!!!!!!!", "pog!!!", "this is so good", "literally the best"],
+    "praising_reactions": ["👀", "🍴", "🍞", "🎉", "🍉", "🎁"],
+
+    "user_ids_to_always_annoy": ["USER_ID", "USER_ID"],
+    "annoying_messages_to_send": ["I don't believe you. PHOTOSHOP!", "banned."],
+    "annoying_reactions": ["👎", "😒", "🦶", "🍗", "♈"],
+
+    "default_bother_amount": 5,
+    "bother_amount_limit": 10,
+
+    "ghost_ping_limit": 100
+}
