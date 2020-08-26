@@ -32,8 +32,8 @@ module.exports = {
             }
 
             const guildStats = allStats[message.guild.id];
-            const sortedGuildStats = {};
             let sortedArray = [];
+            
             for (var userIDs of Object.keys(guildStats)) {
                 sortedArray.push(userIDs);
             }
@@ -46,17 +46,12 @@ module.exports = {
                 if (userIDs === message.author.id) {
                     pointBoard += '**';
                 }
-                let targetMember = message.guild.members.cache.get(userIDs)
-                if (targetMember) {
-                    pointBoard += `${targetMember.displayName}: ${guildStats[userIDs].points} points`;
-                    sortedGuildStats[userIDs] = guildStats[userIDs];
-                } else {
-                    util.sendMessage(message.channel, `Heads up! User ID ${userIDs} is not in the discord!`);
-                }
+                pointBoard += `${message.guild.members.cache.get(userIDs).displayName}: ${guildStats[userIDs].points} points`;
                 if (userIDs === message.author.id) {
                     pointBoard += '**';
                 }
                 pointBoard += '\n';
+
                 // let logChannel = util.getLogChannel(message);
                 // let target = message.guild.members.cache.get(userIDs);
 
@@ -68,7 +63,7 @@ module.exports = {
                 //     let beforePoints = guildStats[userIDs].points;
                 //     guildStats[userIDs].points += pointsToAdd;
                 //     guildStats[userIDs].points = Math.round(guildStats[userIDs].points * 100) / 100; // Rounds to the nearest 0.01 because of floating-point errors.
-
+        
                 //     util.sendMessage(logChannel, new Discord.MessageEmbed()
                 //         .setColor(Colors.YELLOW)
                 //         .setTitle("Earned Points")
@@ -84,10 +79,10 @@ module.exports = {
                 // }
             }
 
-             jsonFile.writeFileSync(fileLocation, sortedGuildStats);
+            // jsonFile.writeFileSync(fileLocation, allStats);
 
             LeaderboardEmbed.setDescription(`${pointBoard}`)
-            util.sendTimedMessage(message.channel, LeaderboardEmbed, config.userinfo_and_myperms_delete_delay);
+            util.sendTimedMessage(message.channel, LeaderboardEmbed, config.longer_delete_delay);
         } catch (err) {
             util.sendTimedMessage(message.channel, "Error fetching stats.json.")
             console.log(err);

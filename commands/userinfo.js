@@ -23,7 +23,7 @@ module.exports = {
                 `Server Join Date: ${target.joinedAt}`,
             ]);
 
-        util.sendTimedMessage(message.channel, embed, config.userinfo_and_myperms_delete_delay);
-        util.sendTimedMessage(message.channel, `The above message will be deleted after ${config.userinfo_and_myperms_delete_delay / 1000} seconds.`);
+        util.sendTimedMessage(message.channel, embed, config.longer_delete_delay);
+        util.sendTimedMessage(message.channel, `The above message will be deleted after ${config.longer_delete_delay / 1000} seconds.`);
     }
 }

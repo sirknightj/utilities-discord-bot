@@ -75,8 +75,8 @@ bot.on('message', message => {
             util.sendTimedMessage(message.channel, new Discord.MessageEmbed()
                 .setTitle('Here are all of my commands:')
                 .setDescription(helpMessage)
-                .setFooter(`This message will be automatically deleted in ${config.userinfo_and_myperms_delete_delay / 1000} seconds.`),
-                config.userinfo_and_myperms_delete_delay);
+                .setFooter(`This message will be automatically deleted in ${config.longer_delete_delay / 1000} seconds.`),
+                config.longer_delete_delay);
             return;
         }
 
@@ -105,7 +105,7 @@ bot.on('message', message => {
             if (args[0]) {
                 if (args[0].toLowerCase() === 'help' || args[0].toLowerCase() === 'usage') {
                     util.safeDelete(message);
-                    util.sendTimedMessage(message.channel, `\`!${command}\`\nDescription: ${botCommand.description}\nUsage: \`${config.prefix}${command} ${botCommand.usage}\`\n_This message will automatically be deleted in ${config.userinfo_and_myperms_delete_delay / 1000} seconds_`, config.userinfo_and_myperms_delete_delay);
+                    util.sendTimedMessage(message.channel, `\`!${command}\`\nDescription: ${botCommand.description}\nUsage: \`${config.prefix}${command} ${botCommand.usage}\`\n_This message will automatically be deleted in ${config.longer_delete_delay / 1000} seconds_`, config.longer_delete_delay);
                     return;
                 }
             }
