@@ -256,6 +256,14 @@ module.exports = {
      * @param {Discord.GuildMember} memberToDelete the member to be deleted
      */
     deleteEntry: function (message, memberToDelete) {
+        if (!message) {
+            console.log(`Error: no message. Utilities.js line 260.`)
+            return;
+        }
+        if (!memberToDelete) {
+            console.log(`Error: no message. Utilities.js line 264.`)
+            return;
+        }
         const logChannel = this.getLogChannel(message);
         var allStats = {};
         const fileLocation = `${config.resources_folder_file_path}stats.json`;

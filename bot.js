@@ -188,16 +188,18 @@ bot.on('message', message => {
                             reaction = config.annoying_reactions[Math.floor((Math.random() * config.annoying_reactions.length))];
                         } else {
                             // The user isn't on either list.
-                            if (Math.floor(Math.random() * 10) === 1) {
-                                // Be mean. 1/10 of being mean.
+                            if (Math.floor(Math.random() * 4) === 1) {
+                                // Be mean. 1/4 of being mean.
                                 message_to_send = config.annoying_messages_to_send[Math.floor((Math.random() * config.annoying_messages_to_send.length))];
                                 reaction = config.annoying_reactions[Math.floor((Math.random() * config.annoying_reactions.length))];
                             } else {
-                                // Be nice. 9/10 of being nice.
+                                // Be nice. 3/4 of being nice.
                                 message_to_send = config.praising_messages_to_send[Math.floor((Math.random() * config.praising_messages_to_send.length))];
                                 reaction = config.praising_reactions[Math.floor((Math.random() * config.praising_reactions.length))];
                             }
                         }
+                    } else {
+                        return;
                     }
                     // Send the praise or criticism message, and also react.
                     util.sendMessage(message.channel, message_to_send);
@@ -343,21 +345,26 @@ bot.on('voiceStateUpdate', async (oldState, newState) => {
 });
 
 bot.on('guildMemberRemove', (memberAffected) => {
-    const logChannel = memberAffected.guild.channels.cache.get(config.log_channel_id);
-    if (logChannel) {
-        util.sendMessage(logChannel, new Discord.MessageEmbed()
-        .setColor(Colors.PINK)
-        .setTitle('Is No Longer In The Discord Server')
-        .setAuthor(memberAffected.displayName, memberAffected.user.displayAvatarURL({ dynamic: true }))
-        .setDescription(`${memberAffected.displayName} left or was kicked from this Discord Server.`)
-        .addField('Timestamps', [
-            `Discord Tag: ${memberAffected.user.tag}`,
-            `User ID: ${memberAffected.id}`,
-            `Left: ${new Date(Date.now())}`,
-        ]));
-        util.deleteEntry()
-    } else {
-        console.log(`Your log channel has not been configured properly.\n${memberAffected.displayName} has left/been removed from the server.\nUser ID: ${memberAffected.id}.\nTimestamp: ${new Date(Date.now())}`);
+    try {
+        const logChannel = memberAffected.guild.channels.cache.get(config.log_channel_id);
+        if (logChannel) {
+            util.sendMessage(logChannel, new Discord.MessageEmbed()
+                .setColor(Colors.PINK)
+                .setTitle('Is No Longer In The Discord Server')
+                .setAuthor(memberAffected.displayName, memberAffected.user.displayAvatarURL({ dynamic: true }))
+                .setDescription(`${memberAffected.displayName} left or was kicked from this Discord Server.`)
+                .addField('Timestamps', [
+                    `Discord Tag: ${memberAffected.user.tag}`,
+                    `User ID: ${memberAffected.id}`,
+                    `Left: ${new Date(Date.now())}`,
+                ])).then(msg => {
+                    util.deleteEntry(msg, memberAffected);
+                });
+        } else {
+            console.log(`Your log channel has not been configured properly.\n${memberAffected.displayName} has left/been removed from the server.\nUser ID: ${memberAffected.id}.\nTimestamp: ${new Date(Date.now())}`);
+        }
+    } catch (err) {
+        console.log(err);
     }
 });
 
