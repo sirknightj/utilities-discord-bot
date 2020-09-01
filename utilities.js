@@ -261,7 +261,7 @@ module.exports = {
             return;
         }
         if (!memberToDelete) {
-            console.log(`Error: no message. Utilities.js line 264.`)
+            console.log(`Error: no member. Utilities.js line 264.`)
             return;
         }
         const logChannel = this.getLogChannel(message);
@@ -285,6 +285,45 @@ module.exports = {
             jsonFile.writeFileSync(fileLocation, allStats);
         } else {
             throw new InvalidArgumentException(`Member ${memberToDelete.id} does not exist.`);
+        }
+    },
+
+        /**
+     * Removes the member's entry on the leaderboards.
+     * Mainly to be used in case someone leaves, because then they won't have a displayName.
+     * @param {Discord.Message} message the message containing the command used to initiate this.
+     * @param {number} memberToDeleteID the ID of the member to be deleted
+     */
+    deleteEntryWithUserID: function (message, memberToDeleteID) {
+        if (!message) {
+            console.log(`Error: no message. Utilities.js line 260.`)
+            return;
+        }
+        if (!memberToDeleteID) {
+            console.log(`Error: no member. Utilities.js line 264.`)
+            return;
+        }
+        const logChannel = this.getLogChannel(message);
+        var allStats = {};
+        const fileLocation = `${config.resources_folder_file_path}stats.json`;
+
+        if (fs.existsSync(fileLocation)) {
+            allStats = jsonFile.readFileSync(fileLocation);
+        } else {
+            this.sendTimedMessage(message.channel, "stats.json has not been properly configured.");
+            return;
+        }
+
+        const guildStats = allStats[message.guild.id];
+        if (guildStats[memberToDeleteID]) {
+            delete guildStats[memberToDeleteID];
+
+            if (logChannel) {
+                this.sendMessage(logChannel, `User ID: ${memberToDeleteID} has been removed from the leaderboards.`)
+            }
+            jsonFile.writeFileSync(fileLocation, allStats);
+        } else {
+            throw new InvalidArgumentException(`Member ${memberToDeleteID} does not exist.`);
         }
     }
 }

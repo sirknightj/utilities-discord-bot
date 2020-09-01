@@ -19,7 +19,7 @@ module.exports = {
             let LeaderboardEmbed = new Discord.MessageEmbed()
                 .setColor("#ffb236")
                 .setTitle("Points Leaderboard")
-                .setFooter(`This message will be automatically deleted in ${config.userinfo_and_myperms_delete_delay / 1000} seconds.`);
+                .setFooter(`This message will be automatically deleted in ${config.longer_delete_delay / 1000} seconds.`);
 
             var allStats = {};
             const fileLocation = `${config.resources_folder_file_path}stats.json`;
@@ -33,7 +33,7 @@ module.exports = {
 
             const guildStats = allStats[message.guild.id];
             let sortedArray = [];
-            
+
             for (var userIDs of Object.keys(guildStats)) {
                 sortedArray.push(userIDs);
             }
@@ -43,14 +43,20 @@ module.exports = {
             let pointBoard = "";
 
             for (userIDs of sortedArray) {
-                if (userIDs === message.author.id) {
-                    pointBoard += '**';
+                let guildMember = message.guild.members.cache.get(userIDs);
+                if (guildMember) {
+                    if (userIDs === message.author.id) {
+                        pointBoard += '**';
+                    }
+                    pointBoard += `${guildMember.displayName}: ${guildStats[userIDs].points} points`;
+                    if (userIDs === message.author.id) {
+                        pointBoard += '**';
+                    }
+                    pointBoard += '\n';
+                } else {
+                    util.deleteEntryWithUserID(message, userIDs);
+                    util.sendTimedMessage(message.channel, `stats.json has been updated. User ID ${userIDs} is no longer in the discord, and so, they have been removed from the file.`);
                 }
-                pointBoard += `${message.guild.members.cache.get(userIDs).displayName}: ${guildStats[userIDs].points} points`;
-                if (userIDs === message.author.id) {
-                    pointBoard += '**';
-                }
-                pointBoard += '\n';
 
                 // let logChannel = util.getLogChannel(message);
                 // let target = message.guild.members.cache.get(userIDs);
@@ -63,7 +69,7 @@ module.exports = {
                 //     let beforePoints = guildStats[userIDs].points;
                 //     guildStats[userIDs].points += pointsToAdd;
                 //     guildStats[userIDs].points = Math.round(guildStats[userIDs].points * 100) / 100; // Rounds to the nearest 0.01 because of floating-point errors.
-        
+
                 //     util.sendMessage(logChannel, new Discord.MessageEmbed()
                 //         .setColor(Colors.YELLOW)
                 //         .setTitle("Earned Points")
@@ -83,6 +89,7 @@ module.exports = {
 
             LeaderboardEmbed.setDescription(`${pointBoard}`)
             util.sendTimedMessage(message.channel, LeaderboardEmbed, config.longer_delete_delay);
+            util.sendTimedMessage(message.channel, `Leaderboard was prepared on ${new Date(Date.now())}`);
         } catch (err) {
             util.sendTimedMessage(message.channel, "Error fetching stats.json.")
             console.log(err);

@@ -9,6 +9,11 @@ module.exports = {
     usage: ``,
 
     execute(bot,message,args) {
+        if (!config.enable_hypixel_api_required_commands) {
+            util.safeDelete(message);
+            util.sendTimedMessage(message.channel, "This command is disabled.");
+            return;
+        }
         try{
             fetch(`https://api.hypixel.net/guild?key&${config.API_KEY}&id=${config.GUILD_KEY}`)
             .then(result =>{

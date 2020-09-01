@@ -10,6 +10,11 @@ module.exports = {
     requiresArgs: true,
 
     execute(bot, message, args) {
+        if (!config.enable_hypixel_api_required_commands) {
+            util.safeDelete(message);
+            util.sendTimedMessage(message.channel, "This command is disabled.");
+            return;
+        }
         // All names are 1 word. So, only 1 argument should be provided.
         if (args.length > 1) {
             throw new InvalidUsageError();

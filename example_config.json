@@ -11,6 +11,10 @@
     "points_earning_channel_id": "CHANNEL_ID",
     "point_earnings": [["hello", 10], ["congrats", 12], ["win", 24]],
 
+    "move_to_afk_on_self_deafen": true,
+    "track_and_award_vc_usage" : true,
+    "enable_hypixel_api_required_commands": false,
+
     "API_KEY": "YOUR_HYPIXEL_API_KEY_HERE",
 
     "resources_folder_file_path": "C:/Users/......./utilities-discord-bot/resources/",

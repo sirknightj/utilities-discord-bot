@@ -1,4 +1,4 @@
-const discord = require("discord.js");
+const discord = require('discord.js');
 const config = require('../config.json');
 const util = require('../utilities');
 
@@ -12,7 +12,6 @@ module.exports = {
         // If a random user tries to use this command, it will return the unknown command message.
         // This way, the command remains a secret.
         if (!message.member.hasPermission('ADMINISTRATOR')) {
-            util.safeDelete(message);
             util.sendMessage(message.channel, config.unknown_command_message);
             return;
         }

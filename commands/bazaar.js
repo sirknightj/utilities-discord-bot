@@ -11,7 +11,13 @@ module.exports = {
     requiresArgs: true,
 
     execute(bot, message, args) {
-        if (!util.API_KEY || util.API_KEY === 'YOUR_HYPIXEL_API_KEY_HERE') {
+        if (!config.enable_hypixel_api_required_commands) {
+            util.safeDelete(message);
+            util.sendTimedMessage(message.channel, "This command is disabled.");
+            return;
+        }
+
+        if (!config.API_KEY || config.API_KEY === 'YOUR_HYPIXEL_API_KEY_HERE') {
             util.safeDelete(message);
             util.sendTimedMessage(message.channel, "This command requires a Hypixel API Key.");
             return;
@@ -22,7 +28,7 @@ module.exports = {
                 .then(response => response.json())
                 .then(data => {
                     util.sendMessage(message.channel, new Discord.MessageEmbed()
-                        .setColor(Color.GOLD)
+                        .setColor(Colors .GOLD)
                         .setTitle(`${data.product_info.quick_status.productId}`)
                         .addFields(
                             { name: "Buy Value", value: `${data.product_info.quick_status.buyPrice}` },

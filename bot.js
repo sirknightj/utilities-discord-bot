@@ -151,7 +151,6 @@ bot.on('message', message => {
             return;
             // If the command doesn't exist...
         } else {
-            util.safeDelete(message);
             util.sendMessage(message.channel, `${config.unknown_command_message}`);
         }
         return;
@@ -258,9 +257,13 @@ bot.on('voiceStateUpdate', async (oldState, newState) => {
     const afkChannel = newState.guild.channels.cache.get(config.afk_channel_id);
     const logChannel = newState.guild.channels.cache.get(config.log_channel_id);
 
-    if (newState.selfDeaf && afkChannel && newState.channel !== afkChannel) { // if the member is self-deafened, move them to the AFK channel
+    if (config.move_to_afk_on_self_deafen && newState.selfDeaf && afkChannel && newState.channel !== afkChannel) { // if the member is self-deafened, move them to the AFK channel
         await newState.setChannel(afkChannel);
         await util.sendMessage(logChannel, `I have moved <@${newState.member.id}> to AFK for self-deafening.`);
+        return;
+    }
+
+    if (!config.track_and_award_vc_usage) {
         return;
     }
 
@@ -348,7 +351,7 @@ bot.on('guildMemberRemove', (memberAffected) => {
     try {
         const logChannel = memberAffected.guild.channels.cache.get(config.log_channel_id);
         if (logChannel) {
-            util.sendMessage(logChannel, new Discord.MessageEmbed()
+            logChannel.sendMessage(new Discord.MessageEmbed()
                 .setColor(Colors.PINK)
                 .setTitle('Is No Longer In The Discord Server')
                 .setAuthor(memberAffected.displayName, memberAffected.user.displayAvatarURL({ dynamic: true }))
