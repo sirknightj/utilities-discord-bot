@@ -1,4 +1,4 @@
-# Extra Utilities Discord Bot
+# Moderator/Extra Utilities Discord Bot
 With very simple, fun, and useful commands that are very easy-to-use and intuitive!
 
 ## Instructions
