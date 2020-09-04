@@ -8,7 +8,7 @@ With very simple, fun, and useful commands that are very easy-to-use and intuiti
 ## Easy-to-use Commands!
 * Tons of `(optional)` arguments, and helpful defaults if no arguments are provided.
 ** Required arguments are given in angle brackets `<required>`, while optional arguments are in parenthesis `(optional)`.
-* `<user>` doesn't have to be a mention! Can be a mention `@spartan` or all or part of the user's name `spar`. Do note that the bot will find the first user that has `spar` in their name, so using a `@mention` is preferred when multiple users have `spar` in their name, such as `jealousparkingspot`.
+* `<user>` doesn't have to be a mention! Can be a mention `@spartan` or all or part of the user's name `spar`. Do note that the bot will find the first user that has `spar` in their name, so using a `@mention` is preferred when multiple users have `spar` in their name, such as <code>jealou**spar**kingspot</code>.
 * Note: `<channel-name>` can either be a mention `#general` or just the channel's name in plain text `general`. This will not search for channels containing your input such as `gen` for `#general`.
 * Note: `<voice-channel-name>` however, can be partial, since it is very difficult to mention a voice channel. For example, `music` can find the voice channel `♬ Music Channel`.
 
@@ -39,7 +39,7 @@ With very simple, fun, and useful commands that are very easy-to-use and intuiti
 * If `<user>` is unspecified, then it defaults to you.
 * If `(channel-name)` is unspecified, defaults to *this* channel.
 
-#### `!purge (optional: channel-name) <number>`
+#### `!purge (optional: channel-name) <number>`2
 * Deletes `<number>` of messages from `(channel-name)`.
 * If `(channel-name)` is unspecified, defaults to *this* channel.
 * Note: Requires the message author to have the `MANAGE_MESSAGES` permission.
