@@ -10,7 +10,7 @@ const Colors = require('../resources/colors.json')
 module.exports = {
     name: ['leaderboards', 'leaderboard', 'pointtotals'],
     description: 'Gives the full list of points.',
-    usage: ``,
+    usage: `(optional: ${getAllowedInputs()})`,
 
     execute(bot, message, args) {
         util.safeDelete(message);
@@ -18,7 +18,6 @@ module.exports = {
         try {
             let LeaderboardEmbed = new Discord.MessageEmbed()
                 .setColor("#ffb236")
-                .setTitle("Points Leaderboard")
                 .setFooter(`This message will be automatically deleted in ${config.longer_delete_delay / 1000} seconds.`);
 
             var allStats = {};
@@ -38,61 +37,66 @@ module.exports = {
                 sortedArray.push(userIDs);
             }
 
-            sortedArray.sort((o1, o2) => guildStats[o2].points - guildStats[o1].points);
+            let keyword;
+            if (args[0]) {
+                keyword = args[0];
+            } else {
+                keyword = 'points';
+            }
 
-            let pointBoard = "";
+            sortedArray.sort((o1, o2) => (guildStats[o2][keyword] || 0) - (guildStats[o1][keyword] || 0));
+
+            let pointBoard = ""; // the leaderboard to print
+            let position = 1; // the current position of the leaderboard
+            let previousPoints = -1; // if there is a tie, this is the value of the tie
+            let previousPosition = 0; // if there is a tie, how many people have the same ranking
 
             for (userIDs of sortedArray) {
                 let guildMember = message.guild.members.cache.get(userIDs);
                 if (guildMember) {
+                    if ((guildStats[userIDs][keyword] || 0) > 0) {
+                        if (previousPoints === guildStats[userIDs][keyword]) {
+                            previousPosition++;
+                        } else {
+                            previousPosition = 0;
+                            previousPoints = guildStats[userIDs][keyword];
+                        }
+                        pointBoard += `${position - previousPosition}. `;
+                    }
                     if (userIDs === message.author.id) {
                         pointBoard += '**';
                     }
-                    pointBoard += `${guildMember.displayName}: ${guildStats[userIDs].points} points`;
+                    if ((guildStats[userIDs][keyword] || 0) > 0 || userIDs == message.author.id) {
+                        pointBoard += `${guildMember.displayName}: ${guildStats[userIDs][keyword] || 0} ${(keyword === 'points') ? 'pts' : keyword}`;
+                    }
                     if (userIDs === message.author.id) {
                         pointBoard += '**';
                     }
+                    position++;
                     pointBoard += '\n';
                 } else {
+                    let pointsHad = guildStats[userIDs].points;
                     util.deleteEntryWithUserID(message, userIDs);
-                    util.sendTimedMessage(message.channel, `stats.json has been updated. User ID ${userIDs} is no longer in the discord, and so, they have been removed from the file.`);
+                    util.sendTimedMessage(message.channel, `stats.json has been updated. User ID ${userIDs} is no longer in the discord, and so, they have been removed from the file. They had ${pointsHad} points.`);
                 }
-
-                // let logChannel = util.getLogChannel(message);
-                // let target = message.guild.members.cache.get(userIDs);
-
-                // if (guildStats[userIDs].vc_session_started > 0) {
-                //     let now = Date.now();
-                //     let secondsSpent = Math.floor((now - guildStats[userIDs].vc_session_started) / 1000);
-                //     let minutesSpent = Math.floor(secondsSpent / 60);
-                //     let pointsToAdd = Math.floor(secondsSpent / 3) / 100; // 1 point per 5 minutes. Equivalent is 0.01 pts per 3 seconds.
-                //     let beforePoints = guildStats[userIDs].points;
-                //     guildStats[userIDs].points += pointsToAdd;
-                //     guildStats[userIDs].points = Math.round(guildStats[userIDs].points * 100) / 100; // Rounds to the nearest 0.01 because of floating-point errors.
-
-                //     util.sendMessage(logChannel, new Discord.MessageEmbed()
-                //         .setColor(Colors.YELLOW)
-                //         .setTitle("Earned Points")
-                //         .setAuthor(target.displayName, target.user.displayAvatarURL({ dynamic: true }))
-                //         .setDescription(`Awarded ${target.displayName} ${pointsToAdd} points for being in a VC for ${Math.floor(minutesSpent / 60)}h ${minutesSpent % 60}m ${secondsSpent % 60}s.`)
-                //         .addField('Timestamps', [
-                //             `Joined: ${new Date(guildStats[userIDs].vc_session_started)}`,
-                //             `Left: ${new Date(now)}`,
-                //             `Before: ${beforePoints} points`,
-                //             `Now: ${guildStats[userIDs].points} points`
-                //         ]));
-                //         guildStats[userIDs].vc_session_started = 0;
-                // }
             }
-
-            // jsonFile.writeFileSync(fileLocation, allStats);
-
-            LeaderboardEmbed.setDescription(`${pointBoard}`)
+            LeaderboardEmbed.setTitle(`${keyword.charAt(0).toUpperCase() + keyword.slice(1)} Leaderboard`);
+            LeaderboardEmbed.setDescription(`${pointBoard.replace(/_/g, "\\_")}`);
             util.sendTimedMessage(message.channel, LeaderboardEmbed, config.longer_delete_delay);
-            util.sendTimedMessage(message.channel, `Leaderboard was prepared on ${new Date(Date.now())}`);
         } catch (err) {
             util.sendTimedMessage(message.channel, "Error fetching stats.json.")
             console.log(err);
         }
     }
+};
+
+function getAllowedInputs() {
+    let output = "points/";
+    for (var i = 0; i < config.point_earnings.length; i++) {
+        output += config.point_earnings[i][0];
+        if (i !== config.point_earnings.length - 1) {
+            output += "/";
+        }
+    }
+    return output;
 }

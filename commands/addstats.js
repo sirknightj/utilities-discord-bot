@@ -7,10 +7,9 @@ const Discord = require('discord.js');
 
 module.exports = {
     name: ['addstats', 'addpoints'],
-    description: "Adds to a user's points. Only available to users with the ADMINISTRATOR permission.",
+    description: "Adds to a user's points. Requires ADMINISTRATOR.",
     usage: `<user> <points-to-add>`,
     requiredPermissions: 'ADMINISTRATOR',
-    hiddenFromHelp: true,
 
     execute(bot, message, args) {
         let pointsToAdd = parseFloat(args.pop());

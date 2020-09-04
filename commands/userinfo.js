@@ -1,6 +1,6 @@
 const util = require('../utilities');
 const config = require('../config.json');
-const { MessageEmbed, GuildMember } = require('discord.js');
+const Discord = require('discord.js');
 
 module.exports = {
     name: 'userinfo',
@@ -9,7 +9,7 @@ module.exports = {
     requiresTarget: true,
     execute(bot, message, args, target) {
         util.safeDelete(message);
-        const embed = new MessageEmbed()
+        const embed = new Discord.MessageEmbed()
             .setThumbnail(target.user.displayAvatarURL({ dynamic: true }))
             .addField('User', [
                 `Discord Tag: ${target.user.tag}`,

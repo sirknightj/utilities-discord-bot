@@ -6,7 +6,8 @@ const fs = require('fs');
 const toggleableOptions = [
     'self deafen afk',
     'track vc usage',
-    'allow hypixel api commands'
+    'allow hypixel api commands',
+    'show welcome messages'
 ]
 
 module.exports = {
@@ -37,6 +38,9 @@ module.exports = {
                 config.enable_hypixel_api_required_commands = !config.enable_hypixel_api_required_commands;
                 updatedState = config.enable_hypixel_api_required_commands;
                 break;
+            case toggleableOptions[3].toLowerCase():
+                config.welcome_new_members = !config.welcome_new_members;
+                updatedState = config.welcome_new_members;
             default:
                 throw new IllegalStateException('This should never happen. toggle.js.');
         }

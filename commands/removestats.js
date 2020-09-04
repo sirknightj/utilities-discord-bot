@@ -7,10 +7,9 @@ const Discord = require('discord.js');
 
 module.exports = {
     name: ['removestats', 'removepoints', 'subtractpoints', 'minus'],
-    description: "Removes a set number of a user's points. Only available to users with the ADMINISTRATOR permission.",
+    description: "Removes points from a user. Requires ADMINISTRATOR.",
     usage: `<user> <points-to-subtract>`,
     requiredPermissions: 'ADMINISTRATOR',
-    hiddenFromHelp: true,
 
     execute(bot, message, args) {
         let pointsToSub = parseFloat(args.pop());

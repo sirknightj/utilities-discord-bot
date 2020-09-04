@@ -212,6 +212,7 @@ bot.on('message', message => {
                 config.points_earning_channel_id = [config.points_earning_channel_id];
             }
 
+            var keyword;
             if (config.points_earning_channel_id.includes("" + message.channel.id)) {
                 let wordsToParse = message.content.split(' ');
                 var pointsToEarn = 0;
@@ -219,20 +220,21 @@ bot.on('message', message => {
                     word = word.toLowerCase();
                     if (pointMap.has(word)) {
                         pointsToEarn = pointMap.get(word);
+                        keyword = word;
                     }
                 });
                 if (pointsToEarn > 0) {
-                    util.sendMessage(message.channel, `${message.member.displayName} has been awarded ${pointsToEarn} points.`);
+                    util.sendMessage(message.channel, `${message.member.displayName} has been awarded ${pointsToEarn} points.\nReason: ${keyword}.`);
                     if (!message.attachments.first()) {
                         util.sendTimedMessage(message.channel, '**REMEMBER TO UPLOAD A SCREENSHOT OF THE WARP OR YOUR POINTS MAY BE INVALIDATED.**');
                     }
-                    let result = util.addPoints(message, message.member, pointsToEarn);
+                    let result = util.addPoints(message, message.member, pointsToEarn, keyword);
 
                     util.sendMessage(util.getLogChannel(message), new Discord.MessageEmbed()
                         .setColor(Colors.GOLD)
                         .setTitle("Awarded Points")
                         .setAuthor(message.member.displayName, message.author.displayAvatarURL({ dynamic: true }))
-                        .setDescription(`${bot.user.username} (bot) manually awarded ${target.displayName} ${pointsToEarn} points!`)
+                        .setDescription(`${bot.user.username} (bot) manually awarded ${target.displayName} ${pointsToEarn} points for ${keyword}!`)
                         .addField('Additional Info', [
                             `Before: ${result.oldPoints} points`,
                             `After: ${result.newPoints} points`,
@@ -241,8 +243,13 @@ bot.on('message', message => {
                 } else {
                     if (!message.attachments.first()) {
                         util.safeDelete(message);
-                        util.sendTimedMessage(message.channel, `Do not send unrelated messages in this channel. If you're reporting an incorrect entry, discuss it in the appropriate channel.\nError: Your message is not exactly one of the specified accepted values.`);
+                        util.sendTimedMessage(message.channel, `Do not send unrelated messages in this channel. If you're reporting an incorrect entry, discuss it in the appropriate channel.`, config.longer_delete_delay);
                     }
+                    let acceptedValues = "(";
+                    for (var i = 0; i < config.point_earnings.length; i++) {
+                        acceptedValues += `\`${config.point_earnings[i][0]}\` `;
+                    }
+                    util.sendTimedMessage(message.channel, `Error: Your message is not exactly one of the specified accepted values ${acceptedValues.trim()}). Please delete your entry and try again.`, config.longer_delete_delay);
                 }
             }
         }
@@ -314,7 +321,7 @@ bot.on('voiceStateUpdate', async (oldState, newState) => {
             let now = Date.now();
             let secondsSpent = Math.floor((now - userStats.vc_session_started) / 1000);
             let minutesSpent = Math.floor(secondsSpent / 60);
-            let pointsToAdd = Math.floor(secondsSpent / 3) / 100; // 1 point per 5 minutes. Equivalent is 0.01 pts per 3 seconds.
+            let pointsToAdd = Math.floor(secondsSpent / 3) / 100 * 2; // 2 points per 5 minutes. Equivalent is 0.02 pts per 3 seconds.
             let beforePoints = userStats.points;
             userStats.points += pointsToAdd;
             userStats.points = Math.round(userStats.points * 100) / 100; // Rounds to the nearest 0.01 because of floating-point errors.
@@ -347,11 +354,23 @@ bot.on('voiceStateUpdate', async (oldState, newState) => {
     jsonFile.writeFileSync(fileLocation, allStats);
 });
 
+bot.on('guildMemberAdd', (newMember) => {
+    if (!config.welcome_new_members) {
+        return;
+    }
+    const welcomeChannel = newMember.guild.channels.cache.get(config.welcome_channel_id);
+    if (!welcomeChannel) {
+        console.log('Your welcome_channel_id is invalid.');
+        return;
+    }
+    util.sendMessage(welcomeChannel, `<@${newMember.id}>, ${config.welcome_message}`);
+});
+
 bot.on('guildMemberRemove', (memberAffected) => {
     try {
         const logChannel = memberAffected.guild.channels.cache.get(config.log_channel_id);
         if (logChannel) {
-            logChannel.sendMessage(new Discord.MessageEmbed()
+            logChannel.send(new Discord.MessageEmbed()
                 .setColor(Colors.PINK)
                 .setTitle('Is No Longer In The Discord Server')
                 .setAuthor(memberAffected.displayName, memberAffected.user.displayAvatarURL({ dynamic: true }))
@@ -400,18 +419,20 @@ function manageStats(message) {
 
     const userStats = guildStats[message.author.id];
 
-    // Adds 1 point if their last message was more than 15 minutes ago.
-    if (Date.now() - userStats.last_message >= 900000) {
-        userStats.points += 1;
+    // Adds 8 points if their last message was more than 10 minutes ago.
+    if (Date.now() - userStats.last_message >= 600000) {
+        const pointsToAdd = 3;
+        let previousPoints = userStats.points;
+        userStats.points = Math.round((userStats.points + pointsToAdd) * 100) / 100;
         userStats.last_message = Date.now();
         util.sendMessage(logChannel, new Discord.MessageEmbed()
             .setColor(Colors.YELLOW)
             .setTitle("Earned Points")
             .setAuthor(target.displayName, target.user.displayAvatarURL({ dynamic: true }))
-            .setDescription(`Awarded ${target.displayName} 1 point for sending a message in the Discord.`)
+            .setDescription(`Awarded ${target.displayName} ${pointsToAdd} points for sending a message in the Discord.`)
             .addField('Timestamps', [
                 `Date Awarded: ${new Date(Date.now())}`,
-                `Before: ${userStats.points - 1} points`,
+                `Before: ${previousPoints} points`,
                 `Now: ${userStats.points} points`
             ]));
     }

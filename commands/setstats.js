@@ -4,11 +4,10 @@ const jsonFile = require('jsonfile');
 const fs = require('fs');
 
 module.exports = {
-    name: ['setstats', 'setpoints'],
-    description: "Sets a user's points. Only available to users with the ADMINISTRATOR permission.",
+    name: ['setpoints', 'setstats'],
+    description: "Sets a user's points. Requires ADMINISTRATOR.",
     usage: `<user> <new point number>`,
     requiredPermissions: 'ADMINISTRATOR',
-    hiddenFromHelp: true,
 
     execute(bot, message, args) {
         let newPointNumber = parseInt(args.pop());

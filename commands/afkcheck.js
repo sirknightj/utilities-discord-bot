@@ -1,4 +1,3 @@
-const discord = require("discord.js");
 const util = require('../utilities');
 const config = require('../config.json');
 const resources_folder_file_path = config.resources_folder_file_path;

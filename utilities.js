@@ -189,8 +189,9 @@ module.exports = {
      * Adds points to the target's point total.
      * @param {Discord.GuildMember} target the target whose points need updating.
      * @param {int} number the number of points to award.
+     * @param {string} reason optional, the property to increase by 1 when a point is added.
      */
-    addPoints: function (message, target, number) {
+    addPoints: function (message, target, number, reason) {
         if (!target) {
             throw new InvalidUsageException('Missing target.');
         }
@@ -214,7 +215,7 @@ module.exports = {
         let oldStats = 0;
 
         if (!(target.user.id in guildStats)) {
-            guildStats[target.user.id] = {
+            guildStats[target.user.id] = { // Sets all of the normal stats to 0.
                 id: target.user.id,
                 points: 0,
                 last_message: 0,
@@ -227,6 +228,13 @@ module.exports = {
 
             if (guildStats[target.user.id].points < 0) {
                 guildStats[target.user.id].points = 0;
+            }
+
+            if (reason) {
+                if (!guildStats[target.user.id][reason]) {
+                    guildStats[target.user.id][reason] = 0;
+                }
+                guildStats[target.user.id][reason]++;
             }
         }
 
@@ -288,12 +296,12 @@ module.exports = {
         }
     },
 
-        /**
-     * Removes the member's entry on the leaderboards.
-     * Mainly to be used in case someone leaves, because then they won't have a displayName.
-     * @param {Discord.Message} message the message containing the command used to initiate this.
-     * @param {number} memberToDeleteID the ID of the member to be deleted
-     */
+    /**
+ * Removes the member's entry on the leaderboards.
+ * Mainly to be used in case someone leaves, because then they won't have a displayName.
+ * @param {Discord.Message} message the message containing the command used to initiate this.
+ * @param {number} memberToDeleteID the ID of the member to be deleted
+ */
     deleteEntryWithUserID: function (message, memberToDeleteID) {
         if (!message) {
             console.log(`Error: no message. Utilities.js line 260.`)
