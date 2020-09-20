@@ -4,7 +4,7 @@ const config = require('../config.json');
 const resources_folder_file_path = config.resources_folder_file_path;
 
 module.exports = {
-    name: ['slap', 'punch', 'smack'],
+    name: ['slap', 'punch', 'smack', 'squish'],
     description: 'Says that you slapped the target.',
     usage: `(optional: user slapping) <user target being slapped> (optional: channel-name)`,
     requiresTarget: true,

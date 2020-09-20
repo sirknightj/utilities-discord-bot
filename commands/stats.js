@@ -46,7 +46,11 @@ module.exports = {
             let properties = Object.keys(userStats);
             for (var i = 0; i < properties.length; i++) {
                 if (properties[i] !== 'last_message' && properties[i] !== 'vc_session_started') {
-                    info.push(`${properties[i]}: ${userStats[properties[i]]}`);
+                    if (properties[i] === 'time_spent_in_vc') {
+                        info.push(`${properties[i]}: ${util.toFormattedTime(userStats[properties[i]])}`)
+                    } else {
+                        info.push(`${properties[i]}: ${userStats[properties[i]]}`);
+                    }
                 }
             }
 

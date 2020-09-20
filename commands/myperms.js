@@ -54,9 +54,9 @@ module.exports = {
             .addField('Discord Info', [
                 `Highest Role: ${target.roles.highest.id === message.guild.id ? 'None' : target.roles.highest.name}`,
                 `Permissions${(targetChannel) ? ` in ${targetChannel}` : ""}: ${target.permissionsIn(targetChannel || message.channel).toArray()}`
-            ]);
+            ])
+            .setDescription(`This message will be automatically deleted after ${config.userinfo_and_myperms_delete_delay / 1000} seconds.`);
 
         util.sendTimedMessage(message.channel, embed, config.userinfo_and_myperms_delete_delay);
-        util.sendTimedMessage(message.channel, `The above message will be deleted after ${config.userinfo_and_myperms_delete_delay / 1000} seconds.`);
     }
 }

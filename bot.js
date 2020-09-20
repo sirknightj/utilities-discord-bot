@@ -249,7 +249,7 @@ bot.on('message', message => {
                     for (var i = 0; i < config.point_earnings.length; i++) {
                         acceptedValues += `\`${config.point_earnings[i][0]}\` `;
                     }
-                    util.sendTimedMessage(message.channel, `Error: Your message is not exactly one of the specified accepted values ${acceptedValues.trim()}). Please delete your entry and try again.`, config.longer_delete_delay);
+                    util.sendTimedMessage(message.channel, `Error: Your message is not exactly one of the specified accepted values ${acceptedValues.trim()}). No points were awarded.`, config.longer_delete_delay);
                 }
             }
         }
@@ -299,7 +299,9 @@ bot.on('voiceStateUpdate', async (oldState, newState) => {
         guildStats[target.user.id] = {
             points: 0,
             last_message: 0,
-            vc_session_started: 0
+            vc_session_started: 0,
+            time_spent_in_vc: 0,
+            participating_messages: 0
         };
     }
 
@@ -319,23 +321,28 @@ bot.on('voiceStateUpdate', async (oldState, newState) => {
         // Awards points for every 5 minutes spent in VC.
         if (userStats.vc_session_started > 0) {
             let now = Date.now();
-            let secondsSpent = Math.floor((now - userStats.vc_session_started) / 1000);
+            let millisecondsSpent = now - userStats.vc_session_started;
+            let secondsSpent = Math.floor(millisecondsSpent / 1000);
             let minutesSpent = Math.floor(secondsSpent / 60);
             let pointsToAdd = Math.floor(secondsSpent / 3) / 100 * 2; // 2 points per 5 minutes. Equivalent is 0.02 pts per 3 seconds.
             let beforePoints = userStats.points;
             userStats.points += pointsToAdd;
             userStats.points = Math.round(userStats.points * 100) / 100; // Rounds to the nearest 0.01 because of floating-point errors.
+            if (!userStats['time_spent_in_vc']) {
+                userStats['time_spent_in_vc'] = 0;
+            }
+            userStats['time_spent_in_vc'] += millisecondsSpent;
 
             util.sendMessage(logChannel, new Discord.MessageEmbed()
                 .setColor(Colors.YELLOW)
                 .setTitle("Earned Points")
                 .setAuthor(target.displayName, target.user.displayAvatarURL({ dynamic: true }))
-                .setDescription(`Awarded ${target.displayName} ${pointsToAdd} points for being in a VC for ${Math.floor(minutesSpent / 60)}h ${minutesSpent % 60}m ${secondsSpent % 60}s.`)
+                .setDescription(`Awarded ${target.displayName} ${util.addCommas(pointsToAdd)} points for being in a VC for ${util.addCommas(Math.floor(minutesSpent / 60))}h ${minutesSpent % 60}m ${secondsSpent % 60}s.`)
                 .addField('Timestamps', [
                     `Joined: ${new Date(userStats.vc_session_started)}`,
                     `Left: ${new Date(now)}`,
-                    `Before: ${beforePoints} points`,
-                    `Now: ${userStats.points} points`
+                    `Before: ${util.addCommas(beforePoints)} points`,
+                    `Now: ${util.addCommas(userStats.points)} points`
                 ]));
             userStats.vc_session_started = 0;
         }
@@ -413,7 +420,9 @@ function manageStats(message) {
         guildStats[message.author.id] = {
             points: 0,
             last_message: 0,
-            vc_session_started: 0
+            vc_session_started: 0,
+            time_spent_in_vc: 0,
+            participating_messages: 0
         };
     }
 
@@ -432,9 +441,13 @@ function manageStats(message) {
             .setDescription(`Awarded ${target.displayName} ${pointsToAdd} points for sending a message in the Discord.`)
             .addField('Timestamps', [
                 `Date Awarded: ${new Date(Date.now())}`,
-                `Before: ${previousPoints} points`,
-                `Now: ${userStats.points} points`
+                `Before: ${util.addCommas(previousPoints)} points`,
+                `Now: ${util.addCommas(userStats.points)} points`
             ]));
+        if (!userStats.participating_messages) {
+            userStats.participating_messages = 0;
+        }
+        userStats.participating_messages++;
     }
 
     jsonFile.writeFileSync(fileLocation, allStats);

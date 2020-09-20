@@ -20,7 +20,7 @@ module.exports = {
             lookingfor = lookingFor.substr(1);
         }
 
-        // First, we check if the input is a User ID.
+        // Next, we check if the input is a User ID.
         let target = message.guild.members.cache.get(lookingFor);
 
         // Next, we look for a mention.
@@ -140,7 +140,7 @@ module.exports = {
      * Catches any errors with the request, such as the bot not having permissions to speak in that channel.
      * @param {Discord.TextChannel} channel the channel to send the message in. 
      * @param {string} content the message to send.
-     * @param {int} millis_before_delete how many milliseconds before deletion.
+     * @param {number} millis_before_delete how many milliseconds before deletion.
      */
     sendTimedMessage: function (channel, content, millis_before_delete) {
         if (!millis_before_delete || millis_before_delete === 0) {
@@ -188,7 +188,7 @@ module.exports = {
     /**
      * Adds points to the target's point total.
      * @param {Discord.GuildMember} target the target whose points need updating.
-     * @param {int} number the number of points to award.
+     * @param {number} number the number of points to award.
      * @param {string} reason optional, the property to increase by 1 when a point is added.
      */
     addPoints: function (message, target, number, reason) {
@@ -219,7 +219,9 @@ module.exports = {
                 id: target.user.id,
                 points: 0,
                 last_message: 0,
-                vc_session_started: 0
+                vc_session_started: 0,
+                time_spent_in_vc: 0,
+                participating_messages: 0
             };
         } else {
             oldStats = guildStats[target.user.id].points;
@@ -246,6 +248,55 @@ module.exports = {
             oldPoints: Math.round(oldStats * 100) / 100,
             newPoints: Math.round(guildStats[target.user.id].points * 100) / 100
         };
+    },
+
+    /**
+     * Adds points to the target's point total.
+     * @param {Discord.Message} message any message sent in the guild.
+     * @param {Discord.GuildMember} target the target whose points need updating.
+     * @param {number} number the stat number to award.
+     * @param {string} reason the property the number is awarded to.
+     */
+    addStats: function (message, target, number, reason) {
+        if (!target) {
+            throw new InvalidUsageException('Missing target.');
+        }
+        if (!number) {
+            throw new InvalidUsageException('Missing number of points.');
+        }
+        if (!reason) {
+            throw new InvalidUsageException('Missing reason.')
+        }
+
+        var allStats = {};
+        const fileLocation = `${config.resources_folder_file_path}stats.json`;
+
+        if (fs.existsSync(fileLocation)) {
+            allStats = jsonFile.readFileSync(fileLocation);
+        } else {
+            message.channel.send("stats.json has not been properly configured.")
+                .then(msg => msg.delete({ timeout: (config.delete_delay) })
+                    .catch(error => channel.send(`Error: ${error}`)));
+            return;
+        }
+
+        const guildStats = allStats[message.guild.id];
+
+        if (!(target.user.id in guildStats)) {
+            guildStats[target.user.id] = { // Sets all of the normal stats to 0.
+                id: target.user.id,
+                points: 0,
+                last_message: 0,
+                vc_session_started: 0,
+                time_spent_in_vc: 0,
+                participating_messages: 0
+            };
+        }
+        if (!guildStats[target.user.id][reason]) {
+            guildStats[target.user.id][reason] = 0;
+        }
+        guildStats[target.user.id][reason] = Math.round((guildStats[target.user.id][reason] + number) * 100) / 100;
+        jsonFile.writeFileSync(fileLocation, allStats);
     },
 
     /**
@@ -297,11 +348,11 @@ module.exports = {
     },
 
     /**
- * Removes the member's entry on the leaderboards.
- * Mainly to be used in case someone leaves, because then they won't have a displayName.
- * @param {Discord.Message} message the message containing the command used to initiate this.
- * @param {number} memberToDeleteID the ID of the member to be deleted
- */
+    * Removes the member's entry on the leaderboards.
+    * Mainly to be used in case someone leaves, because then they won't have a displayName.
+    * @param {Discord.Message} message the message containing the command used to initiate this.
+    * @param {number} memberToDeleteID the ID of the member to be deleted
+    */
     deleteEntryWithUserID: function (message, memberToDeleteID) {
         if (!message) {
             console.log(`Error: no message. Utilities.js line 260.`)
@@ -333,6 +384,38 @@ module.exports = {
         } else {
             throw new InvalidArgumentException(`Member ${memberToDeleteID} does not exist.`);
         }
+    },
+
+    /**
+     * Returns the time in '__h __m __s' format.
+     * @param {number} milliseconds 
+     */
+    toFormattedTime: function (milliseconds) {
+        if (!milliseconds || isNaN(milliseconds)) {
+            return '0s'
+        }
+        let secondsSpent = Math.floor(milliseconds / 1000);
+        let minutesSpent = Math.floor(secondsSpent / 60);
+        let hoursSpent = Math.floor(minutesSpent / 60);
+        let timeString = '';
+        if (hoursSpent > 0) {
+            timeString += `${hoursSpent.toString().replace(/\B(?=(\d{3})+(?!\d))/g, ",")}h `
+        }
+        if (minutesSpent > 0) {
+            timeString += `${minutesSpent % 60}m `
+        }
+        if (secondsSpent > 0) {
+            timeString += `${secondsSpent % 60}s`
+        }
+        return timeString.trim();
+    },
+
+    /**
+     * Adds commas to a number. For example: 100000.0001 becomes 100,000.0001
+     * @param {number} number the number to be formatted
+     */
+    addCommas: function (number) {
+        return number.toString().replace(/\B(?=(\d{3})+(?!\d))/g, ",");
     }
 }
 
