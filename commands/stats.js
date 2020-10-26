@@ -10,7 +10,7 @@ module.exports = {
     description: 'Tells you how many points you have.',
     usage: `(optional: user)`,
 
-    execute(bot, message, args) {
+    execute(bot, message, args, channel) {
         var target;
         if (args.length != 0) {
             target = util.getUserFromMention(message, args.join(' '));
@@ -20,7 +20,7 @@ module.exports = {
 
         util.safeDelete(message);
         if (!target) {
-            util.sendTimedMessage(message.channel, `Error: Cannot find user ${args.join(' ')}`);
+            util.sendTimedMessage(channel || message.channel, `Error: Cannot find user ${args.join(' ')}`);
             return;
         }
 
@@ -31,14 +31,14 @@ module.exports = {
             if (fs.existsSync(fileLocation)) {
                 allStats = jsonFile.readFileSync(fileLocation);
             } else {
-                util.sendTimedMessage(message.channel, "stats.json has not been properly configured.");
+                util.sendTimedMessage(channel || message.channel, "stats.json has not been properly configured.");
                 return;
             }
 
             const userStats = (allStats[message.guild.id])[target.user.id];
 
             if (!userStats) {
-                util.sendTimedMessage(message.channel, `${target.displayName} has 0 points.`);
+                util.sendTimedMessage(channel || message.channel, `${target.displayName} has 0 points.`);
                 return;
             }
 
@@ -49,7 +49,7 @@ module.exports = {
                     if (properties[i] === 'time_spent_in_vc') {
                         info.push(`${properties[i]}: ${util.toFormattedTime(userStats[properties[i]])}`)
                     } else {
-                        info.push(`${properties[i]}: ${userStats[properties[i]]}`);
+                        info.push(`${properties[i]}: ${util.addCommas(userStats[properties[i]])}`);
                     }
                 }
             }
@@ -60,7 +60,7 @@ module.exports = {
                 .addField('Point Insights', info)
                 .setFooter(`This message will be automatically deleted in ${config.longer_delete_delay / 1000} seconds.`), config.longer_delete_delay);
         } catch (err) {
-            util.sendTimedMessage(message.channel, "Error fetching stats.json.")
+            util.sendTimedMessage(channel || message.channel, "Error fetching stats.json.")
             console.log(err);
         }
     }

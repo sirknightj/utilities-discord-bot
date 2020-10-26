@@ -115,7 +115,10 @@ module.exports = {
 };
 
 function getAllowedInputs() {
-    let output = "points/vc/";
+    let output = "points/vc/messages";
+    if (config.point_earnings) {
+        output += "/";
+    }
     for (var i = 0; i < config.point_earnings.length; i++) {
         output += config.point_earnings[i][0];
         if (i !== config.point_earnings.length - 1) {

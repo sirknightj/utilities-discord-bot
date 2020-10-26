@@ -158,6 +158,10 @@ module.exports = {
      * @param {string} content the message to send.
      */
     sendMessage: function (channel, content, messageArgs) {
+        if (!channel.id) {
+            console.log(`Error! util.sendMessage was not used correctly: Missing channel.`);
+            return;
+        }
         channel.send(content, messageArgs)
             .catch(error => {
                 console.log(error + " " + error.message);
@@ -315,12 +319,13 @@ module.exports = {
      * @param {Discord.GuildMember} memberToDelete the member to be deleted
      */
     deleteEntry: function (message, memberToDelete) {
+        console.log("utilities.js called. " + memberToDelete);
         if (!message) {
-            console.log(`Error: no message. Utilities.js line 260.`)
+            console.log(`utilities.js .deleteEntry: Error: no message.`);
             return;
         }
         if (!memberToDelete) {
-            console.log(`Error: no member. Utilities.js line 264.`)
+            console.log(`utilities.js .deleteEntry: Error: no member.`);
             return;
         }
         const logChannel = this.getLogChannel(message);
@@ -334,10 +339,11 @@ module.exports = {
             return;
         }
 
+        require('./commands/stats').execute(null, message, [memberToDelete.id], this.getLogChannel(message));
+
         const guildStats = allStats[memberToDelete.guild.id];
         if (guildStats[memberToDelete.id]) {
             delete guildStats[memberToDelete.id];
-
             if (logChannel) {
                 this.sendMessage(logChannel, `User ID: ${memberToDelete.id} has been removed from the leaderboards.`)
             }
@@ -399,7 +405,7 @@ module.exports = {
         let hoursSpent = Math.floor(minutesSpent / 60);
         let timeString = '';
         if (hoursSpent > 0) {
-            timeString += `${hoursSpent.toString().replace(/\B(?=(\d{3})+(?!\d))/g, ",")}h `
+            timeString += `${this.addCommas(hoursSpent)}h `
         }
         if (minutesSpent > 0) {
             timeString += `${minutesSpent % 60}m `
