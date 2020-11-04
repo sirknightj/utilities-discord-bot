@@ -13,8 +13,12 @@ module.exports = {
     description: 'Gives the full list of points.',
     usage: `(optional: ${getAllowedInputs()})`,
 
-    execute(bot, message, args) {
+    async execute(bot, message, args) {
         util.safeDelete(message);
+        // await message.guild.members.fetch({force: true, cache: true});
+        // message.guild.members.cache.forEach((member) => {
+        //     console.log(member.user.username);
+        // });
 
         try {
             let LeaderboardEmbed = new Discord.MessageEmbed()

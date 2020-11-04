@@ -339,8 +339,6 @@ module.exports = {
             return;
         }
 
-        require('./commands/stats').execute(null, message, [memberToDelete.id], this.getLogChannel(message));
-
         const guildStats = allStats[memberToDelete.guild.id];
         if (guildStats[memberToDelete.id]) {
             delete guildStats[memberToDelete.id];

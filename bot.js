@@ -1,5 +1,5 @@
 const Discord = require('discord.js');
-const bot = new Discord.Client();
+const bot = new Discord.Client({ws: new Discord.Intents().add(Discord.Intents.FLAGS.GUILDS, Discord.Intents.FLAGS.GUILD_MEMBERS, Discord.Intents.FLAGS.GUILD_BANS, Discord.Intents.FLAGS.GUILD_VOICE_STATES)});
 const config = require('./config.json');
 const util = require('./utilities');
 const jsonFile = require('jsonfile');
@@ -58,7 +58,7 @@ bot.on('message', message => {
             return;
         }
 
-        console.log(`${message.author.username} ${message.content}`); // for debugging purposes.
+        console.log(`${message.author.tag}: ${message.content}`); // for debugging purposes.
 
         const args = message.content.trim().slice(config.prefix.length).split(/ +/);
         const command = args.shift().toLowerCase();
@@ -102,6 +102,7 @@ bot.on('message', message => {
                 }
             }
 
+            // If the first word after the command name is "help" or "usage", then display how to use it.
             if (args[0]) {
                 if (args[0].toLowerCase() === 'help' || args[0].toLowerCase() === 'usage') {
                     util.safeDelete(message);
@@ -362,7 +363,7 @@ bot.on('voiceStateUpdate', async (oldState, newState) => {
 });
 
 bot.on('guildMemberAdd', (newMember) => {
-    if (!config.welcome_new_members) {
+    if (!config.welcome_new_members || !config.welcome_message) {
         return;
     }
     const welcomeChannel = newMember.guild.channels.cache.get(config.welcome_channel_id);
@@ -374,9 +375,46 @@ bot.on('guildMemberAdd', (newMember) => {
 });
 
 bot.on('guildMemberRemove', (memberAffected) => {
+    console.log("EVENT EMITTEDD!!!!!!!!!!!")
     try {
         const logChannel = memberAffected.guild.channels.cache.get(config.log_channel_id);
         if (logChannel) {
+            let info = [];
+            try {
+                var allStats = {};
+                const fileLocation = `${config.resources_folder_file_path}stats.json`;
+    
+                if (fs.existsSync(fileLocation)) {
+                    allStats = jsonFile.readFileSync(fileLocation);
+                } else {
+                    util.sendTimedMessage(logChannel, "stats.json has not been properly configured.");
+                    return;
+                }
+    
+                const userStats = (allStats[memberAffected.guild.id])[memberAffected.user.id];
+    
+                if (!userStats) {
+                    util.sendTimedMessage(logChannel, `${memberAffected.displayName} had 0 points.`);
+                    return;
+                }
+                
+                let properties = Object.keys(userStats);
+                for (var i = 0; i < properties.length; i++) {
+                    if (properties[i] !== 'last_message' && properties[i] !== 'vc_session_started') {
+                        if (properties[i] === 'time_spent_in_vc') {
+                            info.push(`${properties[i]}: ${util.toFormattedTime(userStats[properties[i]])}`)
+                        } else {
+                            info.push(`${properties[i]}: ${util.addCommas(userStats[properties[i]])}`);
+                        }
+                    }
+                }
+            } catch (err) {
+                util.sendTimedMessage(logChannel, "Error fetching stats.json.")
+                console.log(err);
+            }
+            if (!info) {
+                info = ["0 points."];
+            }
             logChannel.send(new Discord.MessageEmbed()
                 .setColor(Colors.PINK)
                 .setTitle('Is No Longer In The Discord Server')
@@ -385,8 +423,11 @@ bot.on('guildMemberRemove', (memberAffected) => {
                 .addField('Timestamps', [
                     `Discord Tag: ${memberAffected.user.tag}`,
                     `User ID: ${memberAffected.id}`,
+                    `Joined: ${memberAffected.joinedAt}`,
                     `Left: ${new Date(Date.now())}`,
-                ])).then(msg => {
+                ])
+                .addField('Point Insights', info))
+                .then(msg => {
                     util.deleteEntry(msg, memberAffected);
                 });
         } else {
