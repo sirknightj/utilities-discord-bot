@@ -422,7 +422,7 @@ bot.on('guildMemberRemove', (memberAffected) => {
                 .addField('Timestamps', [
                     `Discord Tag: ${memberAffected.user.tag}`,
                     `User ID: ${memberAffected.id}`,
-                    `Roles: ${target.roles.cache.array().toString().replace(/,/g, ', ') || "None"}`,
+                    `Roles: ${memberAffected.roles.cache.array().toString().replace(/,/g, ', ') || "None"}`,
                     `Joined: ${memberAffected.joinedAt}`,
                     `Left: ${new Date(Date.now())}`,
                 ])
