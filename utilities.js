@@ -339,11 +339,11 @@ module.exports = {
             return;
         }
 
-        const guildStats = allStats[memberToDelete.guild.id];
+        const guildStats = allStats[message.guild.id];
         if (guildStats[memberToDelete.id]) {
             delete guildStats[memberToDelete.id];
             if (logChannel) {
-                this.sendMessage(logChannel, `User ID: ${memberToDelete.id} has been removed from the leaderboards.`)
+                this.sendMessage(logChannel, `Debug: "User ID: ${memberToDelete.id} has been removed from the leaderboards."`)
             }
             jsonFile.writeFileSync(fileLocation, allStats);
         } else {

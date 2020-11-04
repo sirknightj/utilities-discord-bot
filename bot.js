@@ -1,5 +1,5 @@
 const Discord = require('discord.js');
-const bot = new Discord.Client({ws: new Discord.Intents().add(Discord.Intents.FLAGS.GUILDS, Discord.Intents.FLAGS.GUILD_MEMBERS, Discord.Intents.FLAGS.GUILD_BANS, Discord.Intents.FLAGS.GUILD_VOICE_STATES)});
+const bot = new Discord.Client({ ws: new Discord.Intents().add(Discord.Intents.FLAGS.GUILDS, Discord.Intents.FLAGS.GUILD_MEMBERS, Discord.Intents.FLAGS.GUILD_BANS, Discord.Intents.FLAGS.GUILD_VOICE_STATES) });
 const config = require('./config.json');
 const util = require('./utilities');
 const jsonFile = require('jsonfile');
@@ -375,7 +375,6 @@ bot.on('guildMemberAdd', (newMember) => {
 });
 
 bot.on('guildMemberRemove', (memberAffected) => {
-    console.log("EVENT EMITTEDD!!!!!!!!!!!")
     try {
         const logChannel = memberAffected.guild.channels.cache.get(config.log_channel_id);
         if (logChannel) {
@@ -383,21 +382,21 @@ bot.on('guildMemberRemove', (memberAffected) => {
             try {
                 var allStats = {};
                 const fileLocation = `${config.resources_folder_file_path}stats.json`;
-    
+
                 if (fs.existsSync(fileLocation)) {
                     allStats = jsonFile.readFileSync(fileLocation);
                 } else {
                     util.sendTimedMessage(logChannel, "stats.json has not been properly configured.");
                     return;
                 }
-    
+
                 const userStats = (allStats[memberAffected.guild.id])[memberAffected.user.id];
-    
+
                 if (!userStats) {
                     util.sendTimedMessage(logChannel, `${memberAffected.displayName} had 0 points.`);
                     return;
                 }
-                
+
                 let properties = Object.keys(userStats);
                 for (var i = 0; i < properties.length; i++) {
                     if (properties[i] !== 'last_message' && properties[i] !== 'vc_session_started') {
@@ -423,6 +422,7 @@ bot.on('guildMemberRemove', (memberAffected) => {
                 .addField('Timestamps', [
                     `Discord Tag: ${memberAffected.user.tag}`,
                     `User ID: ${memberAffected.id}`,
+                    `Roles: ${target.roles.cache.array().toString().replace(/,/g, ', ') || "None"}`,
                     `Joined: ${memberAffected.joinedAt}`,
                     `Left: ${new Date(Date.now())}`,
                 ])
@@ -437,6 +437,40 @@ bot.on('guildMemberRemove', (memberAffected) => {
         console.log(err);
     }
 });
+
+bot.on('guildBanAdd', (guild, userAffected) => {
+    console.log(userAffected);
+    const logChannel = guild.channels.cache.get(config.log_channel_id);
+    if (!logChannel) {
+        console.log(`guildBanAdd: config.json is not set up correctly.\n${userAffected.tag} has been banned from the server ${userAffected.name}.`);
+        return;
+    }
+    logChannel.send(new Discord.MessageEmbed()
+        .setColor(Colors.PURPLE)
+        .setTitle('Is Now Banned From This Discord Server')
+        .setAuthor(userAffected.tag, userAffected.displayAvatarURL({ dynamic: true }))
+        .setDescription(`${userAffected.tag} has just been banned from this discord server.`)
+        .addField('Timestamps', [
+            `User ID: ${userAffected.id}`,
+            `Banned: ${new Date(Date.now())}`,
+        ]));
+});
+
+bot.on('guildBanRemove', (guild, userAffected) => {
+    const logChannel = guild.channels.cache.get(config.log_channel_id);
+    if (!logChannel) {
+        console.log(`guildBanRemove: config.json is not set up correctly.\n${userAffected.tag} has been unbanned from the server ${guild.name}.`);
+        return;
+    }
+    logChannel.send(new Discord.MessageEmbed()
+        .setColor(Colors.PURPLE)
+        .setTitle('Is Now Unbanned From This Discord Server')
+        .setAuthor(userAffected.tag, userAffected.displayAvatarURL({ dynamic: true }))
+        .setDescription(`${userAffected.tag} was previously banned from this discord server.`)
+        .addField('Timestamps', [
+            `Unbanned: ${new Date(Date.now())}`,
+        ]));
+})
 
 function manageStats(message) {
     const logChannel = message.guild.channels.cache.get(config.log_channel_id);
