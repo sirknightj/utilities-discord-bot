@@ -18,7 +18,7 @@ module.exports = {
             return;
         }
 
-        let listOfUsers = role.members.map(guildMember => guildMember.displayName).sort((s1, s2) => {
+        let listOfUsers = role.members.map(guildMember => `${guildMember.displayName}${guildMember.user.bot ? ' (bot)' : ''}`).sort((s1, s2) => {
             s1 = s1.toLowerCase();
             s2 = s2.toLowerCase();
             if (s1 > s2) {
