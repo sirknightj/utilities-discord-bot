@@ -61,7 +61,7 @@ module.exports = {
      * @returns {Discord.TextChannel} the channel lookingFor represents. Null or undefined if not found.
      */
     getChannelFromMention: function (message, lookingFor) {
-        if (!lookingFor) {
+        if (!message || !lookingFor) {
             return;
         }
 
@@ -98,7 +98,7 @@ module.exports = {
      * @returns {Discord.VoiceChannel} the channel lookingFor represents. Null or undefined if not found, or invalid.
      */
     getVoiceChannelFromMention: function (message, lookingFor) {
-        if (!lookingFor) {
+        if (!message || !lookingFor) {
             return;
         }
 
@@ -136,6 +136,43 @@ module.exports = {
     },
 
     /**
+     * 
+     * @param {Discord.Message} message the message object being sent. 
+     * @param {string} lookingFor the string to be checked for a role mention
+     * @returns {Discord.Role} the role lookingFor represents. Null or undefined if not found, or invalid.
+     */
+    getRoleFromMention: function (message, lookingFor) {
+        if(!message || !lookingFor) {
+            return;
+        }
+        
+        // First, we check if a role ID was directly inputted.
+        let role = message.guild.roles.cache.get(lookingFor);
+
+        // Next, we try to search for an exact match, including capitalization.
+        if (!role) {
+            role = message.guild.roles.cache.find(role => role.name === lookingFor);
+        }
+
+        // Next, we try to find a match, ignoring capitalization.
+        if (!role) {
+            role = message.guild.roles.cache.find(role => role.name.toLowerCase() === lookingFor.toLowerCase());
+        }
+
+        // Next, we try to search for an "includes", including capitalization
+        if (!role) {
+            role = message.guild.roles.cache.find(role => role.name.includes(lookingFor));
+        }
+
+        // Finally, we tru to search for an "includes", ignoring capitalization
+        if (!role) {
+            role = message.guild.roles.cache.find(role => role.name.toLowerCase().includes(lookingFor.toLowerCase()));
+        }
+
+        return role;
+    },
+
+    /**
      * Sends a message in the channel, and deletes after config.delete_delay milliseconds.
      * Catches any errors with the request, such as the bot not having permissions to speak in that channel.
      * @param {Discord.TextChannel} channel the channel to send the message in. 
@@ -143,6 +180,10 @@ module.exports = {
      * @param {number} millis_before_delete how many milliseconds before deletion.
      */
     sendTimedMessage: function (channel, content, millis_before_delete) {
+        if (!channel.id) {
+            console.log(`Error! util.sendTimedMessage was not used correctly: Missing channel.`);
+            return;
+        }
         if (!millis_before_delete || millis_before_delete === 0) {
             millis_before_delete = config.delete_delay;
         }
