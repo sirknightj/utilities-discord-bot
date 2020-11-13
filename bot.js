@@ -4,7 +4,8 @@ const config = require('./config.json');
 const util = require('./utilities');
 const jsonFile = require('jsonfile');
 const fs = require('fs');
-const Colors = require('./resources/colors.json')
+const Colors = require('./resources/colors.json');
+const { PassThrough } = require('stream');
 bot.commands = new Discord.Collection();
 
 const commandList = [];
@@ -77,6 +78,12 @@ bot.on('message', message => {
                 .setDescription(helpMessage)
                 .setFooter(`This message will be automatically deleted in ${config.longer_delete_delay / 1000} seconds.`),
                 config.longer_delete_delay);
+            return;
+        }
+
+        if (command === 'refresh') {
+            updateServerStats(message.guild);
+            util.sendMessage(message.channel, "OK!");
             return;
         }
 
@@ -226,8 +233,8 @@ bot.on('message', message => {
                 });
                 if (pointsToEarn > 0) {
                     util.sendMessage(message.channel, `${message.member.displayName} has been awarded ${pointsToEarn} points.\nReason: ${keyword}.`);
-                    if (!message.attachments.first()) {
-                        util.sendTimedMessage(message.channel, '**REMEMBER TO UPLOAD A SCREENSHOT OF THE WARP OR YOUR POINTS MAY BE INVALIDATED.**');
+                    if (config.require_attachment_to_earn_points && !message.attachments.first() && config.missing_attachment_error_message) {
+                        util.sendTimedMessage(message.channel, config.missing_attachment_error_message);
                     }
                     let result = util.addPoints(message, message.member, pointsToEarn, keyword);
 
@@ -363,6 +370,7 @@ bot.on('voiceStateUpdate', async (oldState, newState) => {
 });
 
 bot.on('guildMemberAdd', (newMember) => {
+    updateServerStats(newMember.guild);
     if (!config.welcome_new_members || !config.welcome_message) {
         return;
     }
@@ -375,6 +383,7 @@ bot.on('guildMemberAdd', (newMember) => {
 });
 
 bot.on('guildMemberRemove', (memberAffected) => {
+    updateServerStats(memberAffected.guild);
     try {
         const logChannel = memberAffected.guild.channels.cache.get(config.log_channel_id);
         if (logChannel) {
@@ -439,6 +448,7 @@ bot.on('guildMemberRemove', (memberAffected) => {
 });
 
 bot.on('guildBanAdd', (guild, userAffected) => {
+    updateServerStats(guild);
     console.log(userAffected);
     const logChannel = guild.channels.cache.get(config.log_channel_id);
     if (!logChannel) {
@@ -457,6 +467,7 @@ bot.on('guildBanAdd', (guild, userAffected) => {
 });
 
 bot.on('guildBanRemove', (guild, userAffected) => {
+    updateServerStats(guild);
     const logChannel = guild.channels.cache.get(config.log_channel_id);
     if (!logChannel) {
         console.log(`guildBanRemove: config.json is not set up correctly.\n${userAffected.tag} has been unbanned from the server ${guild.name}.`);
@@ -526,6 +537,40 @@ function manageStats(message) {
     }
 
     jsonFile.writeFileSync(fileLocation, allStats);
+}
+
+/**
+ * Updates the names of the dedicated Voice Channels to the member and user count of the guild.
+ * @param {Discord.Guild} guild the guild to be updated
+ */
+function updateServerStats(guild) {
+    if (!config.display_server_stats) {
+        return;
+    }
+
+    if (config.user_count_channel_id) {
+        let userCountChannel = guild.channels.cache.get(config.user_count_channel_id);
+        if (!userCountChannel || userCountChannel.type != "voice") {
+            console.log(`Error! Cannot updateServerStats because user_count_channel_id ${config.user_count_channel_id} is invalid or it is not a Voice Channel.`);
+        }
+        if (!userCountChannel || !userCountChannel.permissionsFor(guild.me).has("MANAGE_CHANNELS") || !userCountChannel.permissionsFor(guild.me).has("CONNECT") || !userCountChannel.permissionsFor(guild.me).has("VIEW_CHANNEL")) {
+            console.log("Error! I am missing one of the following: MANAGE_CHANNELS, CONNECT, VIEW_CHANNEL permission to edit the server stats (user_count).");
+        } else {
+            userCountChannel.setName(`Users: ${guild.memberCount}`);
+        }
+    }
+
+    if (config.member_count_channel_id) {
+        let memberCountChannel = guild.channels.cache.get(config.member_count_channel_id);
+        if (!memberCountChannel || memberCountChannel.type != "voice") {
+            console.log(`Error! Cannot updateServerStats because member_count_channel_id ${config.member_count_channel_id} is invalid or it is not a Voice Channel.`);
+        }
+        if (!memberCountChannel || !memberCountChannel.permissionsFor(guild.me).has("MANAGE_CHANNELS") || !memberCountChannel.permissionsFor(guild.me).has("CONNECT") || !memberCountChannel.permissionsFor(guild.me).has("VIEW_CHANNEL")) {
+            console.log("Error! I am missing one of the following: MANAGE_CHANNELS, CONNECT, VIEW_CHANNEL permission to edit the server stats (member_count).");
+        } else {
+            memberCountChannel.setName(`Members: ${guild.members.cache.filter(member => !member.user.bot).size}`);
+        }
+    }
 }
 
 bot.login(config.token);
