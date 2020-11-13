@@ -1,39 +1,47 @@
 {
-    "token": "YOUR_BOT_TOKEN_HERE",
+    "token": "BOT-TOKEN-HERE",
     "prefix": "!",
     "unknown_command_message": "i dont have that command programmed in yet",
-    "purge_limit": 50,
-    "delete_delay": 8000,
-    "userinfo_and_myperms_delete_delay": 30000,
+    "welcome_new_members": false,
+    "welcome_channel_id": "000000000000000000",
+    "welcome_message": "",
 
-    "log_channel_id": "0000000000000",
-    "afk_channel_id": "0000000000000",
-    "points_earning_channel_id": "CHANNEL_ID",
-    "point_earnings": [["hello", 10], ["congrats", 12], ["win", 24]],
+    "log_channel_id": "000000000000000000",
+    "resources_folder_file_path": "C:/FILE_PATH_HERE/utilities-discord-bot/resources/",
 
-    "move_to_afk_on_self_deafen": true,
-    "track_and_award_vc_usage" : true,
+    "move_to_afk_on_self_deafen": false,
+    "afk_channel_id": "000000000000000000",
+
+    "points_earning_channel_id": "000000000000000000",
+    "track_and_award_vc_usage": false,
+    "point_earnings": [["welcome", 25], ["good morning", 50]],
+    "require_attachment_to_earn_points": false,
+    "missing_attachment_error_message": "",
+
+    "display_server_stats": false,
+    "user_count_channel_id": "000000000000000000",
+    "member_count_channel_id": "000000000000000000",
+
     "enable_hypixel_api_required_commands": false,
-
     "API_KEY": "YOUR_HYPIXEL_API_KEY_HERE",
 
-    "resources_folder_file_path": "C:/Users/......./utilities-discord-bot/resources/",
-
     "channel_ids_to_not_accept_commands_from": [],
-    "channel_ids_to_bother": ["CHANNEL_ID", "CHANNEL_ID"],
+    "channel_ids_to_bother": ["000000000000000000", "000000000000000000"],
 
-    "greeting_messages_to_say": ["Hi! You're the best!", "Hello, good to see you today.", "Yo, what's up?"],
+    "greeting_messages_to_say": ["Hi!", "Good morning!", "How are you doing today?"],
 
-    "user_ids_to_always_praise": [],
-    "praising_messages_to_send": ["gg", "GG!", "pog!!!!!!!!!!!!!!!!!!", "pog!!!", "this is so good", "literally the best"],
+    "user_ids_to_always_praise": ["000000000000000000", "000000000000000000"],
+    "praising_messages_to_send": ["Nice work!", "Good job!", "Congrats!"],
     "praising_reactions": ["👀", "🍴", "🍞", "🎉", "🍉", "🎁"],
 
-    "user_ids_to_always_annoy": ["USER_ID", "USER_ID"],
-    "annoying_messages_to_send": ["I don't believe you. PHOTOSHOP!", "banned."],
+    "user_ids_to_always_annoy": ["000000000000000000", "000000000000000000"],
+    "annoying_messages_to_send": ["Boo!", "Bad."],
     "annoying_reactions": ["👎", "😒", "🦶", "🍗", "♈"],
 
     "default_bother_amount": 5,
     "bother_amount_limit": 10,
-
+    "purge_limit": 100,
+    "delete_delay": 8000,
+    "longer_delete_delay": 30000,
     "ghost_ping_limit": 100
 }
