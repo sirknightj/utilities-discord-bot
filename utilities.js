@@ -231,10 +231,17 @@ module.exports = {
     },
 
     /**
+     * @typedef {Object} StatTransaction
+     * @property {number} oldPoints the points before the transaction 
+     * @property {number} newPoints the points after the transaction
+     */
+
+    /**
      * Adds points to the target's point total.
      * @param {Discord.GuildMember} target the target whose points need updating.
      * @param {number} number the number of points to award.
      * @param {string} reason optional, the property to increase by 1 when a point is added.
+     * @returns {StatTransaction} this transaction.
      */
     addPoints: function (message, target, number, reason) {
         if (!target) {
@@ -263,6 +270,7 @@ module.exports = {
             guildStats[target.user.id] = { // Sets all of the normal stats to 0.
                 id: target.user.id,
                 points: 0,
+                coins: 0,
                 last_message: 0,
                 vc_session_started: 0,
                 time_spent_in_vc: 0,
@@ -296,21 +304,52 @@ module.exports = {
     },
 
     /**
+     * Retrieves the value of one of the stats. Returns 0 if the stat name is invalid, or if the stat does not exist.
+     * @param {Discord.Message} message any message sent in the guild.
+     * @param {Discord.GuildMember} target the target who you want to retrieve the stats of.
+     * @param {string} stat the property name you want to retrieve.
+     * @returns {number} the stat number.
+     */
+    getStats: function (message, target, stat) {
+        if (!target) {
+            throw new InvalidUsageException('Missing target.');
+        }
+        if (!stat) {
+            throw new InvalidUsageException('Missing stat.');
+        }
+
+        var allStats = {};
+        const fileLocation = `${config.resources_folder_file_path}stats.json`;
+
+        if (fs.existsSync(fileLocation)) {
+            allStats = jsonFile.readFileSync(fileLocation);
+        } else {
+            message.channel.send("stats.json has not been properly configured.")
+                .then(msg => msg.delete({ timeout: (config.delete_delay) })
+                    .catch(error => channel.send(`Error: ${error}`)));
+            return;
+        }
+
+        return allStats[message.guild.id][target.user.id][stat] ? allStats[message.guild.id][target.user.id][stat] : 0;
+    },
+
+    /**
      * Adds points to the target's point total.
      * @param {Discord.Message} message any message sent in the guild.
      * @param {Discord.GuildMember} target the target whose points need updating.
      * @param {number} number the stat number to award.
-     * @param {string} reason the property the number is awarded to.
+     * @param {string} stat the property the number is awarded to.
+     * @returns {StatTransaction} this transaction.
      */
-    addStats: function (message, target, number, reason) {
+    addStats: function (message, target, number, stat) {
         if (!target) {
             throw new InvalidUsageException('Missing target.');
         }
         if (!number) {
-            throw new InvalidUsageException('Missing number of points.');
+            // throw new InvalidUsageException('Missing number of points.');
         }
-        if (!reason) {
-            throw new InvalidUsageException('Missing reason.')
+        if (!stat) {
+            throw new InvalidUsageException('Missing stat.')
         }
 
         var allStats = {};
@@ -331,17 +370,20 @@ module.exports = {
             guildStats[target.user.id] = { // Sets all of the normal stats to 0.
                 id: target.user.id,
                 points: 0,
+                coins: 0,
                 last_message: 0,
                 vc_session_started: 0,
                 time_spent_in_vc: 0,
                 participating_messages: 0
             };
         }
-        if (!guildStats[target.user.id][reason]) {
-            guildStats[target.user.id][reason] = 0;
-        }
-        guildStats[target.user.id][reason] = Math.round((guildStats[target.user.id][reason] + number) * 100) / 100;
+        let previousStat = guildStats[target.user.id][stat] ? guildStats[target.user.id][stat] : 0;
+        guildStats[target.user.id][stat] = Math.round((guildStats[target.user.id][stat] + number) * 100) / 100;
         jsonFile.writeFileSync(fileLocation, allStats);
+        return {
+            oldPoints: previousStat,
+            newPoints: guildStats[target.user.id][stat]
+        };
     },
 
     /**

@@ -237,15 +237,18 @@ bot.on('message', message => {
                         util.sendTimedMessage(message.channel, config.missing_attachment_error_message);
                     }
                     let result = util.addPoints(message, message.member, pointsToEarn, keyword);
+                    let coinResult = util.addStats(message, message.member, pointsToEarn, "coins");
 
                     util.sendMessage(util.getLogChannel(message), new Discord.MessageEmbed()
                         .setColor(Colors.GOLD)
                         .setTitle("Awarded Points")
                         .setAuthor(message.member.displayName, message.author.displayAvatarURL({ dynamic: true }))
-                        .setDescription(`${bot.user.username} (bot) manually awarded ${target.displayName} ${pointsToEarn} points for ${keyword}!`)
+                        .setDescription(`${bot.user.username} (bot) manually awarded ${target.displayName} ${pointsToEarn} points and ${pointsToEarn} coins for ${keyword}!`)
                         .addField('Additional Info', [
-                            `Before: ${result.oldPoints} points`,
-                            `After: ${result.newPoints} points`,
+                            `Before: ${util.addCommas(result.oldPoints)} points`,
+                            `After: ${util.addCommas(result.newPoints)} points`,
+                            `Before: ${util.addCommas(coinResult.oldPoints)} coins`,
+                            `After: ${util.addCommas(coinResult.newPoints)} coins`,
                             `Date Awarded: ${new Date(Date.now())}`
                         ]));
                 } else {
@@ -341,16 +344,21 @@ bot.on('voiceStateUpdate', async (oldState, newState) => {
             }
             userStats['time_spent_in_vc'] += millisecondsSpent;
 
+            let previousCoins = userStats.coins ? userStats.coins : 0;
+            userStats.coins = Math.round((userStats.coins + pointsToAdd) * 100) / 100;
+
             util.sendMessage(logChannel, new Discord.MessageEmbed()
                 .setColor(Colors.YELLOW)
                 .setTitle("Earned Points")
                 .setAuthor(target.displayName, target.user.displayAvatarURL({ dynamic: true }))
-                .setDescription(`Awarded ${target.displayName} ${util.addCommas(pointsToAdd)} points for being in a VC for ${util.addCommas(Math.floor(minutesSpent / 60))}h ${minutesSpent % 60}m ${secondsSpent % 60}s.`)
+                .setDescription(`Awarded ${target.displayName} ${util.addCommas(pointsToAdd)} points and ${util.addCommas(pointsToAdd)} coins for being in a VC for ${util.addCommas(Math.floor(minutesSpent / 60))}h ${minutesSpent % 60}m ${secondsSpent % 60}s.`)
                 .addField('Timestamps', [
                     `Joined: ${new Date(userStats.vc_session_started)}`,
                     `Left: ${new Date(now)}`,
                     `Before: ${util.addCommas(beforePoints)} points`,
-                    `Now: ${util.addCommas(userStats.points)} points`
+                    `Now: ${util.addCommas(userStats.points)} points`,
+                    `Before: ${util.addCommas(previousCoins)} coins`,
+                    `Now: ${util.addCommas(userStats.coins)} coins`
                 ]));
             userStats.vc_session_started = 0;
         }
@@ -383,6 +391,8 @@ bot.on('guildMemberAdd', (newMember) => {
 });
 
 bot.on('guildMemberRemove', (memberAffected) => {
+    console.log(memberAffected);
+    console.log(`^ is no longer in this discord server. Timestamp: ${new Date(Date.now())}`);
     updateServerStats(memberAffected.guild);
     try {
         const logChannel = memberAffected.guild.channels.cache.get(config.log_channel_id);
@@ -505,6 +515,7 @@ function manageStats(message) {
     if (!(message.author.id in guildStats)) {
         guildStats[message.author.id] = {
             points: 0,
+            coins: 0,
             last_message: 0,
             vc_session_started: 0,
             time_spent_in_vc: 0,
@@ -514,21 +525,25 @@ function manageStats(message) {
 
     const userStats = guildStats[message.author.id];
 
-    // Adds 8 points if their last message was more than 10 minutes ago.
+    // Adds 3 points if their last message was more than 10 minutes ago.
     if (Date.now() - userStats.last_message >= 600000) {
         const pointsToAdd = 3;
-        let previousPoints = userStats.points;
-        userStats.points = Math.round((userStats.points + pointsToAdd) * 100) / 100;
+        let previousPoints = userStats.points ? userStats.points : 0;
+        userStats.points = Math.round((previousPoints + pointsToAdd) * 100) / 100;
+        let previousCoins = userStats.coins ? userStats.coins : 0;
+        userStats.coins = Math.round((previousCoins + pointsToAdd) * 100) / 100;
         userStats.last_message = Date.now();
         util.sendMessage(logChannel, new Discord.MessageEmbed()
             .setColor(Colors.YELLOW)
             .setTitle("Earned Points")
             .setAuthor(target.displayName, target.user.displayAvatarURL({ dynamic: true }))
-            .setDescription(`Awarded ${target.displayName} ${pointsToAdd} points for sending a message in the Discord.`)
+            .setDescription(`Awarded ${target.displayName} ${pointsToAdd} points and ${pointsToAdd} coins for sending a message in the Discord.`)
             .addField('Timestamps', [
                 `Date Awarded: ${new Date(Date.now())}`,
                 `Before: ${util.addCommas(previousPoints)} points`,
-                `Now: ${util.addCommas(userStats.points)} points`
+                `Now: ${util.addCommas(userStats.points)} points`,
+                `Before: ${util.addCommas(previousCoins)} coins`,
+                `Now: ${util.addCommas(userStats.coins)} coins`
             ]));
         if (!userStats.participating_messages) {
             userStats.participating_messages = 0;
