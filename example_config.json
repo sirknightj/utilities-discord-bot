@@ -22,6 +22,9 @@
     "user_count_channel_id": "000000000000000000",
     "member_count_channel_id": "000000000000000000",
 
+    "enable_shop": false,
+    "shop_ticket_cost": false,
+
     "enable_hypixel_api_required_commands": false,
     "API_KEY": "YOUR_HYPIXEL_API_KEY_HERE",
 

@@ -8,7 +8,7 @@ const Discord = require('discord.js');
 module.exports = {
     name: ['addstats', 'addpoints'],
     description: "Adds to a user's points. Requires ADMINISTRATOR.",
-    usage: `<user> <points-to-add>`,
+    usage: `<user> <stat-field> <points-to-add>`,
     requiredPermissions: 'ADMINISTRATOR',
 
     execute(bot, message, args) {

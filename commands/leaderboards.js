@@ -4,9 +4,6 @@ const jsonFile = require('jsonfile');
 const fs = require('fs');
 const Discord = require('discord.js');
 const Colors = require('../resources/colors.json');
-const { format } = require('path');
-
-//Set up the embed for the leaderboard, as it looks cluttered without it.
 
 module.exports = {
     name: ['leaderboards', 'leaderboard', 'pointtotals'],
@@ -15,10 +12,6 @@ module.exports = {
 
     async execute(bot, message, args) {
         util.safeDelete(message);
-        // await message.guild.members.fetch({force: true, cache: true});
-        // message.guild.members.cache.forEach((member) => {
-        //     console.log(member.user.username);
-        // });
 
         try {
             let LeaderboardEmbed = new Discord.MessageEmbed()

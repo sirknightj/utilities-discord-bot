@@ -1,5 +1,4 @@
 const util = require('../utilities');
-const { SystemChannelFlags } = require('discord.js');
 
 module.exports = {
     name: ['leave', 'disconnect'],

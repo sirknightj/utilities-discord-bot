@@ -377,7 +377,8 @@ module.exports = {
                 participating_messages: 0
             };
         }
-        let previousStat = guildStats[target.user.id][stat] ? guildStats[target.user.id][stat] : 0;
+        guildStats[target.user.id][stat] = guildStats[target.user.id][stat] ? guildStats[target.user.id][stat] : 0;
+        let previousStat = guildStats[target.user.id][stat];
         guildStats[target.user.id][stat] = Math.round((guildStats[target.user.id][stat] + number) * 100) / 100;
         jsonFile.writeFileSync(fileLocation, allStats);
         return {
@@ -499,7 +500,8 @@ module.exports = {
 
     /**
      * Adds commas to a number. For example: 100000.0001 becomes 100,000.0001
-     * @param {number} number the number to be formatted
+     * @param {number} number the number to be formatted.
+     * @returns {String} the properly-formatted number.
      */
     addCommas: function (number) {
         return number.toString().replace(/\B(?=(\d{3})+(?!\d))/g, ",");
