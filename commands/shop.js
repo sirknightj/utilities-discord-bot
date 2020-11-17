@@ -64,7 +64,7 @@ function sendShopEmbed(message, oldPoints, newPoints, stat, oldPoints2, newPoint
     let additionalInfo = [`Before: ${oldPoints} ${stat}.`, `After: ${newPoints} ${stat}.`]
 
     if (stat2) {
-        additionalInfo.push(`Before: ${oldPoints2} ${stat}.`, `Now: ${newPoints2} ${stat}.`)
+        additionalInfo.push(`Before: ${oldPoints2} ${stat2}.`, `Now: ${newPoints2} ${stat2}.`)
     }
 
     let logChannel = util.getLogChannel(message);

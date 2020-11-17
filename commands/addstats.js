@@ -5,15 +5,24 @@ const fs = require('fs');
 const Colors = require('../resources/colors.json');
 const Discord = require('discord.js');
 
+const statNames = ["points", "tickets", "coins"];
+
 module.exports = {
     name: ['addstats', 'addpoints'],
     description: "Adds to a user's points. Requires ADMINISTRATOR.",
-    usage: `<user> <stat-field> <points-to-add>`,
+    usage: `<user> <points-to-add> <${getAllowedInputs()}>`,
     requiredPermissions: 'ADMINISTRATOR',
 
     execute(bot, message, args) {
+        let statName = args.pop();
+        statName = statName.toLowerCase();
+
+        if (!statNames.includes(statName)) {
+            throw new InvalidUsageException('Invalid stat name.');
+        }
+
         let pointsToAdd = parseFloat(args.pop());
-        if (pointsToAdd < 0) {
+        if (pointsToAdd <= 0) {
             throw new InvalidUsageException('Points cannot be negative.');
         }
 
@@ -30,22 +39,26 @@ module.exports = {
         }
 
         try {
-            let result = util.addPoints(message, target, pointsToAdd);
+            let result = util.addStats(message, target, pointsToAdd, statName);
 
             util.sendMessage(util.getLogChannel(message), new Discord.MessageEmbed()
                 .setColor(Colors.GOLD)
-                .setTitle("Manually Awarded Points")
+                .setTitle(`Manually Awarded ${statName}`)
                 .setAuthor(target.displayName, target.user.displayAvatarURL({ dynamic: true }))
-                .setDescription(`${message.member.displayName}${message.author.bot ? " (bot)" : ""} manually awarded ${target.displayName} ${pointsToAdd} points!`)
+                .setDescription(`${message.member.displayName}${message.author.bot ? " (bot)" : ""} manually awarded ${target.displayName} ${pointsToAdd} ${statName}!`)
                 .addField('Additional Info', [
-                    `Before: ${result.oldPoints} points`,
-                    `After: ${result.newPoints} points`,
+                    `Before: ${result.oldPoints} ${statName}`,
+                    `After: ${result.newPoints} ${statName}`,
                     `Date Awarded: ${new Date(Date.now())}`
                 ]));
-
+            util.sendMessage(message.channel, "Done.");
         } catch (err) {
             util.sendTimedMessage(message.channel, "Error fetching stats.json.")
             console.log(err);
         }
     }
+}
+
+function getAllowedInputs() {
+    return statNames.toString().replace(/,/g, '/');
 }
