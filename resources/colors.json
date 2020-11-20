@@ -8,5 +8,6 @@
     "BLACK": "#000000",
     "BRIGHT_RED": "#FF2D00",
     "PURPLE": "#9400D3",
-    "BLUE": "#45b6fe"
+    "BLUE": "#45b6fe",
+    "LIGHT_BLUE": "#5dade2"
 }

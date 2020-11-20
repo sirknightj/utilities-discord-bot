@@ -43,7 +43,7 @@ module.exports = {
                 }
 
                 if (participantCounter < 3) {
-                    util.sendMessage(`There are not enough participants to run the giveaway.\n Here is the participant list:\n${participants}`);
+                    util.sendMessage(`There are not enough participants to run the giveaway.\nHere is the participant list:\n${participants}`);
                     return;
                 }
 

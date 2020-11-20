@@ -6,7 +6,7 @@ const Discord = require("discord.js");
 const Colors = require('../resources/colors.json')
 
 module.exports = {
-    name: ['stats', 'points', 'mypoints', 'mystats'],
+    name: ['stats', 'points', 'mypoints', 'mystats', 'balance', 'checkbalance'],
     description: 'Tells you how many points you have.',
     usage: `(optional: user)`,
 
