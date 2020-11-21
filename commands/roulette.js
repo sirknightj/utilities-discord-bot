@@ -86,7 +86,7 @@ module.exports = {
             if (util.getStats(message, message.member, "coins") >= SelectedCoins) {
                 if (randNumb === 0) {
                     // console.log(`${getRouletteColor(randNumb)} ${randNumb} Rolled 0. Player Guessed ${lookingFor}.`);
-                    if (convertArgs(lookingFor).toString().indexOf(`${randNumb}`) != -1) {
+                    if (convertArgs(lookingFor) == 0) {
                         NewCoins = SelectedCoins * GreenMultiplier
                         awardPoints(NewCoins);
                         // util.sendMessage(message.channel, `${getRouletteColor(randNumb)} You've won! Number Rolled: ${randNumb}.`);
