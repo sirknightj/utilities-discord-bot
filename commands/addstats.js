@@ -45,7 +45,7 @@ module.exports = {
                 .setColor(Colors.GOLD)
                 .setTitle(`Manually Awarded ${statName}`)
                 .setAuthor(target.displayName, target.user.displayAvatarURL({ dynamic: true }))
-                .setDescription(`${message.member.displayName}${message.author.bot ? " (bot)" : ""} manually awarded ${target.displayName} ${pointsToAdd} ${statName}!`)
+                .setDescription(`${message.member.displayName}${message.author.bot ? " (bot)" : ""} manually awarded ${target.displayName} ${util.addCommas(pointsToAdd)} ${statName}!`)
                 .addField('Additional Info', [
                     `Before: ${result.oldPoints} ${statName}`,
                     `After: ${result.newPoints} ${statName}`,

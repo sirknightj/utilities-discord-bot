@@ -178,6 +178,7 @@ module.exports = {
      * @param {Discord.TextChannel} channel the channel to send the message in. 
      * @param {string} content the message to send.
      * @param {number} millis_before_delete how many milliseconds before deletion.
+     * @returns {Promise<Message>} The sent message.
      */
     sendTimedMessage: function (channel, content, millis_before_delete) {
         if (!channel.id) {
@@ -187,7 +188,7 @@ module.exports = {
         if (!millis_before_delete || millis_before_delete === 0) {
             millis_before_delete = config.delete_delay;
         }
-        channel.send(content)
+        return channel.send(content)
             .then(msg => msg.delete({ timeout: (millis_before_delete) })
                 .catch(error => channel.send(`Error: ${error}`)));
     },
@@ -197,13 +198,14 @@ module.exports = {
      * Catches any errors with the request, such as the bot not having permissions to speak in that channel.
      * @param {Discord.TextChannel} channel the channel to send the message in. 
      * @param {string} content the message to send.
+     * @returns {Promise<Message>} The sent message.
      */
     sendMessage: function (channel, content, messageArgs) {
         if (!channel.id) {
             console.log(`Error! util.sendMessage was not used correctly: Missing channel.`);
             return;
         }
-        channel.send(content, messageArgs)
+        return channel.send(content, messageArgs)
             .catch(error => {
                 console.log(error + " " + error.message);
                 channel.send(`Error: ${error.message}`);
