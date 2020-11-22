@@ -2,7 +2,6 @@ const util = require('../utilities');
 const config = require('../config.json');
 const Discord = require('discord.js');
 const Colors = require('../resources/colors.json');
-const { trimEnd } = require('ffmpeg-static');
 
 module.exports = {
     name: ["connect4", "4inarow"],
@@ -103,10 +102,10 @@ nextTurn = (message, board, turn, challenger, target, previousMove) => {
                         return;
                     }
                     let column = reactions.findIndex(element => reaction.emoji.name === element); // 1 to BOARD_WIDTH
-                    put(board, column, piece);
+                    let placed = put(board, column, piece);
                     reaction.users.remove(reaction.users.cache.filter(user => user.id !== message.author.id).first().id)
                         .then(() => {
-                            if (winnerCheck(board, column)) {
+                            if (placed && winnerCheck(board, column)) {
                                 message.edit(new Discord.MessageEmbed()
                                     .setTitle(`Connect 4 game ended!`)
                                     .setDescription(`${PLAYER_ONE} ${challenger.displayName} vs. ${PLAYER_TWO} ${target.displayName}\n
@@ -124,11 +123,23 @@ nextTurn = (message, board, turn, challenger, target, previousMove) => {
                                                 .setColor(Colors.DARK_GREEN))
                                         }, 7500);
                                     });
-
+                                return;
+                            } else if (placed && tieCheck(board)) {
+                                message.edit(new Discord.MessageEmbed()
+                                    .setTitle(`Connect 4 game ended!`)
+                                    .setDescription(`${PLAYER_ONE} ${challenger.displayName} vs. ${PLAYER_TWO} ${target.displayName}\n
+                                ${boardToString(board)}
+                                The game ended in a draw!`)
+                                    .setColor(Colors.DARK_GREEN))
+                                message.reactions.removeAll()
                                 return;
                             }
-                            turn = !turn;
-                            nextTurn(message, board, turn, challenger, target, `${piece} ${player.displayName} placed a piece in column ${reaction.emoji.name}.`);
+                            if (placed) {
+                                turn = !turn;
+                                nextTurn(message, board, turn, challenger, target, `${piece} ${player.displayName} placed a piece in column ${reaction.emoji.name}.`);
+                            } else {
+                                nextTurn(message, board, turn, challenger, target, `${piece} ${player.displayName} attempted to place a piece in full column ${reaction.emoji.name}.`);
+                            }
                         });
                 });
         });
@@ -192,7 +203,7 @@ reactionsToString = () => {
  * @returns {boolean} true if the piece was successfully placed
  */
 put = (board, column, piece) => {
-    for (let i = BOARD_HEIGHT; i > 0; i--) {
+    for (let i = BOARD_HEIGHT; i >= 0; i--) {
         if (board[getAbsolutePosition(i, column - 1)] === EMPTY_CELL) {
             board[getAbsolutePosition(i, column - 1)] = piece;
             return true;
@@ -221,7 +232,7 @@ getAbsolutePosition = (row, column) => {
  * @returns {boolean} true if the column is full.
  */
 isColFull = (board, column) => {
-    return board[getAbsolutePosition(BOARD_HEIGHT - 1, column - 1)] !== EMPTY_CELL;
+    return board[getAbsolutePosition(0, column - 1)] !== EMPTY_CELL;
 }
 
 /**
@@ -231,7 +242,7 @@ isColFull = (board, column) => {
  */
 winnerCheck = (board, col) => {
     col--;
-    let row;
+    let row = 0;
     for (let i = BOARD_HEIGHT; i > 0; i--) {
         if (board[getAbsolutePosition(i - 1, col)] === EMPTY_CELL) {
             row = i;
@@ -247,7 +258,7 @@ winnerCheck = (board, col) => {
 
     // Vertical Check
     // You can only win connect 4 if your piece is on top of 3 others. Thus, no loop is necessessary.
-    if (winner === board[getAbsolutePosition(row + 1, col)] && winner === board[getAbsolutePosition(row + 2, col)] && winner === board[getAbsolutePosition(row + 3, col)]) {
+    if (board[getAbsolutePosition(row + 1, col)] === board[getAbsolutePosition(row + 2, col)] && board[getAbsolutePosition(row + 3, col)] === board[getAbsolutePosition(row, col)] && board[getAbsolutePosition(row + 2, col)] === board[getAbsolutePosition(row + 3, col)]) {
         board[getAbsolutePosition(row + 1, col)] = winningSymbol;
         board[getAbsolutePosition(row + 2, col)] = winningSymbol;
         board[getAbsolutePosition(row + 3, col)] = winningSymbol;
@@ -282,4 +293,14 @@ winnerCheck = (board, col) => {
         }
     }
     return false;
+}
+
+tieCheck = (board) => {
+    let isFull = true;
+    for (let i = 1; i <= BOARD_WIDTH; i++) {
+        if (!isColFull(board, i)) {
+            isFull = false;
+        }
+    }
+    return isFull;
 }
