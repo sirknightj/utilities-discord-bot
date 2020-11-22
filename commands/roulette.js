@@ -16,7 +16,7 @@ module.exports = {
         try {
             var lookingFor = args[1]
             let SelectedCoins = parseFloat(args[0]);
-            SelectedCoins = Math.round(SelectedCoins * 100) / 100;
+            SelectedCoins = Math.floor(SelectedCoins * 100) / 100;
             var NewCoins
             if (!lookingFor) {
                 throw new InvalidUseException();
@@ -59,7 +59,7 @@ module.exports = {
             function makeEmbed(oldCoins, newCoins) {
                 return new Discord.MessageEmbed()
                     .setTitle(`${message.member.displayName} has played roulette!`)
-                    .setDescription(`${util.addCommas(Math.abs(Math.round((newCoins - oldCoins) * 100) / 100))} coin${Math.abs(Math.round((newCoins - oldCoins) * 100) / 100) === 1 ? '' : 's'} ha${Math.abs(Math.round((newCoins - oldCoins) * 100) / 100) === 1 ? 's' : 've'} been ${oldCoins > newCoins ? 'taken away for losing.' : 'awarded for winning!'}`)
+                    .setDescription(`${util.addCommas(Math.abs(Math.floor((newCoins - oldCoins) * 100) / 100))} coin${Math.abs(Math.floor((newCoins - oldCoins) * 100) / 100) === 1 ? '' : 's'} ha${Math.abs(Math.round((newCoins - oldCoins) * 100) / 100) === 1 ? 's' : 've'} been ${oldCoins > newCoins ? 'taken away for losing.' : 'awarded for winning!'}`)
                     .addField('Additional Info',`Bet: ${util.addCommas(SelectedCoins)} coins
                                 Guess: ${lookingFor}
                                 Result: ${getRouletteColor(randNumb)} Number rolled: ${randNumb}
@@ -86,7 +86,7 @@ module.exports = {
             if (util.getStats(message, message.member, "coins") >= SelectedCoins) {
                 if (randNumb === 0) {
                     // console.log(`${getRouletteColor(randNumb)} ${randNumb} Rolled 0. Player Guessed ${lookingFor}.`);
-                    if (convertArgs(lookingFor).toString().indexOf(`${randNumb}`) != -1) {
+                    if (convertArgs(lookingFor) == 0) {
                         NewCoins = SelectedCoins * GreenMultiplier
                         awardPoints(NewCoins);
                         // util.sendMessage(message.channel, `${getRouletteColor(randNumb)} You've won! Number Rolled: ${randNumb}.`);
