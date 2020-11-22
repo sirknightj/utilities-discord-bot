@@ -232,7 +232,7 @@ bot.on('message', message => {
                     }
                 });
                 if (pointsToEarn > 0) {
-                    util.sendMessage(message.channel, `${message.member.displayName} has been awarded ${pointsToEarn} points.\nReason: ${keyword}.`);
+                    util.sendMessage(message.channel, `${message.member.displayName} has been awarded ${pointsToEarn} points and ${pointsToEarn} coins.\nReason: ${keyword}.`);
                     if (config.require_attachment_to_earn_points && !message.attachments.first() && config.missing_attachment_error_message) {
                         util.sendTimedMessage(message.channel, config.missing_attachment_error_message);
                     }
