@@ -108,18 +108,14 @@ nextTurn = (message, board, turn, challenger, target, previousMove) => {
                             if (placed && winnerCheck(board, column)) {
                                 message.edit(new Discord.MessageEmbed()
                                     .setTitle(`Connect 4 game ended!`)
-                                    .setDescription(`${PLAYER_ONE} ${challenger.displayName} vs. ${PLAYER_TWO} ${target.displayName}\n
-                                ${boardToString(board)}
-                                ${player.displayName} is the winner!`)
+                                    .setDescription(`${PLAYER_ONE} ${challenger.displayName} vs. ${PLAYER_TWO} ${target.displayName}\n\n${boardToString(board)}\n\n${piece} ${player.displayName} is the winner!`)
                                     .setColor(Colors.DARK_GREEN))
                                 message.reactions.removeAll()
                                     .then(() => {
                                         setTimeout(() => {
                                             message.edit(new Discord.MessageEmbed()
                                                 .setTitle(`Connect 4 game ended!`)
-                                                .setDescription(`${PLAYER_ONE} ${challenger.displayName} vs. ${PLAYER_TWO} ${target.displayName}\n
-                                        ${boardToString(board, true)}
-                                        ${piece} ${player.displayName} is the winner!`)
+                                                .setDescription(`${PLAYER_ONE} ${challenger.displayName} vs. ${PLAYER_TWO} ${target.displayName}\n\n${boardToString(board, true)}\n\n${piece} ${player.displayName} is the winner!`)
                                                 .setColor(Colors.DARK_GREEN))
                                         }, 7500);
                                     });
@@ -127,9 +123,7 @@ nextTurn = (message, board, turn, challenger, target, previousMove) => {
                             } else if (placed && tieCheck(board)) {
                                 message.edit(new Discord.MessageEmbed()
                                     .setTitle(`Connect 4 game ended!`)
-                                    .setDescription(`${PLAYER_ONE} ${challenger.displayName} vs. ${PLAYER_TWO} ${target.displayName}\n
-                                ${boardToString(board)}
-                                The game ended in a draw!`)
+                                    .setDescription(`${PLAYER_ONE} ${challenger.displayName} vs. ${PLAYER_TWO} ${target.displayName}\n\n${boardToString(board)}\n\nThe game ended in a draw!`)
                                     .setColor(Colors.DARK_GREEN))
                                 message.reactions.removeAll()
                                 return;
@@ -156,7 +150,7 @@ gameEmbed = (board, piece, member, override, previousMove) => {
     return new Discord.MessageEmbed()
         .setTitle(`Playing Connect 4`)
         .setThumbnail(member ? member.user.displayAvatarURL({ dynamic: true }) : '')
-        .setDescription(override ? override : `${previousMove ? `${previousMove}\n` : ""}It is ${piece} ${member.displayName}'s turn.\n\n${boardToString(board)}${reactionsToString(reactions)}`)
+        .setDescription(override ? override : `${previousMove ? `${previousMove}\n` : ""}It is ${piece} ${member.displayName}'s turn.\n\n${boardToString(board)}\n${reactionsToString(reactions)}`)
         .setColor(Colors.GREEN);
 }
 
@@ -182,7 +176,9 @@ boardToString = (board, replace) => {
                 result += board[getAbsolutePosition(i, j)] + ' ';
             }
         }
-        result += '\n';
+        if (i < BOARD_HEIGHT - 1) {
+            result += '\n';
+        }
     }
     return result;
 }
