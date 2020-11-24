@@ -28,17 +28,22 @@ module.exports = {
         var participantCounter = 0;
         let toDo = true;
 
+        let guildMemberIDs = Object.keys(guildStats);
+        guildMemberIDs.sort((o1, o2) => {
+            return (guildStats[o2].tickets || 0) - (guildStats[o1].tickets || 0)
+        });
+
         try {
             for (let i = 0; i < 3; i++) {
                 let totalTickets = 1;
-                for (var userIDs of Object.keys(guildStats)) {
+                for (var userIDs of guildMemberIDs) {
                     if (!winners || !winners.includes(userIDs)) {
-                        totalTickets += (guildStats[userIDs]['tickets'] || 0);
+                        totalTickets += (guildStats[userIDs].tickets || 0);
                     }
 
-                    if (toDo && guildStats[userIDs]['tickets']) {
+                    if (toDo && guildStats[userIDs].tickets) {
                         participantCounter++;
-                        participants += `${util.getUserFromMention(message, userIDs).displayName}: ${guildStats[userIDs]['tickets']}\n`
+                        participants += `${util.getUserFromMention(message, userIDs).displayName}: ${guildStats[userIDs].tickets}\n`
                     }
                 }
 
@@ -52,10 +57,10 @@ module.exports = {
                 const winnerThreshold = Math.floor(Math.random() * totalTickets);
 
                 let sum = 0;
-                for (var userIDs of Object.keys(guildStats)) {
+                for (var userIDs of guildMemberIDs) {
                     if (!winners || !winners.includes(userIDs)) {
-                        if (guildStats[userIDs]['tickets']) {
-                            sum += (guildStats[userIDs]['tickets'] || 0);
+                        if (guildStats[userIDs].tickets) {
+                            sum += (guildStats[userIDs].tickets || 0);
                             if (sum >= winnerThreshold) {
                                 winners.push(userIDs);
                                 break;

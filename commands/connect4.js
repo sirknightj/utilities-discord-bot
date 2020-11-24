@@ -3,20 +3,28 @@ const config = require('../config.json');
 const Discord = require('discord.js');
 const Colors = require('../resources/colors.json');
 
+var spacing = ' '; // non-breaking space
+
 module.exports = {
-    name: ["connect4", "4inarow"],
+    name: ["connect4", "4inarow", "connectfour"],
     description: "Play connect 4 with a friend!",
-    usage: "<opponent>",
+    usage: "<opponent> (optional: emoji align true/false)",
     requiresTarget: true,
 
-    async execute(bot, message, args, target) {
+    execute(bot, message, args, target) {
         if (!message.channel.permissionsFor(message.guild.me).has("ADD_REACTIONS")) {
-            util.sendMessage(`Missing required permission: 'ADD_REACTIONS'`);
+            util.sendMessage(message.channel, `Missing required permission: 'ADD_REACTIONS'`);
             return;
         }
         if (!message.channel.permissionsFor(message.guild.me).has("MANAGE_MESSAGES")) {
-            util.sendMessage(`Missing required permission: 'MANAGE_MESSAGES'`);
+            util.sendMessage(message.channel, `Missing required permission: 'MANAGE_MESSAGES'`);
             return;
+        }
+        spacing = ' ';
+        if (args[0]) {
+            if (args[0].toLowerCase() === 'true') {
+                spacing = '          '; // 10 non-breaking spaces
+            }
         }
         let challenger = message.member;
         util.sendMessage(message.channel, `<@${target.id}>, ${challenger.displayName} challenges you to a game of connect 4! Do you accept?`)
@@ -36,11 +44,13 @@ module.exports = {
                                 startGame(bot, message.channel, challenger, target);
                             } else {
                                 util.sendMessage(message.channel, `${target.displayName} has declined your challenge.`);
+                                message.reactions.removeAll();
                             }
                         });
                         collector.on('end', collected => {
                             if (collected.size === 0) {
                                 util.sendMessage(message.channel, `${target.displayName} did not respond within 60 seconds. The connect 4 game has been cancelled.`);
+                                message.reactions.removeAll();
                             }
                         });
                     });
@@ -94,9 +104,7 @@ nextTurn = (message, board, turn, challenger, target, previousMove) => {
                     if (!reaction) {
                         message.edit(new Discord.MessageEmbed()
                             .setTitle(`Connect 4 game ended!`)
-                            .setDescription(`${PLAYER_ONE} ${challenger.displayName} vs. ${PLAYER_TWO} ${target.displayName}\n
-                                ${boardToString(board)}
-                                ${player.displayName} did not make a move within 60 seconds! They have lost!`)
+                            .setDescription(`${PLAYER_ONE} ${challenger.displayName} vs. ${PLAYER_TWO} ${target.displayName}\n\n${boardToString(board)}\n${player.displayName} did not make a move within 60 seconds! They have lost!`)
                             .setColor(Colors.DARK_GREEN));
                         message.reactions.removeAll();
                         return;
@@ -166,15 +174,18 @@ boardToString = (board, replace) => {
         for (let j = 0; j < BOARD_WIDTH; j++) {
             if (replace) {
                 if (board[getAbsolutePosition(i, j)] === WINNER_ONE) {
-                    result += PLAYER_ONE + ' ';
+                    result += PLAYER_ONE + spacing;
                 } else if (board[getAbsolutePosition(i, j)] === WINNER_TWO) {
-                    result += PLAYER_TWO + ' ';
+                    result += PLAYER_TWO + spacing;
                 } else {
-                    result += board[getAbsolutePosition(i, j)] + ' ';
+                    result += board[getAbsolutePosition(i, j)] + spacing;
                 }
             } else {
-                result += board[getAbsolutePosition(i, j)] + ' ';
+                result += board[getAbsolutePosition(i, j)] + spacing;
             }
+        }
+        if (spacing !== ' ') {
+            result += '\n';
         }
         if (i < BOARD_HEIGHT - 1) {
             result += '\n';
@@ -186,7 +197,7 @@ boardToString = (board, replace) => {
 reactionsToString = () => {
     let result = "";
     for (let i = 1; i <= BOARD_WIDTH; i++) {
-        result += reactions[i] + ' ';
+        result += reactions[i] + spacing;
     }
     return result;
 }
