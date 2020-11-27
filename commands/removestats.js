@@ -78,11 +78,9 @@ module.exports = {
             if (everyone) {
                 let sortedArray = [];
                 let counter = 0;
-                let names = "";
                 let logs = "";
-                let logsAfter = ""
                 let actionPerformed = false;
-                const maxLogsPerMessage = 32;
+                const maxLogsPerMessage = 35;
 
                 for (var userIDs of Object.keys(guildStats)) {
                     sortedArray.push(userIDs);
@@ -92,19 +90,15 @@ module.exports = {
 
                 for (userID of sortedArray) {
                     if (guildStats[userID][statName]) {
-                        names += util.getUserFromMention(message, userID).displayName + "\n";
                         if (deleteEntry) {
-                            logs += `${util.addCommas(guildStats[userID][statName])}\n`;
-                            logsAfter += "Wiped\n";
+                            logs += `${util.getUserFromMention(message, userID).displayName} » Before: ${util.addCommas(guildStats[userID][statName])}, After: Wiped\n`;
                             delete guildStats[userID][statName];
                         } else if (removeAllPoints) {
-                            logs += `${util.addCommas(guildStats[userID][statName])}\n`;
-                            logsAfter = "0\n";
+                            logs += `${util.getUserFromMention(message, userID).displayName} » Before: ${util.addCommas(guildStats[userID][statName])}, After: 0\n`;
                             guildStats[userID][statName] = 0;
                         } else {
                             let newPoints = Math.round((guildStats[userID][statName] - pointsToRemove) * 100) / 100;
-                            logs += `${util.addCommas(guildStats[userID][statName])}\n`;
-                            logsAfter += `${newPoints < 0 ? 0 : util.addCommas(newPoints)}\n`
+                            logs += `${util.getUserFromMention(message, userID).displayName} » Before: ${util.addCommas(guildStats[userID][statName])}, After: ${newPoints < 0 ? 0 : util.addCommas(newPoints)}\n`;
                             guildStats[userID][statName] = newPoints < 0 ? 0 : newPoints;
                         }
                         if (!actionPerformed) {
@@ -117,15 +111,10 @@ module.exports = {
                             .setTitle(`${statName.charAt(0).toUpperCase() + statName.slice(1)} Stats Modification`)
                             .setAuthor(message.member.displayName, message.member.user.displayAvatarURL({ dynamic: true }))
                             .setColor(Colors.RED_RED)
-                            .setDescription(`${message.member.displayName} has ${deleteEntry ? "deleted" : "removed"} ${removeAllPoints ? "all" : util.addCommas(pointsToRemove)} ${statName} from everyone!`)
-                            .addField('Name', names.replace(/_/g, '\\_'), true)
-                            .addField(`Before`, logs, true)
-                            .addField(`After`, logsAfter, true)
+                            .setDescription(`${message.member.displayName} has ${deleteEntry ? "deleted" : "removed"} ${removeAllPoints ? "all" : pointsToRemove} ${statName} from everyone!\n\n**${util.capitalizeFirstLetter(statName)} Transactions**\n${logs.replace(/_/g, '\\_')}`)
                             .setTimestamp());
                         counter = 0;
                         logs = "";
-                        logsAfter = "";
-                        names = "";
                     }
                 }
                 if (!actionPerformed) {
@@ -135,10 +124,7 @@ module.exports = {
                         .setTitle(`${statName.charAt(0).toUpperCase() + statName.slice(1)} Stats Modification`)
                         .setAuthor(message.member.displayName, message.member.user.displayAvatarURL({ dynamic: true }))
                         .setColor(Colors.RED_RED)
-                        .setDescription(`${message.member.displayName} has ${deleteEntry ? "deleted" : "removed"} ${removeAllPoints ? "all" : pointsToRemove} ${statName} from everyone!`)
-                        .addField('Name', names.replace(/_/g, '\\_'), true)
-                        .addField(`Before`, logs, true)
-                        .addField(`After`, logsAfter, true)
+                        .setDescription(`${message.member.displayName} has ${deleteEntry ? "deleted" : "removed"} ${removeAllPoints ? "all" : pointsToRemove} ${statName} from everyone!\n\n**${util.capitalizeFirstLetter(statName)} Transactions**\n${logs.replace(/_/g, '\\_')}`)
                         .setTimestamp());
                     util.sendMessage(message.channel, "Done.");
                 }
