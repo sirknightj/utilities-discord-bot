@@ -399,6 +399,15 @@ module.exports = {
     },
 
     /**
+     * Capitalizes the first letter of the word.
+     * @param {String} word the word whose first letter needs capitalizing.
+     * @returns {String} the word with a capitalized first letter.
+     */
+    capitalizeFirstLetter: function (word) {
+        return word.charAt(0).toUpperCase() + word.slice(1);
+    },
+
+    /**
      * Removes the member's entry on the leaderboards.
      * Mainly to be used in case someone leaves, because then they won't have a displayName.
      * @param {Discord.Message} message the message containing the command used to initiate this.

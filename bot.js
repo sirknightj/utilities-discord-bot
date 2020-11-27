@@ -65,12 +65,24 @@ bot.on('message', message => {
         const command = args.shift().toLowerCase();
 
         if (command === 'help') {
+            const helpLimit = 30;
+            let count = 0;
             util.safeDelete(message);
             var helpMessage = '';
             for (commandName of commandList) {
                 var commands = bot.commands.get(commandName);
                 if (!commands.hiddenFromHelp) {
                     helpMessage += `\`${config.prefix}${commandName} help\` ${commands.description}\n`;
+                }
+                count++;
+                if (count >= helpLimit) {
+                    util.sendTimedMessage(message.channel, new Discord.MessageEmbed()
+                        .setTitle('Here are all of my commands:')
+                        .setDescription(helpMessage)
+                        .setFooter(`This message will be automatically deleted in ${config.longer_delete_delay / 1000} seconds.`),
+                    config.longer_delete_delay);
+                    count = 0;
+                    helpMessage = '';
                 }
             }
             util.sendTimedMessage(message.channel, new Discord.MessageEmbed()

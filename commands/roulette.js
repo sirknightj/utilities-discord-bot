@@ -59,12 +59,8 @@ module.exports = {
             function makeEmbed(oldCoins, newCoins) {
                 return new Discord.MessageEmbed()
                     .setTitle(`${message.member.displayName} has played roulette!`)
-                    .setDescription(`${util.addCommas(Math.abs(Math.floor((newCoins - oldCoins) * 100) / 100))} coin${Math.abs(Math.floor((newCoins - oldCoins) * 100) / 100) === 1 ? '' : 's'} ha${Math.abs(Math.round((newCoins - oldCoins) * 100) / 100) === 1 ? 's' : 've'} been ${oldCoins > newCoins ? 'taken away for losing.' : 'awarded for winning!'}`)
-                    .addField('Additional Info',`Bet: ${util.addCommas(SelectedCoins)} coins
-                                Guess: ${lookingFor}
-                                Result: ${getRouletteColor(randNumb)} Number rolled: ${randNumb}
-                                Previous coins: ${util.addCommas(oldCoins)}
-                                New coins: ${util.addCommas(newCoins)}`)
+                    .setDescription(`${util.addCommas(Math.abs(Math.round((newCoins - oldCoins) * 100) / 100))} coin${Math.abs(Math.round((newCoins - oldCoins) * 100) / 100) === 1 ? '' : 's'} ha${Math.abs(Math.round((newCoins - oldCoins) * 100) / 100) === 1 ? 's' : 've'} been ${oldCoins > newCoins ? 'taken away for losing.' : 'awarded for winning!'}`)
+                    .addField('Additional Info',`Bet: ${util.addCommas(SelectedCoins)} coins\nGuess: ${lookingFor}\nResult: ${getRouletteColor(randNumb)} Number rolled: ${randNumb}\nPrevious coins: ${util.addCommas(oldCoins)}\nNew coins: ${util.addCommas(newCoins)}`)
                     .setColor(Colors.BLUE)
                     .setThumbnail(target.user.displayAvatarURL({ dynamic: true }));
             }
