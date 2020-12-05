@@ -10,11 +10,12 @@ module.exports = {
     description: "Lets you purchase items from the store. 'All' purchases as many of that item as you can.",
     usage: `purchase <${getAllowedInputs()}> (optional: quantity/all)`,
     requiresArgs: true,
+    requiredPermissions: "CHANGE_NICKNAME",
 
     execute(bot, message, args) {
         util.safeDelete(message);
         if (args[0].toLowerCase() !== 'purchase') {
-            return;
+            throw new InvalidUsageException('First argument must be purchase');
         }
 
 
