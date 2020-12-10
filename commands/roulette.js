@@ -5,39 +5,40 @@ const Colors = require('../resources/colors.json');
 const util = require('../utilities');
 const config = require('../config.json');
 
-const ROULETTE_COLORS = [":green_circle:", ":red_circle:", ":black_circle:"]
+const ROULETTE_COLORS = [":green_circle:", ":red_circle:", ":black_circle:"];
 const GREEN_MULTIPLIER = 7;
+const BETS = ["even", "odd", "low", "high", "red", "black", "green"];
 
 module.exports = {
     name: ["roulette"],
     description: "Spins the roulette wheel.",
-    usage: "<coins/all> <even/odd/low/high/red/black/green>",
+    usage: `<coins/all> <${BETS.join('/')}>`,
     requiresArgs: true,
 
     execute(bot, message, args) {
+        let lookingFor = args[1];
+
+        let SelectedCoins = -1;
+        if (/^\d+\.\d+$/.test(args[0]) || /^-?\d+$/.test(args[0]) || /\.\d+$/.test(args[0])) {
+            SelectedCoins = parseFloat(args[0]);
+            SelectedCoins = Math.floor(SelectedCoins * 100) / 100;
+        } else if (args[0].toLowerCase() === 'all') {
+            SelectedCoins = util.getStats(message, message.member, 'coins');
+        }
+
+        if (!lookingFor) {
+            throw 'No bet entered.';
+        }
+        if (SelectedCoins < 0) {
+            throw 'Coins cannot be negative.';
+        }
+
+        const RANDOM_NUMBER = Math.floor(Math.random() * 38); // 0 - 37, where 37 is 00.
+
         try {
-            let lookingFor = args[1];
-
-            let SelectedCoins = -1;
-            if (/^\d+\.\d+$/.test(args[0]) || /^-?\d+$/.test(args[0])) {
-                SelectedCoins = parseFloat(args[0]);
-                SelectedCoins = Math.floor(SelectedCoins * 100) / 100;
-            } else if (args[0].toLowerCase() === 'all') {
-                SelectedCoins = util.getStats(message, message.member, 'coins');
-            }
-
-            if (!lookingFor) {
-                throw new InvalidUseageException('No bet entered.');
-            }
-            if (SelectedCoins < 0) {
-                throw new InvalidUsageException('Coins cannot be negative.');
-            }
             if (SelectedCoins === 0) {
-                util.sendMessage(message.channel, 'You may not play with 0 coins. You can, however, play with partial coins, rounded down to the nearest hundredth.');
-                return;
+                throw 'You may not play with 0 coins. You can, however, play with partial coins, rounded down to the nearest hundredth.';
             }
-
-            const RANDOM_NUMBER = Math.floor(Math.random() * 38); // 0 - 37, where 37 is 00.
 
             if (util.getStats(message, message.member, "coins") >= SelectedCoins) {
                 let winner = isWin(lookingFor, RANDOM_NUMBER);
@@ -48,9 +49,9 @@ module.exports = {
                 }
             } else {
                 util.sendTimedMessage(message.channel, `You do not have enough coins. You have ${util.getStats(message, message.member, "coins")} coins.`, config.longer_delete_delay);
-                return;
             }
         } catch (err) {
+            util.sendMessage(message.channel, `Error: ${err}`);
             console.log(err);
         }
     }
@@ -58,6 +59,8 @@ module.exports = {
 
  /**
   * Returns the winning payout multiplier (e.g. 1-to-1 --> 1) if they win. 
+  * guess: String - the guess to be checked
+  * randNumb: Number - the winning number
   */
  isWin = (guess, randNumb) => {
     guess = guess.toLowerCase();
@@ -77,12 +80,17 @@ module.exports = {
         case "black":
             return (getRouletteColor(randNumb) === ROULETTE_COLORS[2]) ? 1 : 0;
         default:
-            throw new InvalidUsageException('Invalid bet!');
+            throw `Invalid bet!\nValid bets: \`${BETS.join('`/`')}\``;
     }
 }
 
 /**
  * Returns an embed representing this gambling session
+ * message: Discord.Message() - any message sent in this guild
+ * randNumb: Number - the winning number chosen
+ * lookingFor: String - the player's guess
+ * coinsToAdd: Number - the number of coins to remove from the player
+ * Returns: Discord.messageEmbed() - the embed representing the game, and coins transaction
  */
 makeEmbed = (message, randNumb, lookingFor, SelectedCoins, oldCoins, newCoins) => {
     return new Discord.MessageEmbed()
@@ -95,26 +103,33 @@ makeEmbed = (message, randNumb, lookingFor, SelectedCoins, oldCoins, newCoins) =
 
 /**
  * Adds the specified number of coins, and also sends messages to the log, and to the user
+ * message: Discord.Message() - any message sent in this guild
+ * randNumb: Number - the winning number chosen
+ * lookingFor: String - the player's guess
+ * coinsToAdd: Number - the number of coins to add to the player
  */
 awardPoints = (message, randNumb, lookingFor, SelectedCoins, coinsToAdd) => {
     let result = util.addStats(message, message.member, coinsToAdd, "coins");
     util.sendMessage(util.getLogChannel(message), makeEmbed(message, randNumb, lookingFor, SelectedCoins, result.oldPoints, result.newPoints));
     util.sendMessage(message.channel, makeEmbed(message, randNumb, lookingFor, SelectedCoins, result.oldPoints, result.newPoints));
-    return;
 };
 
 /**
  * Removes the specified number of points, and also sends messages to the log, and to the user
+ * message: Discord.Message() - any message sent in this guild
+ * randNumb: Number - the winning number chosen
+ * lookingFor: String - the player's guess
+ * coinsToRemove: Number - the number of coins to remove from the player
  */
-removePoints = (message, randNumb, lookingFor, coinsToAdd) => {
-    let result = util.addStats(message, message.member, -coinsToAdd, "coins");
-    util.sendMessage(util.getLogChannel(message), makeEmbed(message, randNumb, lookingFor, coinsToAdd, result.oldPoints, result.newPoints));
-    util.sendMessage(message.channel, makeEmbed(message, randNumb, lookingFor, coinsToAdd, result.oldPoints, result.newPoints));
-    return;
+removePoints = (message, randNumb, lookingFor, coinsToRemove) => {
+    let result = util.addStats(message, message.member, -coinsToRemove, "coins");
+    util.sendMessage(util.getLogChannel(message), makeEmbed(message, randNumb, lookingFor, coinsToRemove, result.oldPoints, result.newPoints));
+    util.sendMessage(message.channel, makeEmbed(message, randNumb, lookingFor, coinsToRemove, result.oldPoints, result.newPoints));
 };
 
 /**
  * Returns the roulette color for the number
+ * randNumb: Number - the number whose color to be returned
  */
 getRouletteColor = (randNumb) => {
     if (randNumb === 0 || randNumb === 37) { // green when 0 or 00
@@ -136,6 +151,7 @@ getRouletteColor = (randNumb) => {
 
 /**
  * Returns true if the number is even
+ * number: Number - the number to be checked
  */
 isEven = (number) => {
     return number % 2 === 0;
