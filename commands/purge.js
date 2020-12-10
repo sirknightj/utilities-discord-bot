@@ -16,7 +16,7 @@ module.exports = {
         }
 
         if (!args[0] || args.length > 2) {
-            throw new InvalidUsageException();
+            throw 'Too many arguments are provided.';
         }
 
         var targetChannel;
@@ -26,7 +26,7 @@ module.exports = {
 
             targetChannel = util.getChannelFromMention(message, lookingFor);
             if (!targetChannel) {
-                throw new InvalidUsageException();
+                throw `Cannot find channel: ${lookingFor}.`;
             }
         }
 
@@ -35,7 +35,7 @@ module.exports = {
 
         // Checks for a valid number input, and makes sure that it's below the purge limit.
         if (numberToDelete <= 0 || numberToDelete > config.purge_limit) {
-            throw new InvalidUsageException();
+            throw 'Invalid input number.';
         }
         util.safeDelete(message);
 

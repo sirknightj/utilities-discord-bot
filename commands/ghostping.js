@@ -29,7 +29,7 @@ module.exports = {
         }
 
         if (numberOfPings < 1) {
-            throw new InvalidUsageException();
+            throw 'Invalid requested number.';
         }
 
         if (numberOfPings > config.ghost_ping_limit) {

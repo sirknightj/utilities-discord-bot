@@ -9,7 +9,7 @@ module.exports = {
 
     execute(bot, message, args) {
         if (args.length > 2) {
-            throw new InvalidUsageException();
+            throw 'Too many arguments provided.';
         }
 
         var target, targetChannel;

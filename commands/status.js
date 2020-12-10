@@ -10,11 +10,11 @@ module.exports = {
     requiresArgs: true,
     execute(bot, message, args) {
         if (args.length > 1) {
-            throw new InvalidUsageError();
+            throw 'Too many arguments provided.';
         }
         // The presence must be set to one of the four options listed in the presence array above.
         if (!presence.includes(args[0].toLowerCase())) {
-            throw new InvalidUsageError();
+            throw `Invalid status. Please choose from one of the following: \`${presence.join('`/`')}\``;
         }
         util.safeDelete(message);
         bot.user.setStatus(args[0].toLowerCase())

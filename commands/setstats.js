@@ -12,7 +12,7 @@ module.exports = {
     execute(bot, message, args) {
         let newPointNumber = parseInt(args.pop());
         if (newPointNumber < 0) {
-            throw new InvalidUsageException('Points cannot be negative.');
+            throw 'Points cannot be negative.';
         }
 
         var target;

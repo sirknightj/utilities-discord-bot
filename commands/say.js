@@ -13,7 +13,7 @@ module.exports = {
         var sendingChannel = util.getChannelFromMention(message, args[0]);
 
         if (!lookingFor) {
-            throw new InvalidUsageException();
+            throw 'Missing channel.';
         }
 
         if (!sendingChannel) {
@@ -26,7 +26,7 @@ module.exports = {
         }
 
         if (args.length < 1) {
-            throw new InvalidUsageException();
+            throw 'Cannot send an empty message.';
         }
         util.safeDelete(message);
         sendingChannel.send(args.join(" "))

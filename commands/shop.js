@@ -15,7 +15,7 @@ module.exports = {
     execute(bot, message, args) {
         util.safeDelete(message);
         if (args[0].toLowerCase() !== 'purchase') {
-            throw new InvalidUsageException('First argument must be purchase');
+            throw 'First argument must be purchase';
         }
 
 
@@ -28,7 +28,7 @@ module.exports = {
         }
 
         if (!args[1]) {
-            throw new InvalidUsageError('Missing item to purchase.');
+            throw 'Missing item to purchase.';
         }
 
         args[1] = args[1].toLowerCase();
@@ -54,7 +54,7 @@ module.exports = {
                     util.sendTimedMessage(message.channel, `Sorry ${message.member.displayName}, you don't have enough coins to purchase this item. It costs ${cost} coin${addS(cost)} to purchase ${quantity} ticket${addS(quantity)}, and you only have ${coinBalance} coin${addS(coinBalance)}.`);
                 }
             } else {
-                throw new InvalidUsageError('Invalid argument.');
+                throw 'Invalid argument.';
             }
         } catch (err) {
             util.sendTimedMessage(message.channel, "Error fetching stats.json.")

@@ -22,7 +22,7 @@ module.exports = {
 
         util.safeDelete(message);
         if (!target && !voiceChannel) {
-            throw new InvalidUsageException();
+            throw 'Missing arguments.';
         }
 
         if (target && !voiceChannel) {

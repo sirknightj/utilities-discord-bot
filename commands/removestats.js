@@ -25,7 +25,7 @@ module.exports = {
         statName = statName.toLowerCase();
 
         if (!statNames.includes(statName)) {
-            throw new InvalidUsageException('Invalid stat name.');
+            throw 'Invalid stat name.';
         }
 
         let everyone = false;
@@ -39,11 +39,11 @@ module.exports = {
             } else {
                 pointsToRemove = parseFloat(arg2);
                 if (pointsToRemove <= 0) {
-                    throw new InvalidUsageException('Points cannot be negative.');
+                    throw 'Points cannot be negative.';
                 }
             }
         } else {
-            throw new InvalidUsageException('Not enough arguments.');
+            throw 'Not enough arguments.';
         }
 
         if (deleteEntry && !removeAllPoints) {

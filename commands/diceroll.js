@@ -11,7 +11,7 @@ module.exports = {
         let sides = parseInt(args);
 
         if (sides < 4 || sides > 20) {
-            throw new InvalidUsageError();
+            throw 'Invalid number of sides.';
         }
 
         util.sendMessage(message.channel, `${message.member.displayName}, you have rolled a ${Math.floor(Math.random() * Math.floor(sides)) + 1}.`);

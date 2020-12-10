@@ -22,7 +22,7 @@ module.exports = {
 
         var chosenOption = args.join(' ').toLowerCase();
         if (!toggleableOptions.includes(chosenOption)) {
-            throw new InvalidUsageError('Invalid option.');
+            throw 'Invalid option.';
         }
         let updatedState;
         switch (chosenOption) {
@@ -42,7 +42,7 @@ module.exports = {
                 config.welcome_new_members = !config.welcome_new_members;
                 updatedState = config.welcome_new_members;
             default:
-                throw new IllegalStateException('This should never happen. toggle.js.');
+                throw 'This should never happen. toggle.js.';
         }
 
         fs.writeFile(`config.json`, JSON.stringify(config), 'utf-8', () => { });

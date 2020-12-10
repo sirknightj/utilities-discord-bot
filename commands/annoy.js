@@ -57,7 +57,7 @@ module.exports = {
         if (!voiceChannel) {
             let target = util.getUserFromMention(message, args.join(' '));
             if (!target) {
-                throw new InvalidUsageException('Invalid optional: user or "voice channel name" argument.');
+                throw 'Invalid optional: user or "voice channel name" argument.';
             }
 
             voiceChannel = target.voice.channel;
@@ -72,23 +72,6 @@ module.exports = {
         if (speed > 500) {
             util.sendTimedMessage(message.channel, `${message.content.substring(config.prefix.length, message.content.indexOf(' ')).toLowerCase()}ing ${voiceChannel.name} ${times} times...`);
         }
-
-        // times = 5;
-        // let dab = voiceChannel;
-        // for (var i = 0; i < times; i++) {
-        //     console.log('here')
-        //     await dab.join()
-        //         .then(async connection => {
-        //             console.log('here2')
-        //             let x = new Promise(resolve => connection.once('disconnect', resolve));
-        //             dab.leave();
-        //             await x;
-        //         });
-
-        //     // await new Promise((resolve, reject) => {
-        //     //     setTimeout(() => resolve(), speed);
-        //     // });
-        // }
 
         try {
             var interval = setInterval(() => {

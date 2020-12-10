@@ -17,7 +17,7 @@ module.exports = {
         }
         // All names are 1 word. So, only 1 argument should be provided.
         if (args.length > 1) {
-            throw new InvalidUsageError();
+            throw 'Too many arguments provided.';
         }
 
         try {

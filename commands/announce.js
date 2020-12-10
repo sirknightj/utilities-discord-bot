@@ -13,7 +13,7 @@ module.exports = {
         var lookingFor = args.shift();
 
         if (!lookingFor) {
-            throw new InvalidUsageException();
+            throw 'Missing channel-name';
         }
 
         sendingChannel = util.getChannelFromMention(message, lookingFor);
@@ -23,7 +23,7 @@ module.exports = {
         }
 
         if (args.length < 1) {
-            throw new InvalidUsageException();
+            throw 'Cannot send an empty message.';
         }
 
         util.sendMessage(sendingChannel, args.join(" "));

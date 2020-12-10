@@ -2,8 +2,6 @@ const util = require('../utilities');
 const config = require('../config.json');
 const Discord = require('discord.js');
 
-
-
 module.exports = {
     name: "slots",
     description: "Roll the slot machine!",

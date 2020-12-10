@@ -15,7 +15,7 @@ module.exports = {
         try {
             if (args.length != 0) {
                 if (args.length > 2) {
-                    throw new InvalidUsageException('Too many arguments provided.');
+                    throw 'Too many arguments provided.';
                 }
                 var slapper;
                 var target = util.getUserFromMention(message, args[0]);
