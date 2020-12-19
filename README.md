@@ -89,10 +89,54 @@ With very simple, fun, and useful commands that are very easy-to-use and intuiti
 * If `(user slapping)` is unspecified, then it defaults to you.
 * If `(channel-name)` is unspecified, then it will default to *this* channel.
 
+## Games!
+
+#### `!connect4 <target>`
+* Sets up a Connect 4 game between you and your target.
+* You can even play against yourself!
+
+#### `!roulette <coins/all> <guess>`
+* Lets you play around with the coins the bot awards you for Discord participation!
+* `guess` can be even/odd/red/black/high/low/green
+* green (0 or 00) is a 7-to-1 multiplier. All the other guesses are a 1-to-1 multiplier.
+
+## Keeps Track of Discord Participation!
+* Coins system - spend coins on giveaway entry tickets!
+* Points system - keep track of someone's total points!
+* Leaderboards system - keep track of who has the most coins/points!
+
+#### `!leaderboards (optional: stat-name)>`
+* Prints out the entire leaderboards, sorted from most to least.
+* Defaults to `points` if no `(stat-name)` is provided. Some stat names include `points`, `coins`, and `tickets`
+
+#### `!stats (optional: user)`
+* Prints out the stat card of a user (displaying their time spent in vc, coins, points, and more!)
+* If `(user)` is unspecified, then it defaults to you.
+
+#### `!addstats <user> <amount> <stat-name>`
+* Adds a specific stat to the target. Requires the message author to have `Administrator` permission.
+
+#### `!removestats <user/everyone> <amount/all> <stat-name> (optional: delete entry: true/false)`
+* Removes a specific stat from the target. Requires the message author to have the `Administrator` permission.
+* Delete entry: defaults to false. Essentially, stats.json will have "0" as the number for that stat. If delete entry is true, then the stat will not exist in stats.json.
+* Example on how to clear tickets after a giveaway: `!removestats everyone all tickets true`.
+
+#### `!shop purchase ticket (optional: amount/all)`
+* Purchases a giveaway entry ticket from the shop.
+* If amount is unspecified, then defaults to 1. If all is specified, then purchases as many tickets as the user can.
+
+#### `!giveaway`
+* Randomly selects three unique winners from everyone who has giveaway entry tickets. Essentially, draws 3 names out of a hat, starting from 1st place, discarding duplicates. Also prints out the participants list.
+* Note: this command does not change any user's ticket totals. If you want to clear all the tickets after each giveaway, then use `!removestats everyone all tickets true`.
+
 ## Misc. Commands
 
 #### `!coinflip`
 * Flips an imaginary coin, and tells you what it lands on.
+
+#### `!slots`
+* Rolls the slot machine. 
+* There are 4 colors and 3 wheels.
 
 #### `!ghostping <user> <channel-name>`
 * Pings the user, and then deletes the message as fast as possible. Also deletes your command as fast as possible.
