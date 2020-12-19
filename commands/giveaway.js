@@ -48,7 +48,7 @@ module.exports = {
                 }
 
                 if (participantCounter < 3) {
-                    util.sendMessage(message.channel, `There are not enough participants to run the giveaway.\nHere is the participant list:\n${participants ? participants : '_There are no participants._'}`);
+                    util.sendMessage(message.channel, `There are not enough participants to run the giveaway.\nHere is the participant list:\n${participants ? util.fixNameFormat(participants) : '_There are no participants._'}`);
                     return;
                 }
 
@@ -80,8 +80,8 @@ module.exports = {
         util.sendMessage(message.channel, new Discord.MessageEmbed()
             .setColor(Colors.DARK_GREEN)
             .setTitle('And the winner is...')
-            .setDescription(`1st Place: ${winner1.displayName}\n2nd Place: ${winner2.displayName}\n3rd Place: ${winner3.displayName}`)
-            .addField('Participants:', participants)
+            .setDescription(`1st Place: ${util.fixNameFormat(winner1.displayName)}\n2nd Place: ${util.fixNameFormat(winner2.displayName)}\n3rd Place: ${util.fixNameFormat(winner3.displayName)}`)
+            .addField('Participants:', util.fixNameFormat(participants))
             .setFooter(`Held on ${new Date(Date.now())}`)
         );
     }

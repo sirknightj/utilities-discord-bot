@@ -400,8 +400,8 @@ module.exports = {
 
     /**
      * Capitalizes the first letter of the word.
-     * @param {String} word the word whose first letter needs capitalizing.
-     * @returns {String} the word with a capitalized first letter.
+     * @param {string} word the word whose first letter needs capitalizing.
+     * @returns {string} the word with a capitalized first letter.
      */
     capitalizeFirstLetter: function (word) {
         return word.charAt(0).toUpperCase() + word.slice(1);
@@ -512,11 +512,25 @@ module.exports = {
     /**
      * Adds commas to a number. For example: 100000.0001 becomes 100,000.0001
      * @param {number} number the number to be formatted.
-     * @returns {String} the properly-formatted number.
+     * @returns {string} the properly-formatted number.
      */
     addCommas: function (number) {
         return number.toString().replace(/\B(?=(\d{3})+(?!\d))/g, ",");
-    }
+    },
+
+    /**
+     * Adds the escape character before characters which indicate formatting.
+     * Ex. all '_' with '\_'. Formatting codes included are '`', '*', and '_'. 
+     * @param {string} name the name(s) to be formatted.
+     * @returns {string}
+     */
+    fixNameFormat: function (name) {
+        if (typeof(name) === 'string') {
+            let charsToReplace = {'_':"\\_","`":"\\`","*":"\\*"}
+            return name.replace(/[_`*]/g, char => charsToReplace[char]);
+        }
+        return name;
+    },
 }
 
 /**

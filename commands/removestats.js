@@ -24,10 +24,6 @@ module.exports = {
 
         statName = statName.toLowerCase();
 
-        if (!statNames.includes(statName)) {
-            throw 'Invalid stat name.';
-        }
-
         let everyone = false;
         let removeAllPoints = false;
         let arg2 = args.pop();
@@ -76,6 +72,10 @@ module.exports = {
 
         try {
             if (everyone) {
+                if (!statNames.includes(statName)) {
+                    throw 'Invalid stat name.';
+                }
+
                 let sortedArray = [];
                 let counter = 0;
                 let logs = "";
@@ -134,6 +134,11 @@ module.exports = {
                     util.sendTimedMessage(message.channel, `Error: Cannot find user ${args.join(' ')}`);
                     return;
                 }
+
+                if (!util.getStats(message, target, statName) && !statNames.includes(statName)) {
+                    throw "They don't have any of that stat.";
+                }
+
                 let result = util.addStats(message, target, -pointsToRemove, statName);
                 util.sendMessage(util.getLogChannel(message), new Discord.MessageEmbed()
                     .setColor(Colors.GOLD)

@@ -47,8 +47,10 @@ module.exports = {
             for (var i = 0; i < properties.length; i++) {
                 if (properties[i] !== 'last_message' && properties[i] !== 'vc_session_started') {
                     if (properties[i] === 'time_spent_in_vc') {
-                        info.push(`${properties[i]}: ${util.toFormattedTime(userStats[properties[i]])}`)
-                    } else {
+                        info.push(`${properties[i]}: ${util.toFormattedTime(userStats[properties[i]])}`);
+                    } else if (properties[i] === 'daily_reward_last_claimed') {
+                        info.push(`${properties[i]}: ${new Date(userStats[properties[i]])}`);
+                     }else {
                         info.push(`${properties[i]}: ${util.addCommas(userStats[properties[i]])}`);
                     }
                 }

@@ -1,7 +1,5 @@
 const util = require('../utilities');
 const config = require('../config.json');
-const jsonFile = require('jsonfile');
-const fs = require('fs');
 const Discord = require('discord.js');
 const Colors = require('../resources/colors.json');
 

@@ -23,7 +23,10 @@
     "member_count_channel_id": "000000000000000000",
 
     "enable_shop": false,
-    "shop_ticket_cost": false,
+    "shop_ticket_cost": 1000,
+
+    "enable_daily_rewards": true,
+    "daily_reward_coin_amount": 50,
 
     "enable_hypixel_api_required_commands": false,
     "API_KEY": "YOUR_HYPIXEL_API_KEY_HERE",

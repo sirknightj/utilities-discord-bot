@@ -55,7 +55,7 @@ module.exports = {
             console.log(err);
         }
     }
-}
+};
 
  /**
   * Returns the winning payout multiplier (e.g. 1-to-1 --> 1) if they win. 
@@ -82,7 +82,7 @@ module.exports = {
         default:
             throw `Invalid bet!\nValid bets: \`${BETS.join('`/`')}\``;
     }
-}
+};
 
 /**
  * Returns an embed representing this gambling session
@@ -96,7 +96,11 @@ makeEmbed = (message, randNumb, lookingFor, SelectedCoins, oldCoins, newCoins) =
     return new Discord.MessageEmbed()
         .setTitle(`${message.member.displayName} has played roulette!`)
         .setDescription(`${util.addCommas(Math.abs(Math.round((newCoins - oldCoins) * 100) / 100))} coin${Math.abs(Math.round((newCoins - oldCoins) * 100) / 100) === 1 ? '' : 's'} ha${Math.abs(Math.round((newCoins - oldCoins) * 100) / 100) === 1 ? 's' : 've'} been ${oldCoins > newCoins ? 'taken away for losing.' : 'awarded for winning!'}`)
-        .addField('Additional Info', `Bet: ${util.addCommas(SelectedCoins)} coins\nGuess: ${lookingFor}\nResult: ${getRouletteColor(randNumb)} Number rolled: ${randNumb === 37 ? '00' : randNumb}\nPrevious coins: ${util.addCommas(oldCoins)}\nNew coins: ${util.addCommas(newCoins)}`)
+        .addField('Additional Info', [`Bet: ${util.addCommas(SelectedCoins)} coins`,
+                `Guess: ${lookingFor}`,
+                `Result: ${getRouletteColor(randNumb)} Number rolled: ${randNumb === 37 ? '00' : randNumb}`,
+                `Previous coins: ${util.addCommas(oldCoins)}`,
+                `New coins: ${util.addCommas(newCoins)}`])
         .setColor(Colors.BLUE)
         .setThumbnail(target.user.displayAvatarURL({ dynamic: true }));
 };
@@ -147,7 +151,7 @@ getRouletteColor = (randNumb) => {
             return ROULETTE_COLORS[2];
         }
     }
-}
+};
 
 /**
  * Returns true if the number is even
