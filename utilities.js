@@ -496,15 +496,19 @@ module.exports = {
         let secondsSpent = Math.floor(milliseconds / 1000);
         let minutesSpent = Math.floor(secondsSpent / 60);
         let hoursSpent = Math.floor(minutesSpent / 60);
+        let daysSpent = Math.floor(hoursSpent / 24);
         let timeString = '';
+        if (daysSpent > 0) {
+            timeString += `${this.addCommas(daysSpent)}d `;
+        }
         if (hoursSpent > 0) {
-            timeString += `${this.addCommas(hoursSpent)}h `
+            timeString += `${hoursSpent % 24}h `;
         }
         if (minutesSpent > 0) {
-            timeString += `${minutesSpent % 60}m `
+            timeString += `${minutesSpent % 60}m `;
         }
         if (secondsSpent > 0) {
-            timeString += `${secondsSpent % 60}s`
+            timeString += `${secondsSpent % 60}s`;
         }
         return timeString.trim();
     },
@@ -515,6 +519,9 @@ module.exports = {
      * @returns {string} the properly-formatted number.
      */
     addCommas: function (number) {
+        if (!number) {
+            return "0";
+        }
         return number.toString().replace(/\B(?=(\d{3})+(?!\d))/g, ",");
     },
 

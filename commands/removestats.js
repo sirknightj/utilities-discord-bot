@@ -144,7 +144,7 @@ module.exports = {
                     .setColor(Colors.GOLD)
                     .setTitle(`Manually Revoked ${statName}`)
                     .setAuthor(target.displayName, target.user.displayAvatarURL({ dynamic: true }))
-                    .setDescription(`${message.member.displayName}${message.author.bot ? " (bot)" : ""} manually took away ${target.displayName} ${util.addCommas(pointsToRemove)} ${statName}!`)
+                    .setDescription(`${message.member.displayName}${message.author.bot ? " (bot)" : ""} manually took away ${util.addCommas(pointsToRemove)} ${statName} from ${target.displayName}!`)
                     .addField('Additional Info', [
                         `Before: ${result.oldPoints} ${statName}`,
                         `After: ${result.newPoints} ${statName}`,

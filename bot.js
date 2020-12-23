@@ -166,6 +166,7 @@ bot.on('message', message => {
                 botCommand.execute(bot, message, args);
             } catch (error) {
                 util.safeDelete(message);
+                console.log(error)
                 util.sendTimedMessage(message.channel, `Invalid usage. ${config.prefix}${command} ${botCommand.usage}`);
             }
             return;

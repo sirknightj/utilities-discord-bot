@@ -29,16 +29,27 @@ module.exports = {
         let now = Date.now();
 
         if (!whenClaimed || now - whenClaimed >= 82800000) { // 23 hours = 82,800,000 ms
+            let streakResult;
+            if (!whenClaimed || now - whenClaimed <= 172800000) { // 48 hours = 172,800,000 ms
+                // Streak maintained. Increase by 1.
+                streakResult = util.addStats(message, message.member, 1, 'daily_rewards_streak'); 
+            } else {
+                // Streak broken. Set to 1.
+                streakResult = util.addStats(message, message.member, -util.getStats(message, message.member, 'daily_rewards_streak') + 1, 'daily_rewards_streak');
+            }
+            let coinsToAward = config.daily_reward_coin_amount + (streakResult.newPoints - 1) * config.daily_reward_coin_increment_per_streak_day;
+            let coinTransaction = util.addStats(message, message.member, coinsToAward, 'coins');
+           
             util.addStats(message, message.member, now - whenClaimed, 'daily_reward_last_claimed');
-            let coinTransaction = util.addStats(message, message.member, config.daily_reward_coin_amount, 'coins');
-
+            util.addStats(message, message.member, 1, 'daily_rewards_claimed');
             let embed = new Discord.MessageEmbed()
                 .setTitle(`${message.member.displayName} has claimed their daily reward!`)
                 .setColor(Colors.YELLOW)
-                .setDescription(`${message.member.displayName} has been awarded ${config.daily_reward_coin_amount} coin${config.daily_reward_coin_amount === 1 ? '' : 's'}.`)
+                .setDescription([`${message.member.displayName} has been awarded ${coinsToAward} coin${coinsToAward === 1 ? '' : 's'}.`, 
+                    `${streakResult.newPoints > streakResult.oldPoints ? (streakResult.oldPoints === 0 ? "Streak started!" : "Streak maintained!") : "Streak reset!"}`])
                 .addField('Additional Info', [
-                    `Before: ${util.addCommas(coinTransaction.oldPoints)} coins`,
-                    `Now: ${util.addCommas(coinTransaction.newPoints)} coins`
+                    `Coins: ${util.addCommas(coinTransaction.oldPoints)} » ${util.addCommas(coinTransaction.newPoints)}`,
+                    `Streak: ${util.addCommas(streakResult.oldPoints)} » ${util.addCommas(streakResult.newPoints)}`
                 ])
                 .setTimestamp(now)
                 .setThumbnail(message.author.displayAvatarURL({ dynamic: true }));
@@ -63,8 +74,10 @@ module.exports = {
                 .setTitle('Not time yet')
                 .setColor(Colors.GOLD)
                 .setDescription([`Sorry, ${util.fixNameFormat(message.member.displayName)}, it hasn't been 23 hours yet since you last claimed your daily reward.`,
-                    `You last claimed it at ${new Date(whenClaimed)}`,
-                    `You can claim it again on ${new Date(whenClaimed + 82800000)}`])
+                    `You need to wait ${util.toFormattedTime(whenClaimed + 82800000 - Date.now())}.`
+                    ])
+                .addField('Additional Info', [`You last claimed it at ${new Date(whenClaimed)}`,
+                `You can claim it again on ${new Date(whenClaimed + 82800000)}`])
                 .setThumbnail(message.author.displayAvatarURL({ dynamic: true }))
                 .setFooter(`This message will automatically be deleted in ${config.longer_delete_delay / 1000} seconds.`), config.longer_delete_delay);
             util.safeDelete(message);

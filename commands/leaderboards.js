@@ -41,6 +41,8 @@ module.exports = {
                     keyword = 'time_spent_in_vc';
                 } else if (args[0].toLowerCase() === 'messages') {
                     keyword = 'participating_messages';
+                } else if (args[0].toLowerCase() === 'streaks') {
+                    keyword = 'daily_rewards_streak';
                 } else {
                     keyword = args[0].toLowerCase();
                 }
@@ -75,7 +77,7 @@ module.exports = {
                         if (isTime) {
                             pointBoard += `${guildMember.displayName}: ${util.toFormattedTime((guildStats[userIDs][keyword] || 0))}`
                         } else {
-                            pointBoard += `${guildMember.displayName}: ${(guildStats[userIDs][keyword] || 0).toString().replace(/\B(?=(\d{3})+(?!\d))/g, ",")} ${(keyword === 'points' || keyword === 'participating_messages') ? (keyword === 'points' ? 'pts' : (guildStats[userIDs][keyword] === 1 ? 'msg' : 'msgs')) : keyword}`;
+                            pointBoard += `${guildMember.displayName}: ${(guildStats[userIDs][keyword] || 0).toString().replace(/\B(?=(\d{3})+(?!\d))/g, ",")} ${(keyword === 'points' || keyword === 'participating_messages') ? (keyword === 'points' ? 'pts' : (guildStats[userIDs][keyword] === 1 ? 'msg' : 'msgs')) : (keyword === 'daily_rewards_streak' ? 'streak' : keyword)}`;
                         }
                     }
                     if (userIDs === message.author.id) {
