@@ -9,7 +9,7 @@ const statNames = ["points", "tickets", "coins"];
 
 module.exports = {
     name: ['removestats', 'removepoints'],
-    description: "Removes a user's points. Requires ADMINISTRATOR.",
+    description: "Removes a user's points. Requires KICK_MEMBERS.",
     usage: `<user/everyone> <points-to-remove/all> <${getAllowedInputs()}> (optional: delete entry: true/false)`,
     requiredPermissions: 'KICK_MEMBERS',
 

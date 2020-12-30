@@ -7,11 +7,19 @@ const Discord = require('discord.js');
 
 module.exports = {
     name: ['giveaway'],
-    description: "Randomly selects 3 unique winners from everyone who has tickets. Requires ADMINISTRATOR.",
-    usage: ``,
-    requiredPermissions: 'ADMINISTRATOR',
+    description: "Randomly selects some unique winners from everyone who has tickets. Default: 3 winners. Requires MANAGE_GUILD.",
+    usage: `(optional: number of winners)`,
+    requiredPermissions: 'MANAGE_GUILD',
 
     execute(bot, message, args) {
+        let numberOfWinners = 3;
+        if (args[0]) {
+            if (/^-?\d+$/.test(args[0])) {
+                numberOfWinners = parseInt(args[0]);
+            } else {
+                throw 'Invalid quantity';
+            }
+        }
         var allStats = {};
         const fileLocation = `${config.resources_folder_file_path}stats.json`;
 
@@ -34,7 +42,7 @@ module.exports = {
         });
 
         try {
-            for (let i = 0; i < 3; i++) {
+            for (let i = 0; i < numberOfWinners; i++) {
                 let totalTickets = 1;
                 for (var userIDs of guildMemberIDs) {
                     if (!winners || !winners.includes(userIDs)) {
@@ -43,12 +51,15 @@ module.exports = {
 
                     if (toDo && guildStats[userIDs].tickets) {
                         participantCounter++;
-                        participants += `${util.getUserFromMention(message, userIDs).displayName}: ${guildStats[userIDs].tickets}\n`
+                        participants += `${util.getUserFromMention(message, userIDs)}: ${guildStats[userIDs].tickets}\n`
                     }
                 }
 
-                if (participantCounter < 3) {
-                    util.sendMessage(message.channel, `There are not enough participants to run the giveaway.\nHere is the participant list:\n${participants ? util.fixNameFormat(participants) : '_There are no participants._'}`);
+                if (participantCounter < numberOfWinners) {
+                    util.sendMessage(message.channel, new Discord.MessageEmbed()
+                    .setTitle('Unfortunately...')
+                    .setDescription(`There are not enough participants to run the giveaway. There are only ${participantCounter} participants, but ${numberOfWinners} are required.\nHere is the participant list:\n${participants ? util.fixNameFormat(participants) : '_There are no participants._'}`)
+                    .setTimestamp());
                     return;
                 }
 
@@ -72,17 +83,38 @@ module.exports = {
         } catch (e) {
             console.log(e);
         }
-    
-        let winner1 = util.getUserFromMention(message, winners[0]);
-        let winner2 = util.getUserFromMention(message, winners[1]);
-        let winner3 = util.getUserFromMention(message, winners[2]);
+
+        let winnerDescription = [];
+
+        for (let i = 1; i <= winners.length; i++) {
+            winnerDescription.push(`${ordinalSuffix(i)} Place: ${util.getUserFromMention(message, winners[i - 1])}`)
+        }
         
         util.sendMessage(message.channel, new Discord.MessageEmbed()
             .setColor(Colors.DARK_GREEN)
             .setTitle('And the winner is...')
-            .setDescription(`1st Place: ${util.fixNameFormat(winner1.displayName)}\n2nd Place: ${util.fixNameFormat(winner2.displayName)}\n3rd Place: ${util.fixNameFormat(winner3.displayName)}`)
+            .setDescription(winnerDescription)
             .addField('Participants:', util.fixNameFormat(participants))
             .setFooter(`Held on ${new Date(Date.now())}`)
         );
+    }
+}
+
+/**
+ * Appends the ordinal suffix to the number.
+ * @param {number} number the number whose suffix you want.
+ * @returns {string} the number with the ordinal suffix attached. 
+ */
+function ordinalSuffix(number) {
+    let ones = number % 10;
+    let exceptions = number % 100;
+    if (ones == 1 && exceptions != 11) {
+        return number + 'st';
+    } else if (ones == 2 && exceptions != 12) {
+        return number + 'nd';
+    } else if (ones == 3 && exceptions != 13) {
+        return number + 'rd';
+    } else {
+        return number + 'th';
     }
 }

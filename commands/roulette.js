@@ -7,7 +7,7 @@ const config = require('../config.json');
 
 const ROULETTE_COLORS = [":green_circle:", ":red_circle:", ":black_circle:"];
 const GREEN_MULTIPLIER = 7;
-const BETS = ["even", "odd", "low", "high", "red", "black", "green"];
+const BETS = ["even", "odd", "low", "high", "red", "black", "green", "column1", "column2", "column3", "dozen1", "dozen2", "dozen3"];
 
 module.exports = {
     name: ["roulette"],
@@ -79,6 +79,18 @@ module.exports = {
             return (getRouletteColor(randNumb) === ROULETTE_COLORS[1]) ? 1 : 0;
         case "black":
             return (getRouletteColor(randNumb) === ROULETTE_COLORS[2]) ? 1 : 0;
+        case "column1":
+            return (((randNumb - 1) % 3) === 0) ? 2 : 0; // 1, 4, 7, ..., 31, 34
+        case "column2":
+            return (((randNumb - 2) % 3) === 0) ? 2 : 0; // 2, 5, 8, ..., 32, 35
+        case "column3":
+            return ((randNumb % 3) === 0) ? 2 : 0; // 3, 6, 9, ..., 33, 36
+        case "dozen1":
+            return (1 <= randNumb && randNumb <= 12) ? 2 : 0; // 1-12
+        case "dozen2":
+            return (13 <= randNumb && randNumb <= 24) ? 2 : 0; // 13-24
+        case "dozen3":
+            return (25 <= randNumb && randNumb <= 36) ? 2 : 0; // 25-36
         default:
             throw `Invalid bet!\nValid bets: \`${BETS.join('`/`')}\``;
     }
@@ -97,11 +109,12 @@ makeEmbed = (message, randNumb, lookingFor, SelectedCoins, oldCoins, newCoins) =
         .setTitle(`${message.member.displayName} has played roulette!`)
         .setDescription(`${util.addCommas(Math.abs(Math.round((newCoins - oldCoins) * 100) / 100))} coin${Math.abs(Math.round((newCoins - oldCoins) * 100) / 100) === 1 ? '' : 's'} ha${Math.abs(Math.round((newCoins - oldCoins) * 100) / 100) === 1 ? 's' : 've'} been ${oldCoins > newCoins ? 'taken away for losing.' : 'awarded for winning!'}`)
         .addField('Additional Info', [`Bet: ${util.addCommas(SelectedCoins)} coins`,
-                `Guess: ${lookingFor}`,
-                `Result: ${getRouletteColor(randNumb)} Number rolled: ${randNumb === 37 ? '00' : randNumb}`,
+                `Guess: ${lookingFor} (${getDescription(lookingFor)})`,
+                `Result: ${getRouletteColor(randNumb)} ${randNumb === 37 ? '00' : randNumb}`,
                 `Coins: ${util.addCommas(oldCoins)} » ${util.addCommas(newCoins)}`
             ])
         .setColor(Colors.BLUE)
+        .setTimestamp()
         .setThumbnail(target.user.displayAvatarURL({ dynamic: true }));
 };
 
@@ -160,3 +173,37 @@ getRouletteColor = (randNumb) => {
 isEven = (number) => {
     return number % 2 === 0;
 };
+
+getDescription = (lookingFor) => {
+    lookingFor = lookingFor.toLowerCase();
+    switch (lookingFor) {
+        case "green":
+            return "0 or 00";
+        case "even":
+            return "2, 4, 6, ..., 34, 36. 0 and 00 are not even nor odd.";
+        case "odd":
+            return "1, 3, 5, ..., 33, 35. 0 and 00 are not even nor odd.";
+        case "high":
+            return "19-36";
+        case "low":
+            return "1-18";
+        case "red":
+            return "1-10 and 19-28, odd is red. 11-18 and 29-36, even is red"
+        case "black":
+            return "1-10 and 19-28, even is black. 11-18 and 29-36, odd is black.";
+        case "column1":
+            return "1, 4, 7, ..., 31, 34";
+        case "column2":
+            return "2, 5, 8, ..., 32, 35";
+        case "column3":
+            return "3, 6, 9, ..., 33, 36";
+        case "dozen1":
+            return "1-12";
+        case "dozen2":
+            return "13-24";
+        case "dozen3":
+            return "25-36";
+        default:
+            throw `Invalid bet!\nValid bets: \`${BETS.join('`/`')}\``;
+    }
+}

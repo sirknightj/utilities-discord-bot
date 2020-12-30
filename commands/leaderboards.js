@@ -77,7 +77,7 @@ module.exports = {
                         if (isTime) {
                             pointBoard += `${guildMember.displayName}: ${util.toFormattedTime((guildStats[userIDs][keyword] || 0))}`
                         } else {
-                            pointBoard += `${guildMember.displayName}: ${(guildStats[userIDs][keyword] || 0).toString().replace(/\B(?=(\d{3})+(?!\d))/g, ",")} ${(keyword === 'points' || keyword === 'participating_messages') ? (keyword === 'points' ? 'pts' : (guildStats[userIDs][keyword] === 1 ? 'msg' : 'msgs')) : (keyword === 'daily_rewards_streak' ? 'streak' : keyword)}`;
+                            pointBoard += `${guildMember.displayName}: ${util.addCommas(guildStats[userIDs][keyword] || 0)} ${(keyword === 'points' || keyword === 'participating_messages') ? (keyword === 'points' ? 'pts' : (guildStats[userIDs][keyword] === 1 ? 'msg' : 'msgs')) : (keyword === 'daily_rewards_streak' ? 'streak' : keyword)}`;
                         }
                     }
                     if (userIDs === message.author.id) {

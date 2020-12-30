@@ -21,7 +21,7 @@ module.exports = {
         }
 
         let quantity = 1;
-        if (/^-?\d+$/.test(args[2])) {
+        if (/^\d+$/.test(args[2])) {
             quantity = parseInt(args[2]);
         } else if (args[2] && args[2].toLowerCase() !== 'all') {
             util.safeDelete(message);
@@ -41,10 +41,10 @@ module.exports = {
             if (purchase && args[2] && typeof (args[2]) === 'string' && args[2].toLowerCase() === 'all') {
                 quantity = Math.floor(coinBalance / config.shop_ticket_cost);
             } else if (!purchase && typeof (args[2]) === 'string' && args[2].toLowerCase() === 'all') {
-                quantity = util.getStats(message, message.member, args[1]);
+                quantity = util.getStats(message, message.member, 'tickets');
                 if (!quantity) {
                     util.safeDelete(message);
-                    util.sendTimedMessage(message.channel, `You don't have any ${args[1]} to refund.`);
+                    util.sendTimedMessage(message.channel, `You don't have any tickets to refund.`);
                     return;
                 }
             }
@@ -59,12 +59,17 @@ module.exports = {
                     let coinResult = util.addStats(message, message.member, -cost, 'coins');
                     sendShopEmbed(message, ticketResult.oldPoints, ticketResult.newPoints, 'tickets', purchase, coinResult.oldPoints, coinResult.newPoints, 'coins');
                 } else if (!purchase) {
+                    if (quantity > util.getStats(message, message.member, 'tickets')) {
+                        util.safeDelete(message);
+                        util.sendTimedMessage(message.channel, `Sorry ${util.fixNameFormat(message.member.displayName)}, you don't have that many tickets.\nYou only have ${util.getStats(message, message.member, 'tickets')}.`);
+                        return;
+                    }
                     let ticketResult = util.addStats(message, message.member, -quantity, 'tickets');
                     let coinResult = util.addStats(message, message.member, cost, 'coins');
                     sendShopEmbed(message, ticketResult.oldPoints, ticketResult.newPoints, 'tickets', purchase, coinResult.oldPoints, coinResult.newPoints, 'coins');
                 } else {
                     util.safeDelete(message);
-                    util.sendTimedMessage(message.channel, `Sorry ${message.member.displayName}, you don't have enough coins to purchase this item. It costs ${cost} coin${addS(cost)} to purchase ${quantity} ticket${addS(quantity)}, and you only have ${coinBalance} coin${addS(coinBalance)}.`);
+                    util.sendTimedMessage(message.channel, `Sorry ${util.fixNameFormat(message.member.displayName)}, you don't have enough coins to purchase this item. It costs ${cost} coin${addS(cost)} to purchase ${quantity} ticket${addS(quantity)}, and you only have ${coinBalance} coin${addS(coinBalance)}.`);
                 }
             } else {
                 throw 'Invalid argument.';
@@ -93,10 +98,10 @@ function getAllowedInputs() {
  */
 function sendShopEmbed(message, oldPoints, newPoints, stat, purchase, oldPoints2, newPoints2, stat2) {
 
-    let additionalInfo = [`${util.capitalizeFirstLetter(stat)} ${util.addCommas(oldPoints)} » ${util.addCommas(newPoints)}`];
+    let additionalInfo = [`${util.capitalizeFirstLetter(stat)}: ${util.addCommas(oldPoints)} » ${util.addCommas(newPoints)}`];
 
     if (stat2) {
-        additionalInfo.push(`${util.capitalizeFirstLetter(stat)} ${util.addCommas(oldPoints2)} » ${util.addCommas(newPoints2)}`);
+        additionalInfo.push(`${util.capitalizeFirstLetter(stat2)}: ${util.addCommas(oldPoints2)} » ${util.addCommas(newPoints2)}`);
     }
 
     let logChannel = util.getLogChannel(message);
