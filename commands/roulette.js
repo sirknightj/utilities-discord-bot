@@ -99,8 +99,8 @@ makeEmbed = (message, randNumb, lookingFor, SelectedCoins, oldCoins, newCoins) =
         .addField('Additional Info', [`Bet: ${util.addCommas(SelectedCoins)} coins`,
                 `Guess: ${lookingFor}`,
                 `Result: ${getRouletteColor(randNumb)} Number rolled: ${randNumb === 37 ? '00' : randNumb}`,
-                `Previous coins: ${util.addCommas(oldCoins)}`,
-                `New coins: ${util.addCommas(newCoins)}`])
+                `Coins: ${util.addCommas(oldCoins)} » ${util.addCommas(newCoins)}`
+            ])
         .setColor(Colors.BLUE)
         .setThumbnail(target.user.displayAvatarURL({ dynamic: true }));
 };

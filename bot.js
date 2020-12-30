@@ -258,10 +258,9 @@ bot.on('message', message => {
                         .setAuthor(message.member.displayName, message.author.displayAvatarURL({ dynamic: true }))
                         .setDescription(`${bot.user.username} (bot) manually awarded ${target.displayName} ${pointsToEarn} points and ${pointsToEarn} coins for ${keyword}!`)
                         .addField('Additional Info', [
-                            `Before: ${util.addCommas(result.oldPoints)} points`,
-                            `After: ${util.addCommas(result.newPoints)} points`,
-                            `Before: ${util.addCommas(coinResult.oldPoints)} coins`,
-                            `After: ${util.addCommas(coinResult.newPoints)} coins`,
+                            `Points: ${util.addCommas(result.oldPoints)} » ${util.addCommas(result.newPoints)}`,
+                            `Coins: ${util.addCommas(coinResult.oldPoints)} » ${util.addCommas(coinResult.newPoints)}`,
+                            `${util.capitalizeFirstLetter(keyword)}: ${util.addCommas(result.oldReason)} » ${util.addCommas(result.newReason)}`,
                             `Date Awarded: ${new Date(Date.now())}`
                         ]));
                 } else {
@@ -365,13 +364,11 @@ bot.on('voiceStateUpdate', async (oldState, newState) => {
                 .setTitle("Earned Points")
                 .setAuthor(target.displayName, target.user.displayAvatarURL({ dynamic: true }))
                 .setDescription(`Awarded ${target.displayName} ${util.addCommas(pointsToAdd)} points and ${util.addCommas(pointsToAdd)} coins for being in a VC for ${util.addCommas(Math.floor(minutesSpent / 60))}h ${minutesSpent % 60}m ${secondsSpent % 60}s.`)
-                .addField('Timestamps', [
+                .addField('Additional Info', [
                     `Joined: ${new Date(userStats.vc_session_started)}`,
                     `Left: ${new Date(now)}`,
-                    `Before: ${util.addCommas(beforePoints)} points`,
-                    `Now: ${util.addCommas(userStats.points)} points`,
-                    `Before: ${util.addCommas(previousCoins)} coins`,
-                    `Now: ${util.addCommas(userStats.coins)} coins`
+                    `Points: ${util.addCommas(beforePoints)} » ${util.addCommas(userStats.points)}`,
+                    `Coins: ${util.addCommas(previousCoins)} » ${util.addCommas(userStats.coins)}`
                 ]));
             userStats.vc_session_started = 0;
         }
@@ -551,13 +548,11 @@ function manageStats(message) {
             .setTitle("Earned Points")
             .setAuthor(target.displayName, target.user.displayAvatarURL({ dynamic: true }))
             .setDescription(`Awarded ${target.displayName} ${pointsToAdd} points and ${pointsToAdd} coins for sending a message in the Discord.`)
-            .addField('Timestamps', [
-                `Date Awarded: ${new Date(Date.now())}`,
-                `Before: ${util.addCommas(previousPoints)} points`,
-                `Now: ${util.addCommas(userStats.points)} points`,
-                `Before: ${util.addCommas(previousCoins)} coins`,
-                `Now: ${util.addCommas(userStats.coins)} coins`
-            ]));
+            .addField('Additional Info', [
+                `Points: ${util.addCommas(previousPoints)} » ${util.addCommas(userStats.points)}`,
+                `Coins: ${util.addCommas(previousCoins)} » ${util.addCommas(userStats.coins)}`
+            ])
+            .setTimestamp());
         if (!userStats.participating_messages) {
             userStats.participating_messages = 0;
         }

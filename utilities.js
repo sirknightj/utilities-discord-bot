@@ -142,10 +142,10 @@ module.exports = {
      * @returns {Discord.Role} the role lookingFor represents. Null or undefined if not found, or invalid.
      */
     getRoleFromMention: function (message, lookingFor) {
-        if(!message || !lookingFor) {
+        if (!message || !lookingFor) {
             return;
         }
-        
+
         // First, we check if a role ID was directly inputted.
         let role = message.guild.roles.cache.get(lookingFor);
 
@@ -299,10 +299,19 @@ module.exports = {
         message.channel.send(`Updated ${target.displayName}'s points from ${oldStats} to ${guildStats[target.user.id].points}.`)
             .then(msg => msg.delete({ timeout: (config.delete_delay) })
                 .catch(error => channel.send(`Error: ${error}`)));
-        return {
-            oldPoints: Math.round(oldStats * 100) / 100,
-            newPoints: Math.round(guildStats[target.user.id].points * 100) / 100
-        };
+        if (reason) {
+            return {
+                oldPoints: Math.round(oldStats * 100) / 100,
+                newPoints: Math.round(guildStats[target.user.id].points * 100) / 100,
+                oldReason: Math.round((guildStats[target.user.id][reason] - 1) * 100) / 100,
+                newReason: Math.round(guildStats[target.user.id][reason])
+            };
+        } else {
+            return {
+                oldPoints: Math.round(oldStats * 100) / 100,
+                newPoints: Math.round(guildStats[target.user.id].points * 100) / 100
+            }
+        }
     },
 
     /**
@@ -486,7 +495,7 @@ module.exports = {
     },
 
     /**
-     * Returns the time in '__h __m __s' format.
+     * Returns the time in '__d __h __m __s' format.
      * @param {number} milliseconds 
      */
     toFormattedTime: function (milliseconds) {
@@ -516,7 +525,7 @@ module.exports = {
     /**
      * Adds commas to a number. For example: 100000.0001 becomes 100,000.0001
      * @param {number} number the number to be formatted.
-     * @returns {string} the properly-formatted number.
+     * @returns {string} the properly-formatted number. 0 if not a number.
      */
     addCommas: function (number) {
         if (!number) {
@@ -532,8 +541,8 @@ module.exports = {
      * @returns {string}
      */
     fixNameFormat: function (name) {
-        if (typeof(name) === 'string') {
-            let charsToReplace = {'_':"\\_","`":"\\`","*":"\\*"}
+        if (typeof (name) === 'string') {
+            let charsToReplace = { '_': "\\_", "`": "\\`", "*": "\\*" }
             return name.replace(/[_`*]/g, char => charsToReplace[char]);
         }
         return name;

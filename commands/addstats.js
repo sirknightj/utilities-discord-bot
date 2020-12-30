@@ -11,7 +11,7 @@ module.exports = {
     name: ['addstats', 'addpoints'],
     description: "Adds to a user's points. Requires ADMINISTRATOR.",
     usage: `<user> <points-to-add> <${getAllowedInputs()}>`,
-    requiredPermissions: 'ADMINISTRATOR',
+    requiredPermissions: 'KICK_MEMBERS',
 
     execute(bot, message, args) {
         let statName = args.pop();
@@ -41,17 +41,18 @@ module.exports = {
         try {
             let result = util.addStats(message, target, pointsToAdd, statName);
 
-            util.sendMessage(util.getLogChannel(message), new Discord.MessageEmbed()
-                .setColor(Colors.GOLD)
-                .setTitle(`Manually Awarded ${statName}`)
-                .setAuthor(target.displayName, target.user.displayAvatarURL({ dynamic: true }))
-                .setDescription(`${message.member.displayName}${message.author.bot ? " (bot)" : ""} manually awarded ${target.displayName} ${util.addCommas(pointsToAdd)} ${statName}!`)
-                .addField('Additional Info', [
-                    `Before: ${result.oldPoints} ${statName}`,
-                    `After: ${result.newPoints} ${statName}`,
-                    `Date Awarded: ${new Date(Date.now())}`
-                ]));
+            const embed = new Discord.MessageEmbed()
+            .setColor(Colors.GOLD)
+            .setTitle(`Manually Awarded ${statName}`)
+            .setAuthor(target.displayName, target.user.displayAvatarURL({ dynamic: true }))
+            .setThumbnail(message.member.user.displayAvatarURL({ dynamic: true }))
+            .setDescription(`${util.fixNameFormat(message.member.displayName)}${message.author.bot ? " (bot)" : ""} manually awarded ${util.fixNameFormat(target.displayName)} ${util.addCommas(pointsToAdd)} ${statName}!`)
+            .addField('Additional Info', `${util.capitalizeFirstLetter(statName)}: ${util.addCommas(result.oldPoints)} » ${util.addCommas(result.newPoints)}`)
+            .setTimestamp();
+
+            util.sendMessage(util.getLogChannel(message), embed);
             util.sendMessage(message.channel, "Done.");
+            util.sendTimedMessage(message.channel, embed.setFooter(`This messsage will automatically be deleted in ${config.longer_delete_delay / 1000} seconds.`), config.longer_delete_delay);
         } catch (err) {
             util.sendTimedMessage(message.channel, "Error fetching stats.json.")
             console.log(err);

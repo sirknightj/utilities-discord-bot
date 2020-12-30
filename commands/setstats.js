@@ -7,7 +7,7 @@ module.exports = {
     name: ['setpoints', 'setstats'],
     description: "Sets a user's points. Requires ADMINISTRATOR.",
     usage: `<user> <new point number>`,
-    requiredPermissions: 'ADMINISTRATOR',
+    requiredPermissions: 'MANAGE_GUILD',
 
     execute(bot, message, args) {
         let newPointNumber = parseInt(args.pop());

@@ -6,7 +6,7 @@ const Discord = require('discord.js');
 const Colors = require('../resources/colors.json');
 
 module.exports = {
-    name: ['leaderboards', 'leaderboard', 'pointtotals'],
+    name: ['leaderboards', 'leaderboard', 'scoreboard', 'pointtotals'],
     description: 'Gives the full list of points.',
     usage: `(optional: ${getAllowedInputs()})`,
 

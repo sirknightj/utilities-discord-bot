@@ -11,7 +11,7 @@ module.exports = {
     name: ['removestats', 'removepoints'],
     description: "Removes a user's points. Requires ADMINISTRATOR.",
     usage: `<user/everyone> <points-to-remove/all> <${getAllowedInputs()}> (optional: delete entry: true/false)`,
-    requiredPermissions: 'ADMINISTRATOR',
+    requiredPermissions: 'KICK_MEMBERS',
 
     execute(bot, message, args) {
         let statName = args.pop();
@@ -91,14 +91,14 @@ module.exports = {
                 for (userID of sortedArray) {
                     if (guildStats[userID][statName]) {
                         if (deleteEntry) {
-                            logs += `${util.getUserFromMention(message, userID).displayName} » Before: ${util.addCommas(guildStats[userID][statName])}, After: Wiped\n`;
+                            logs += `${util.getUserFromMention(message, userID).displayName}: ${util.addCommas(guildStats[userID][statName])} » Wiped\n`;
                             delete guildStats[userID][statName];
                         } else if (removeAllPoints) {
-                            logs += `${util.getUserFromMention(message, userID).displayName} » Before: ${util.addCommas(guildStats[userID][statName])}, After: 0\n`;
+                            logs += `${util.getUserFromMention(message, userID).displayName}: ${util.addCommas(guildStats[userID][statName])} » 0\n`;
                             guildStats[userID][statName] = 0;
                         } else {
                             let newPoints = Math.round((guildStats[userID][statName] - pointsToRemove) * 100) / 100;
-                            logs += `${util.getUserFromMention(message, userID).displayName} » Before: ${util.addCommas(guildStats[userID][statName])}, After: ${newPoints < 0 ? 0 : util.addCommas(newPoints)}\n`;
+                            logs += `${util.getUserFromMention(message, userID).displayName}: ${util.addCommas(guildStats[userID][statName])} » ${newPoints < 0 ? 0 : util.addCommas(newPoints)}\n`;
                             guildStats[userID][statName] = newPoints < 0 ? 0 : newPoints;
                         }
                         if (!actionPerformed) {
@@ -108,10 +108,10 @@ module.exports = {
                     }
                     if (counter >= maxLogsPerMessage) {
                         util.sendMessage(util.getLogChannel(message), new Discord.MessageEmbed()
-                            .setTitle(`${statName.charAt(0).toUpperCase() + statName.slice(1)} Stats Modification`)
+                            .setTitle(`${util.capitalizeFirstLetter(statName)} Stats Modification`)
                             .setAuthor(message.member.displayName, message.member.user.displayAvatarURL({ dynamic: true }))
                             .setColor(Colors.RED_RED)
-                            .setDescription(`${message.member.displayName} has ${deleteEntry ? "deleted" : "removed"} ${removeAllPoints ? "all" : pointsToRemove} ${statName} from everyone!\n\n**${util.capitalizeFirstLetter(statName)} Transactions**\n${logs.replace(/_/g, '\\_')}`)
+                            .setDescription(`${util.fixNameFormat(message.member.displayName)} has ${deleteEntry ? "deleted" : "removed"} ${removeAllPoints ? "all" : pointsToRemove} ${statName} from everyone!\n\n**${util.capitalizeFirstLetter(statName)} Transactions**\n${util.fixNameFormat(logs)}`)
                             .setTimestamp());
                         counter = 0;
                         logs = "";
@@ -124,11 +124,10 @@ module.exports = {
                         .setTitle(`${statName.charAt(0).toUpperCase() + statName.slice(1)} Stats Modification`)
                         .setAuthor(message.member.displayName, message.member.user.displayAvatarURL({ dynamic: true }))
                         .setColor(Colors.RED_RED)
-                        .setDescription(`${message.member.displayName} has ${deleteEntry ? "deleted" : "removed"} ${removeAllPoints ? "all" : pointsToRemove} ${statName} from everyone!\n\n**${util.capitalizeFirstLetter(statName)} Transactions**\n${logs.replace(/_/g, '\\_')}`)
+                        .setDescription(`${util.fixNameFormat(message.member.displayName)} has ${deleteEntry ? "deleted" : "removed"} ${removeAllPoints ? "all" : pointsToRemove} ${statName} from everyone!\n\n**${util.capitalizeFirstLetter(statName)} Transactions**\n${logs.replace(/_/g, '\\_')}`)
                         .setTimestamp());
                     util.sendMessage(message.channel, "Done.");
                 }
-                jsonFile.writeFileSync(fileLocation, allStats);
             } else {
                 if (!target) {
                     util.sendTimedMessage(message.channel, `Error: Cannot find user ${args.join(' ')}`);
@@ -139,19 +138,27 @@ module.exports = {
                     throw "They don't have any of that stat.";
                 }
 
-                let result = util.addStats(message, target, -pointsToRemove, statName);
-                util.sendMessage(util.getLogChannel(message), new Discord.MessageEmbed()
-                    .setColor(Colors.GOLD)
-                    .setTitle(`Manually Revoked ${statName}`)
-                    .setAuthor(target.displayName, target.user.displayAvatarURL({ dynamic: true }))
-                    .setDescription(`${message.member.displayName}${message.author.bot ? " (bot)" : ""} manually took away ${util.addCommas(pointsToRemove)} ${statName} from ${target.displayName}!`)
-                    .addField('Additional Info', [
-                        `Before: ${result.oldPoints} ${statName}`,
-                        `After: ${result.newPoints} ${statName}`,
-                        `Date Revoked: ${new Date(Date.now())}`
-                    ]));
+                let oldPoints = guildStats[target.id][statName];
+                let newPoints = 0;
+                if (!removeAllPoints) {
+                    newPoints = Math.round((guildStats[target.id][statName] - pointsToRemove) * 100) / 100;
+                }
+                guildStats[target.id][statName] = newPoints;
+
+                const embed = new Discord.MessageEmbed()
+                .setColor(Colors.GOLD)
+                .setTitle(`Manually Revoked ${statName}`)
+                .setAuthor(target.displayName, target.user.displayAvatarURL({ dynamic: true }))
+                .setThumbnail(message.member.user.displayAvatarURL({ dynamic: true }))
+                .setDescription(`${util.fixNameFormat(message.member.displayName)}${message.author.bot ? " (bot)" : ""} manually took away ${util.addCommas(pointsToRemove)} ${statName} from ${util.fixNameFormat(target.displayName)}!`)
+                .addField('Additional Info', `${util.capitalizeFirstLetter(statName)}: ${util.addCommas(oldPoints)} » ${util.addCommas(newPoints)}`)
+                .setTimestamp();
+
+                util.sendMessage(util.getLogChannel(message), embed);
                 util.sendMessage(message.channel, "Done.");
+                util.sendTimedMessage(message.channel, embed.setFooter(`This message will automatically be deleted in ${config.longer_delete_delay / 1000} seconds.`), config.longer_delete_delay);
             }
+            jsonFile.writeFileSync(fileLocation, allStats);
         } catch (err) {
             util.sendTimedMessage(message.channel, "Error fetching stats.json.")
             console.log(err);
