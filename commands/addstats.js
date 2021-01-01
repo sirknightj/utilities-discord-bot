@@ -11,6 +11,7 @@ module.exports = {
     name: ['addstats', 'addpoints'],
     description: "Adds to a user's points. Requires KICK_MEMBERS.",
     usage: `<user> <points-to-add> <${getAllowedInputs()}>`,
+    requiresArgs: true,
     requiredPermissions: 'KICK_MEMBERS',
 
     execute(bot, message, args) {

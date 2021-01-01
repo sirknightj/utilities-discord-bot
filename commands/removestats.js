@@ -14,6 +14,10 @@ module.exports = {
     requiredPermissions: 'KICK_MEMBERS',
 
     execute(bot, message, args) {
+        if (args.length < 3) {
+            throw 'Not enough arguments.';
+        }
+        
         let statName = args.pop();
         let deleteEntry = false;
 
@@ -150,7 +154,7 @@ module.exports = {
                 .setTitle(`Manually Revoked ${statName}`)
                 .setAuthor(target.displayName, target.user.displayAvatarURL({ dynamic: true }))
                 .setThumbnail(message.member.user.displayAvatarURL({ dynamic: true }))
-                .setDescription(`${util.fixNameFormat(message.member.displayName)}${message.author.bot ? " (bot)" : ""} manually took away ${util.addCommas(pointsToRemove)} ${statName} from ${util.fixNameFormat(target.displayName)}!`)
+                .setDescription(`${util.fixNameFormat(message.member.displayName)}${message.author.bot ? " (bot)" : ""} manually took away ${removeAllPoints ? "all" : util.addCommas(pointsToRemove)} ${statName} from ${util.fixNameFormat(target.displayName)}!`)
                 .addField('Additional Info', `${util.capitalizeFirstLetter(statName)}: ${util.addCommas(oldPoints)} » ${util.addCommas(newPoints)}`)
                 .setTimestamp();
 

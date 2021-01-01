@@ -24,6 +24,9 @@ module.exports = {
             SelectedCoins = Math.floor(SelectedCoins * 100) / 100;
         } else if (args[0].toLowerCase() === 'all') {
             SelectedCoins = util.getStats(message, message.member, 'coins');
+            if (!SelectedCoins) {
+                throw 'You have no coins.';
+            }
         }
 
         if (!lookingFor) {

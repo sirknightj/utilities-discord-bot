@@ -298,7 +298,7 @@ module.exports = {
         jsonFile.writeFileSync(fileLocation, allStats);
         message.channel.send(`Updated ${target.displayName}'s points from ${oldStats} to ${guildStats[target.user.id].points}.`)
             .then(msg => msg.delete({ timeout: (config.delete_delay) })
-                .catch(error => channel.send(`Error: ${error}`)));
+                .catch(error => message.channel.send(`Error: ${error}`)));
         if (reason) {
             return {
                 oldPoints: Math.round(oldStats * 100) / 100,
