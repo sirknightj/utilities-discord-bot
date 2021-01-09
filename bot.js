@@ -28,7 +28,7 @@ for (command of fs.readdirSync('./commands').filter(file => file.endsWith('.js')
 }
 
 // Initializes the point map
-for (var i = 0; i < config.point_earnings.length; i++) {
+for (let i = 0; i < config.point_earnings.length; i++) {
     pointMap.set(config.point_earnings[i][0], config.point_earnings[i][1]);
 }
 

@@ -18,7 +18,15 @@ module.exports = {
         let statName = args.pop();
         statName = statName.toLowerCase();
 
-        if (!statNames.includes(statName)) {
+        let pointsAndCoinsToAdd = 0;
+        for (let i = 0; i < config.point_earnings.length; i++) {
+            if (statName === config.point_earnings[i][0]) {
+                pointsAndCoinsToAdd = config.point_earnings[i][1];
+                break;
+            }
+        }
+
+        if (!statNames.includes(statName) && !pointsAndCoinsToAdd) {
             throw 'Invalid stat name.';
         }
 
@@ -42,14 +50,23 @@ module.exports = {
         try {
             let result = util.addStats(message, target, pointsToAdd, statName);
 
+            let additionalInfo = [`${util.capitalizeFirstLetter(statName)}: ${util.addCommas(result.oldPoints)} » ${util.addCommas(result.newPoints)}`];
+
+            if (pointsAndCoinsToAdd) {
+                let pointResult = util.addStats(message, target, pointsAndCoinsToAdd * pointsToAdd, "points");
+                let coinResult = util.addStats(message, target, pointsAndCoinsToAdd * pointsToAdd, "coins");
+                additionalInfo.push(`Points: ${util.addCommas(pointResult.oldPoints)} » ${util.addCommas(util.addCommas(pointResult.newPoints))}`,
+                                    `Coins: ${util.addCommas(coinResult.oldPoints)} » ${util.addCommas(util.addCommas(coinResult.newPoints))}`);
+            }
+
             const embed = new Discord.MessageEmbed()
-            .setColor(Colors.GOLD)
-            .setTitle(`Manually Awarded ${statName}`)
-            .setAuthor(target.displayName, target.user.displayAvatarURL({ dynamic: true }))
-            .setThumbnail(message.member.user.displayAvatarURL({ dynamic: true }))
-            .setDescription(`${util.fixNameFormat(message.member.displayName)}${message.author.bot ? " (bot)" : ""} manually awarded ${util.fixNameFormat(target.displayName)} ${util.addCommas(pointsToAdd)} ${statName}!`)
-            .addField('Additional Info', `${util.capitalizeFirstLetter(statName)}: ${util.addCommas(result.oldPoints)} » ${util.addCommas(result.newPoints)}`)
-            .setTimestamp();
+                .setColor(Colors.GOLD)
+                .setTitle(`Manually Awarded ${statName}`)
+                .setAuthor(target.displayName, target.user.displayAvatarURL({ dynamic: true }))
+                .setThumbnail(message.member.user.displayAvatarURL({ dynamic: true }))
+                .setDescription(`${util.fixNameFormat(message.member.displayName)}${message.author.bot ? " (bot)" : ""} manually awarded ${util.fixNameFormat(target.displayName)} ${util.addCommas(pointsToAdd)} ${statName}!`)
+                .addField('Additional Info', additionalInfo)
+                .setTimestamp();
 
             util.sendMessage(util.getLogChannel(message), embed);
             util.sendMessage(message.channel, "Done.");

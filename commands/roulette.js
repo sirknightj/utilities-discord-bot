@@ -25,12 +25,13 @@ module.exports = {
         } else if (args[0].toLowerCase() === 'all') {
             SelectedCoins = util.getStats(message, message.member, 'coins');
             if (!SelectedCoins) {
-                throw 'You have no coins.';
+                util.sendMessage(message.channel, 'You have no coins.');
+                return;
             }
         }
 
         if (!lookingFor) {
-            throw 'No bet entered.';
+            throw 'No bet (guess) entered.';
         }
         if (SelectedCoins < 0) {
             throw 'Coins cannot be negative.';

@@ -17,7 +17,7 @@ module.exports = {
         if (args.length < 3) {
             throw 'Not enough arguments.';
         }
-        
+
         let statName = args.pop();
         let deleteEntry = false;
 
@@ -146,17 +146,38 @@ module.exports = {
                 let newPoints = 0;
                 if (!removeAllPoints) {
                     newPoints = Math.round((guildStats[target.id][statName] - pointsToRemove) * 100) / 100;
+                } else {
+                    pointsToRemove = guildStats[target.id][statName];
                 }
                 guildStats[target.id][statName] = newPoints;
 
+                additionalInfo = [`${util.capitalizeFirstLetter(statName)}: ${util.addCommas(oldPoints)} » ${util.addCommas(newPoints)}`];
+
+                let pointsAndCoinsToRemove = 0;
+                for (let i = 0; i < config.point_earnings.length; i++) {
+                    if (statName === config.point_earnings[i][0]) {
+                        pointsAndCoinsToRemove = config.point_earnings[i][1];
+                        break;
+                    }
+                }
+
+                if (pointsAndCoinsToRemove) {
+                    let prevPoints = guildStats[target.id]["points"];
+                    guildStats[target.id]["points"] = Math.round((prevPoints - pointsAndCoinsToRemove * pointsToRemove) * 100) / 100;
+                    let prevCoins = guildStats[target.id]["coins"];
+                    guildStats[target.id]["coins"] = Math.round((prevCoins - pointsAndCoinsToRemove * pointsToRemove) * 100) / 100;
+                    additionalInfo.push(`Points: ${util.addCommas(prevPoints)} » ${util.addCommas(guildStats[target.id]["points"])}`,
+                                        `Coins: ${util.addCommas(prevCoins)} » ${util.addCommas(guildStats[target.id]["coins"])}`);
+                }
+
                 const embed = new Discord.MessageEmbed()
-                .setColor(Colors.GOLD)
-                .setTitle(`Manually Revoked ${statName}`)
-                .setAuthor(target.displayName, target.user.displayAvatarURL({ dynamic: true }))
-                .setThumbnail(message.member.user.displayAvatarURL({ dynamic: true }))
-                .setDescription(`${util.fixNameFormat(message.member.displayName)}${message.author.bot ? " (bot)" : ""} manually took away ${removeAllPoints ? "all" : util.addCommas(pointsToRemove)} ${statName} from ${util.fixNameFormat(target.displayName)}!`)
-                .addField('Additional Info', `${util.capitalizeFirstLetter(statName)}: ${util.addCommas(oldPoints)} » ${util.addCommas(newPoints)}`)
-                .setTimestamp();
+                    .setColor(Colors.GOLD)
+                    .setTitle(`Manually Revoked ${statName}`)
+                    .setAuthor(target.displayName, target.user.displayAvatarURL({ dynamic: true }))
+                    .setThumbnail(message.member.user.displayAvatarURL({ dynamic: true }))
+                    .setDescription(`${util.fixNameFormat(message.member.displayName)}${message.author.bot ? " (bot)" : ""} manually took away ${removeAllPoints ? "all" : util.addCommas(pointsToRemove)} ${statName} from ${util.fixNameFormat(target.displayName)}!`)
+                    .addField('Additional Info', additionalInfo)
+                    .setTimestamp();
 
                 util.sendMessage(util.getLogChannel(message), embed);
                 util.sendMessage(message.channel, "Done.");
