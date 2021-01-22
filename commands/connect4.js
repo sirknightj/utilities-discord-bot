@@ -4,6 +4,7 @@ const Discord = require('discord.js');
 const Colors = require('../resources/colors.json');
 
 var spacing = ' '; // non-breaking space
+var gameActive;
 
 module.exports = {
     name: ["connect4", "4inarow", "connectfour"],
@@ -18,6 +19,11 @@ module.exports = {
         }
         if (!message.channel.permissionsFor(message.guild.me).has("MANAGE_MESSAGES")) {
             util.sendMessage(message.channel, `Missing required permission: 'MANAGE_MESSAGES'`);
+            return;
+        }
+        if (gameActive) {
+            util.safeDelete(message);
+            util.sendTimedMessage(message.channel, "Sorry, I can only handle one game at a time. Please wait until that finishes.");
             return;
         }
         spacing = ' ';
@@ -69,6 +75,11 @@ const reactions = ['', '1️⃣', '2️⃣', '3️⃣', '4️⃣', '5️⃣', '6
 const timeout = 60000; // 60 seconds
 
 startGame = (bot, channel, challenger, target) => {
+    if (gameActive) {
+        util.sendTimedMessage(message.channel, `Sorry ${util.fixNameFormat(challenger.displayName)} and ${util.fixNameFormat(target.displayName)}, I can only handle one game at a time. Please wait until that finishes.`);
+        return;
+    }
+    gameActive = true;
     const board = [];
     for (let i = 0; i < BOARD_HEIGHT * BOARD_WIDTH; i++) {
         board[i] = EMPTY_CELL;
@@ -107,6 +118,7 @@ nextTurn = (message, board, turn, challenger, target, previousMove) => {
                             .setDescription(`${PLAYER_ONE} ${challenger.displayName} vs. ${PLAYER_TWO} ${target.displayName}\n\n${boardToString(board)}\n${player.displayName} did not make a move within 60 seconds! They have lost!`)
                             .setColor(Colors.DARK_GREEN));
                         message.reactions.removeAll();
+                        gameActive = false;
                         return;
                     }
                     let column = reactions.findIndex(element => reaction.emoji.name === element); // 1 to BOARD_WIDTH
@@ -127,14 +139,24 @@ nextTurn = (message, board, turn, challenger, target, previousMove) => {
                                                 .setColor(Colors.DARK_GREEN))
                                         }, 7500);
                                     });
+                                    gameActive = false;
                                 return;
                             } else if (placed && tieCheck(board)) {
                                 message.edit(new Discord.MessageEmbed()
                                     .setTitle(`Connect 4 game ended!`)
                                     .setDescription(`${PLAYER_ONE} ${challenger.displayName} vs. ${PLAYER_TWO} ${target.displayName}\n\n${boardToString(board)}\n\nThe game ended in a draw!`)
                                     .setColor(Colors.DARK_GREEN))
-                                message.reactions.removeAll()
+                                message.reactions.removeAll();
+                                gameActive = false;
                                 return;
+                            }
+                            if (spacing.length === 1) {
+                                for (const emote of message.reactions.cache) {
+                                    let colNum = reactions.indexOf(emote[0])
+                                    if (colNum !== -1 && isColFull(board, colNum)) {
+                                        emote[1].remove();
+                                    }
+                                }
                             }
                             if (placed) {
                                 turn = !turn;
