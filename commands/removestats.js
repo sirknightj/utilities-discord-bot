@@ -172,7 +172,7 @@ module.exports = {
 
                 const embed = new Discord.MessageEmbed()
                     .setColor(Colors.GOLD)
-                    .setTitle(`Manually Revoked ${statName}`)
+                    .setTitle(`Manually Revoked ${util.capitalizeFirstLetter(statName)}`)
                     .setAuthor(target.displayName, target.user.displayAvatarURL({ dynamic: true }))
                     .setThumbnail(message.member.user.displayAvatarURL({ dynamic: true }))
                     .setDescription(`${util.fixNameFormat(message.member.displayName)}${message.author.bot ? " (bot)" : ""} manually took away ${removeAllPoints ? "all" : util.addCommas(pointsToRemove)} ${statName} from ${util.fixNameFormat(target.displayName)}!`)

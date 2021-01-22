@@ -538,7 +538,7 @@ module.exports = {
      * Adds the escape character before characters which indicate formatting.
      * Ex. all '_' with '\_'. Formatting codes included are '`', '*', and '_'. 
      * @param {string} name the name(s) to be formatted.
-     * @returns {string}
+     * @returns {string} the correctly-formatted name
      */
     fixNameFormat: function (name) {
         if (typeof (name) === 'string') {

@@ -61,7 +61,7 @@ module.exports = {
 
             const embed = new Discord.MessageEmbed()
                 .setColor(Colors.GOLD)
-                .setTitle(`Manually Awarded ${statName}`)
+                .setTitle(`Manually Awarded ${util.capitalizeFirstLetter(statName)}`)
                 .setAuthor(target.displayName, target.user.displayAvatarURL({ dynamic: true }))
                 .setThumbnail(message.member.user.displayAvatarURL({ dynamic: true }))
                 .setDescription(`${util.fixNameFormat(message.member.displayName)}${message.author.bot ? " (bot)" : ""} manually awarded ${util.fixNameFormat(target.displayName)} ${util.addCommas(pointsToAdd)} ${statName}!`)
