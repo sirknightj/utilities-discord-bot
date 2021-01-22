@@ -51,7 +51,7 @@ module.exports = {
 
                     if (toDo && guildStats[userIDs].tickets) {
                         participantCounter++;
-                        participants += `${util.getUserFromMention(message, userIDs)}: ${guildStats[userIDs].tickets}\n`
+                        participants += `${util.fixNameFormat(util.getUserFromMention(message, userIDs).displayName)}: ${guildStats[userIDs].tickets}\n`
                     }
                 }
 
@@ -87,14 +87,14 @@ module.exports = {
         let winnerDescription = [];
 
         for (let i = 1; i <= winners.length; i++) {
-            winnerDescription.push(`${ordinalSuffix(i)} Place: ${util.getUserFromMention(message, winners[i - 1])}`)
+            winnerDescription.push(`${ordinalSuffix(i)} Place: ${util.fixNameFormat(util.getUserFromMention(message, winners[i - 1]).displayName)}`);
         }
         
         util.sendMessage(message.channel, new Discord.MessageEmbed()
             .setColor(Colors.DARK_GREEN)
             .setTitle('And the winner is...')
             .setDescription(winnerDescription)
-            .addField('Participants:', util.fixNameFormat(participants))
+            .addField('Participants:', participants)
             .setFooter(`Held on ${new Date(Date.now())}`)
         );
     }
