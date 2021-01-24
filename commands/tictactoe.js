@@ -100,7 +100,7 @@ nextTTTTurn = (message, board, turn, challenger, target, previousMove) => {
                     if (!reaction) {
                         message.edit(new Discord.MessageEmbed()
                             .setTitle(`Tic Tac Toe game ended!`)
-                            .setDescription(`${TTT_PLAYER_ONE} ${challenger.displayName} vs. ${TTT_PLAYER_TWO} ${target.displayName}\n\n${TTTBoardToString(board)}\n${util.fixNameFormat(player.displayName)} did not make a move within 60 seconds!\n${util.fixNameFormat(player.displayName)} has lost tic tac toe! **YIKES**`)
+                            .setDescription(`${TTT_PLAYER_ONE} ${challenger.displayName} vs. ${TTT_PLAYER_TWO} ${target.displayName}\n\n${TTTBoardToString(board)}\n${util.fixNameFormat(player.displayName)} did not make a move within 60 seconds!\n${util.fixNameFormat(player.displayName)} has lost tic tac toe! **YIKES!**`)
                             .setColor(Colors.DARK_GREEN));
                         message.reactions.removeAll();
                         TTTGameActive = false;
