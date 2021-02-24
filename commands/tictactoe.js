@@ -26,7 +26,7 @@ module.exports = {
             return;
         }
         let challenger = message.member;
-        util.sendMessage(message.channel, `<@${target.id}>, ${challenger.displayName} challenges you to a game of tic tac toe! Do you accept?`)
+        util.sendMessage(message.channel, `<@${target.id}>, ${util.fixNameFormat(challenger.displayName)} challenges you to a game of tic tac toe! Do you accept?`)
             .then(message => {
                 message.react('✅')
                     .then(() => {
@@ -42,13 +42,13 @@ module.exports = {
                                 util.safeDelete(message);
                                 startTTTGame(bot, message.channel, challenger, target);
                             } else {
-                                util.sendMessage(message.channel, `${target.displayName} has declined your challenge.`);
+                                util.sendMessage(message.channel, `${util.fixNameFormat(target.displayName)} has declined your challenge.`);
                                 message.reactions.removeAll();
                             }
                         });
                         collector.on('end', collected => {
                             if (collected.size === 0) {
-                                util.sendMessage(message.channel, `${target.displayName} did not respond within 60 seconds. The tic tac toe game has been cancelled.`);
+                                util.sendMessage(message.channel, `${util.fixNameFormat(target.displayName)} did not respond within 60 seconds. The tic tac toe game has been cancelled.`);
                                 message.reactions.removeAll();
                             }
                         });
@@ -100,7 +100,7 @@ nextTTTTurn = (message, board, turn, challenger, target, previousMove) => {
                     if (!reaction) {
                         message.edit(new Discord.MessageEmbed()
                             .setTitle(`Tic Tac Toe game ended!`)
-                            .setDescription(`${TTT_PLAYER_ONE} ${challenger.displayName} vs. ${TTT_PLAYER_TWO} ${target.displayName}\n\n${TTTBoardToString(board)}\n${util.fixNameFormat(player.displayName)} did not make a move within 60 seconds!\n${util.fixNameFormat(player.displayName)} has lost tic tac toe! **YIKES!**`)
+                            .setDescription(`${TTT_PLAYER_ONE} ${util.fixNameFormat(challenger.displayName)} vs. ${TTT_PLAYER_TWO} ${util.fixNameFormat(target.displayName)}\n\n${TTTBoardToString(board)}\n${util.fixNameFormat(player.displayName)} did not make a move within 60 seconds!\n${util.fixNameFormat(player.displayName)} has lost tic tac toe! **YIKES!**`)
                             .setColor(Colors.DARK_GREEN));
                         message.reactions.removeAll();
                         TTTGameActive = false;
@@ -114,7 +114,7 @@ nextTTTTurn = (message, board, turn, challenger, target, previousMove) => {
                             if (placed && TTTWinnerCheck(board, column)) {
                                 message.edit(new Discord.MessageEmbed()
                                     .setTitle(`Tic Tac Toe game ended!`)
-                                    .setDescription(`${TTT_PLAYER_ONE} ${challenger.displayName} vs. ${TTT_PLAYER_TWO} ${target.displayName}\n\n${TTTBoardToString(board)}\n${util.fixNameFormat(turn ? target: challenger).displayName} has lost tic tac toe! **YIKES!**`)
+                                    .setDescription(`${TTT_PLAYER_ONE} ${util.fixNameFormat(challenger.displayName)} vs. ${TTT_PLAYER_TWO} ${util.fixNameFormat(target.displayName)}\n\n${TTTBoardToString(board)}\n${util.fixNameFormat((turn ? target: challenger).displayName)} has lost tic tac toe! **YIKES!**`)
                                     .setColor(Colors.DARK_GREEN))
                                 message.reactions.removeAll()
                                 TTTGameActive = false;
@@ -122,7 +122,7 @@ nextTTTTurn = (message, board, turn, challenger, target, previousMove) => {
                             } else if (placed && TTTTieCheck(board)) {
                                 message.edit(new Discord.MessageEmbed()
                                     .setTitle(`Tic Tac Toe game ended!`)
-                                    .setDescription(`${TTT_PLAYER_ONE} ${challenger.displayName} vs. ${TTT_PLAYER_TWO} ${target.displayName}\n\n${TTTBoardToString(board)}\nThe game ended in a draw!`)
+                                    .setDescription(`${TTT_PLAYER_ONE} ${util.fixNameFormat(challenger.displayName)} vs. ${TTT_PLAYER_TWO} ${util.fixNameFormat(target.displayName)}\n\n${TTTBoardToString(board)}\nThe game ended in a draw!`)
                                     .setColor(Colors.DARK_GREEN))
                                 message.reactions.removeAll();
                                 TTTGameActive = false;
@@ -130,9 +130,9 @@ nextTTTTurn = (message, board, turn, challenger, target, previousMove) => {
                             }
                             if (placed) {
                                 turn = !turn;
-                                nextTTTTurn(message, board, turn, challenger, target, `${piece} ${player.displayName} placed a piece in position ${reaction.emoji.name}.`);
+                                nextTTTTurn(message, board, turn, challenger, target, `${piece} ${util.fixNameFormat(player.displayName)} placed a piece in position ${reaction.emoji.name}.`);
                             } else {
-                                nextTTTTurn(message, board, turn, challenger, target, `${piece} ${player.displayName} attempted to place a piece in full position ${reaction.emoji.name}.`);
+                                nextTTTTurn(message, board, turn, challenger, target, `${piece} ${util.fixNameFormat(player.displayName)} attempted to place a piece in full position ${reaction.emoji.name}.`);
                             }
                         });
                 });
@@ -150,7 +150,7 @@ TTTGameEmbed = (board, piece, member, override, previousMove) => {
     return new Discord.MessageEmbed()
         .setTitle(`Playing Tic Tac Toe`)
         .setThumbnail(member ? member.user.displayAvatarURL({ dynamic: true }) : '')
-        .setDescription(override ? override : `${previousMove ? `${previousMove}\n` : ""}It is ${piece} ${member.displayName}'s turn.\n\n${TTTBoardToString(board)}`)
+        .setDescription(override ? override : `${previousMove ? `${previousMove}\n` : ""}It is ${piece} ${util.fixNameFormat(member.displayName)}'s turn.\n\n${TTTBoardToString(board)}`)
         .setColor(Colors.GREEN);
 }
 

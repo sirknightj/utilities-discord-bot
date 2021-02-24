@@ -33,7 +33,7 @@ module.exports = {
             }
         }
         let challenger = message.member;
-        util.sendMessage(message.channel, `<@${target.id}>, ${challenger.displayName} challenges you to a game of connect 4! Do you accept?`)
+        util.sendMessage(message.channel, `<@${target.id}>, ${util.fixNameFormat(challenger.displayName)} challenges you to a game of connect 4! Do you accept?`)
             .then(message => {
                 message.react('✅')
                     .then(() => {
@@ -49,13 +49,13 @@ module.exports = {
                                 util.safeDelete(message);
                                 startGame(bot, message.channel, challenger, target);
                             } else {
-                                util.sendMessage(message.channel, `${target.displayName} has declined your challenge.`);
+                                util.sendMessage(message.channel, `${util.fixNameFormat(target.displayName)} has declined your challenge.`);
                                 message.reactions.removeAll();
                             }
                         });
                         collector.on('end', collected => {
                             if (collected.size === 0) {
-                                util.sendMessage(message.channel, `${target.displayName} did not respond within 60 seconds. The connect 4 game has been cancelled.`);
+                                util.sendMessage(message.channel, `${util.fixNameFormat(target.displayName)} did not respond within 60 seconds. The connect 4 game has been cancelled.`);
                                 message.reactions.removeAll();
                             }
                         });
@@ -115,7 +115,7 @@ nextTurn = (message, board, turn, challenger, target, previousMove) => {
                     if (!reaction) {
                         message.edit(new Discord.MessageEmbed()
                             .setTitle(`Connect 4 game ended!`)
-                            .setDescription(`${PLAYER_ONE} ${challenger.displayName} vs. ${PLAYER_TWO} ${target.displayName}\n\n${boardToString(board)}\n${player.displayName} did not make a move within 60 seconds! They have lost!`)
+                            .setDescription(`${PLAYER_ONE} ${util.fixNameFormat(challenger.displayName)} vs. ${PLAYER_TWO} ${util.fixNameFormat(target.displayName)}\n\n${boardToString(board)}\n${util.fixNameFormat(player.displayName)} did not make a move within 60 seconds! They have lost!`)
                             .setColor(Colors.DARK_GREEN));
                         message.reactions.removeAll();
                         gameActive = false;
@@ -128,14 +128,14 @@ nextTurn = (message, board, turn, challenger, target, previousMove) => {
                             if (placed && winnerCheck(board, column)) {
                                 message.edit(new Discord.MessageEmbed()
                                     .setTitle(`Connect 4 game ended!`)
-                                    .setDescription(`${PLAYER_ONE} ${challenger.displayName} vs. ${PLAYER_TWO} ${target.displayName}\n\n${boardToString(board)}\n\n${piece} ${player.displayName} is the winner!`)
+                                    .setDescription(`${PLAYER_ONE} ${util.fixNameFormat(challenger.displayName)} vs. ${PLAYER_TWO} ${util.fixNameFormat(target.displayName)}\n\n${boardToString(board)}\n\n${piece} ${util.fixNameFormat(player.displayName)} is the winner!`)
                                     .setColor(Colors.DARK_GREEN))
                                 message.reactions.removeAll()
                                     .then(() => {
                                         setTimeout(() => {
                                             message.edit(new Discord.MessageEmbed()
                                                 .setTitle(`Connect 4 game ended!`)
-                                                .setDescription(`${PLAYER_ONE} ${challenger.displayName} vs. ${PLAYER_TWO} ${target.displayName}\n\n${boardToString(board, true)}\n\n${piece} ${player.displayName} is the winner!`)
+                                                .setDescription(`${PLAYER_ONE} ${util.fixNameFormat(challenger.displayName)} vs. ${PLAYER_TWO} ${util.fixNameFormat(target.displayName)}\n\n${boardToString(board, true)}\n\n${piece} ${util.fixNameFormat(player.displayName)} is the winner!`)
                                                 .setColor(Colors.DARK_GREEN))
                                         }, 7500);
                                     });
@@ -144,7 +144,7 @@ nextTurn = (message, board, turn, challenger, target, previousMove) => {
                             } else if (placed && tieCheck(board)) {
                                 message.edit(new Discord.MessageEmbed()
                                     .setTitle(`Connect 4 game ended!`)
-                                    .setDescription(`${PLAYER_ONE} ${challenger.displayName} vs. ${PLAYER_TWO} ${target.displayName}\n\n${boardToString(board)}\n\nThe game ended in a draw!`)
+                                    .setDescription(`${PLAYER_ONE} ${util.fixNameFormat(challenger.displayName)} vs. ${PLAYER_TWO} ${util.fixNameFormat(target.displayName)}\n\n${boardToString(board)}\n\nThe game ended in a draw!`)
                                     .setColor(Colors.DARK_GREEN))
                                 message.reactions.removeAll();
                                 gameActive = false;
@@ -160,9 +160,9 @@ nextTurn = (message, board, turn, challenger, target, previousMove) => {
                             }
                             if (placed) {
                                 turn = !turn;
-                                nextTurn(message, board, turn, challenger, target, `${piece} ${player.displayName} placed a piece in column ${reaction.emoji.name}.`);
+                                nextTurn(message, board, turn, challenger, target, `${piece} ${util.fixNameFormat(player.displayName)} placed a piece in column ${reaction.emoji.name}.`);
                             } else {
-                                nextTurn(message, board, turn, challenger, target, `${piece} ${player.displayName} attempted to place a piece in full column ${reaction.emoji.name}.`);
+                                nextTurn(message, board, turn, challenger, target, `${piece} ${util.fixNameFormat(player.displayName)} attempted to place a piece in full column ${reaction.emoji.name}.`);
                             }
                         });
                 });
@@ -180,7 +180,7 @@ gameEmbed = (board, piece, member, override, previousMove) => {
     return new Discord.MessageEmbed()
         .setTitle(`Playing Connect 4`)
         .setThumbnail(member ? member.user.displayAvatarURL({ dynamic: true }) : '')
-        .setDescription(override ? override : `${previousMove ? `${previousMove}\n` : ""}It is ${piece} ${member.displayName}'s turn.\n\n${boardToString(board)}\n${reactionsToString(reactions)}`)
+        .setDescription(override ? override : `${previousMove ? `${previousMove}\n` : ""}It is ${piece} ${util.fixNameFormat(member.displayName)}'s turn.\n\n${boardToString(board)}\n${reactionsToString(reactions)}`)
         .setColor(Colors.GREEN);
 }
 
@@ -216,6 +216,9 @@ boardToString = (board, replace) => {
     return result;
 }
 
+/**
+ * @returns {string} the column number display to be placed below the board
+ */
 reactionsToString = () => {
     let result = "";
     for (let i = 1; i <= BOARD_WIDTH; i++) {
@@ -227,7 +230,7 @@ reactionsToString = () => {
 /**
  * Puts the piece in the column.
  * @param {Array} board the board to be affected
- * @param {column} number the column number (1 to BOARD_WIDTH)
+ * @param {number} column the column number (1 to BOARD_WIDTH)
  * @param {String} piece the piece to put
  * @returns {boolean} true if the piece was successfully placed
  */
