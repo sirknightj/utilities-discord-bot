@@ -11,6 +11,14 @@ module.exports = {
     requiredPermissions: "CHANGE_NICKNAME",
 
     execute(bot, message, args) {
+        if (config.role_id_required_to_use_shop) {
+            if (!message.member.roles.cache.some(role => role.id === config.role_id_required_to_use_shop)) {
+                util.safeDelete(message);
+                util.sendTimedMessage(message.channel, `Sorry, you don't have the role required to use the shop.\nRequired role(s): \`${getRolesRequired(message)}\``);
+                return;
+            }
+        }
+
         let purchase = true;
         if (args[0].toLowerCase() !== 'purchase' && args[0].toLowerCase() !== 'refund') {
             throw 'First argument must be purchase';
@@ -128,4 +136,39 @@ function sendShopEmbed(message, oldPoints, newPoints, stat, purchase, oldPoints2
  */
 function addS(number) {
     return number === 1 ? '' : 's';
+}
+
+/**
+ * Gets and returns the name of the provided roles array or id.
+ * 
+ * @param {Discord.Message} message 
+ * @returns the role's names
+ */
+function getRolesRequired(message) {
+    if (Array.isArray(config.role_id_required_to_use_shop)) {
+        let result = [];
+        for (roleID of config.role_id_required_to_use_shop) {
+            result.push(getRoleName(message, roleID));
+        }
+        return result.join(', ');
+    } else if (config.role_id_required_to_use_shop) {
+        return getRoleName(message, config.role_id_required_to_use_shop);
+    }
+    return "Error. shop.js line 157."; // this should never happen
+}
+
+/**
+ * Gets and returns the name of the provided role id.
+ * 
+ * @param {Discord.Message} message any message sent within the guild
+ * @param {string} roleID the id of the role you want to get the name of
+ * @returns the role's name
+ */
+function getRoleName(message, roleID) {
+    let role = util.getRoleFromMention(message, roleID + "");
+    if (role) {
+        return role.name;
+    } else {
+        return 'Invalid role.';
+    }
 }

@@ -24,6 +24,7 @@
 
     "enable_shop": false,
     "shop_ticket_cost": 1000,
+    "role_id_required_to_use_shop": "000000000000000000",
 
     "enable_daily_rewards": true,
     "daily_reward_coin_amount": 50,
