@@ -12,7 +12,7 @@ const BETS = ["even", "odd", "low", "high", "red", "black", "green", "column1", 
 module.exports = {
     name: ["roulette"],
     description: "Spins the roulette wheel.",
-    usage: `<coins/all> <${BETS.join('/')}>`,
+    usage: `<coins/half/all> <${BETS.join('/')}>`,
     requiresArgs: true,
 
     execute(bot, message, args) {
@@ -28,6 +28,14 @@ module.exports = {
                 util.sendMessage(message.channel, 'You have no coins.');
                 return;
             }
+        } else if (args[0].toLowerCase() === 'half') {
+            SelectedCoins = util.getStats(message, message.member, 'coins');
+            if (!SelectedCoins) {
+                util.sendMessage(message.channel, 'You have no coins.');
+                return;
+            }
+            SelectedCoins /= 2;
+            SelectedCoins = Math.floor(SelectedCoins * 100) / 100;
         }
 
         if (!lookingFor) {
