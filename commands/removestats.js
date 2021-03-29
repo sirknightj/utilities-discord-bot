@@ -151,7 +151,11 @@ module.exports = {
                 }
                 guildStats[target.id][statName] = newPoints;
 
-                additionalInfo = [`${util.capitalizeFirstLetter(statName)}: ${util.addCommas(oldPoints)} » ${util.addCommas(newPoints)}`];
+                if (deleteEntry) {
+                    delete guildStats[target.id][statName];
+                }
+
+                additionalInfo = [`${util.capitalizeFirstLetter(statName)}: ${util.addCommas(oldPoints)} » ${util.addCommas(newPoints ? newPoints : 0)}`];
 
                 let pointsAndCoinsToRemove = 0;
                 for (let i = 0; i < config.point_earnings.length; i++) {

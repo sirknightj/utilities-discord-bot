@@ -42,6 +42,13 @@ if (typeof config.channel_ids_to_not_accept_commands_from === 'number') {
 bot.once('ready', () => {
     // bot.user.setStatus('invisible');
     console.log('online!');
+    setInterval(() => {
+        fs.copyFile(
+          `${config.resources_folder_file_path}stats.json`,
+          `${config.resources_folder_file_path}backup_stats.json`,
+          (err) => console.error
+        );
+      }, 1000 * 60 * 60); // 1 hour
 });
 
 bot.on('message', message => {
@@ -354,7 +361,9 @@ bot.on('voiceStateUpdate', async (oldState, newState) => {
             if (!userStats['time_spent_in_vc']) {
                 userStats['time_spent_in_vc'] = 0;
             }
+            let beforeTimeSpentInVC = userStats['time_spent_in_vc'];
             userStats['time_spent_in_vc'] += millisecondsSpent;
+            let nowTimeSpentInVC = userStats['time_spent_in_vc'];
 
             let previousCoins = userStats.coins ? userStats.coins : 0;
             userStats.coins = Math.round((userStats.coins + pointsToAdd) * 100) / 100;
@@ -368,7 +377,8 @@ bot.on('voiceStateUpdate', async (oldState, newState) => {
                     `Joined: ${new Date(userStats.vc_session_started)}`,
                     `Left: ${new Date(now)}`,
                     `Points: ${util.addCommas(beforePoints)} » ${util.addCommas(userStats.points)}`,
-                    `Coins: ${util.addCommas(previousCoins)} » ${util.addCommas(userStats.coins)}`
+                    `Coins: ${util.addCommas(previousCoins)} » ${util.addCommas(userStats.coins)}`,
+                    `Time Spent In VC: ${util.toFormattedTime(beforeTimeSpentInVC)} » ${util.toFormattedTime(nowTimeSpentInVC)}`
                 ]));
             userStats.vc_session_started = 0;
         }
@@ -543,6 +553,9 @@ function manageStats(message) {
         let previousCoins = userStats.coins ? userStats.coins : 0;
         userStats.coins = Math.round((previousCoins + pointsToAdd) * 100) / 100;
         userStats.last_message = Date.now();
+        if (!userStats.participating_messages) {
+            userStats.participating_messages = 0;
+        }
         util.sendMessage(logChannel, new Discord.MessageEmbed()
             .setColor(Colors.YELLOW)
             .setTitle("Earned Points")
@@ -550,12 +563,10 @@ function manageStats(message) {
             .setDescription(`Awarded ${target.displayName} ${pointsToAdd} points and ${pointsToAdd} coins for sending a message in the Discord.`)
             .addField('Additional Info', [
                 `Points: ${util.addCommas(previousPoints)} » ${util.addCommas(userStats.points)}`,
-                `Coins: ${util.addCommas(previousCoins)} » ${util.addCommas(userStats.coins)}`
+                `Coins: ${util.addCommas(previousCoins)} » ${util.addCommas(userStats.coins)}`,
+                `Messages: ${util.addCommas(userStats.participating_messages)} » ${util.addCommas(userStats.participating_messages + 1)}`
             ])
             .setTimestamp());
-        if (!userStats.participating_messages) {
-            userStats.participating_messages = 0;
-        }
         userStats.participating_messages++;
     }
 
