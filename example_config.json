@@ -49,7 +49,7 @@
     "default_bother_amount": 5,
     "bother_amount_limit": 10,
     "purge_limit": 100,
-    "delete_delay": 8000,
-    "longer_delete_delay": 30000,
+    "delete_delay": 20000,
+    "longer_delete_delay": 45000,
     "ghost_ping_limit": 100
 }

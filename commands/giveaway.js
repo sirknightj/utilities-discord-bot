@@ -31,10 +31,11 @@ module.exports = {
         }
 
         const guildStats = allStats[message.guild.id];
-        var winners = [];
-        var participants = "";
-        var participantCounter = 0;
+        let winners = [];
+        let participants = "";
+        let participantCounter = 0;
         let toDo = true;
+        let total = 0;
 
         let guildMemberIDs = Object.keys(guildStats);
         guildMemberIDs.sort((o1, o2) => {
@@ -62,8 +63,10 @@ module.exports = {
                     .setTimestamp());
                     return;
                 }
-
-                toDo = false;
+                if (toDo) {
+                    toDo = false;
+                    total = totalTickets;
+                }
 
                 const winnerThreshold = Math.floor(Math.random() * totalTickets);
 
@@ -94,7 +97,7 @@ module.exports = {
             .setColor(Colors.DARK_GREEN)
             .setTitle('And the winner is...')
             .setDescription(winnerDescription)
-            .addField('Participants:', participants)
+            .addField(`Participants (${total} total tickets):`, participants)
             .setFooter(`Held on ${new Date(Date.now())}`)
         );
     }
