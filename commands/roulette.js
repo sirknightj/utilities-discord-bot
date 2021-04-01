@@ -6,23 +6,20 @@ const util = require('../utilities');
 const config = require('../config.json');
 
 const ROULETTE_COLORS = [":green_circle:", ":red_circle:", ":black_circle:"];
-const GREEN_MULTIPLIER = 7;
+const GREEN_MULTIPLIER = 17;
 const BETS = ["even", "odd", "low", "high", "red", "black", "green", "column1", "column2", "column3", "dozen1", "dozen2", "dozen3"];
 
 module.exports = {
-    name: ["roulette"],
+    name: ["roulette", "r"],
     description: "Spins the roulette wheel.",
     usage: `<coins/half/all> <${BETS.join('/')}>`,
     requiresArgs: true,
 
     execute(bot, message, args) {
         let lookingFor = args[1];
-
         let SelectedCoins = -1;
-        if (/^\d+\.\d+$/.test(args[0]) || /^-?\d+$/.test(args[0]) || /\.\d+$/.test(args[0])) {
-            SelectedCoins = parseFloat(args[0]);
-            SelectedCoins = Math.floor(SelectedCoins * 100) / 100;
-        } else if (args[0].toLowerCase() === 'all') {
+        
+        if (args[0].toLowerCase() === 'all') {
             SelectedCoins = util.getStats(message, message.member, 'coins');
             if (!SelectedCoins) {
                 util.sendMessage(message.channel, 'You have no coins.');
@@ -35,6 +32,9 @@ module.exports = {
                 return;
             }
             SelectedCoins /= 2;
+            SelectedCoins = Math.floor(SelectedCoins * 100) / 100;
+        } else {
+            SelectedCoins = util.convertNumber(args[0]);
             SelectedCoins = Math.floor(SelectedCoins * 100) / 100;
         }
 
@@ -116,10 +116,10 @@ module.exports = {
  * coinsToAdd: Number - the number of coins to remove from the player
  * Returns: Discord.messageEmbed() - the embed representing the game, and coins transaction
  */
-makeEmbed = (message, randNumb, lookingFor, SelectedCoins, oldCoins, newCoins) => {
+makeEmbed = (message, randNumb, lookingFor, SelectedCoins, oldCoins, newCoins, streak, additionalMessage = "") => {
     return new Discord.MessageEmbed()
         .setTitle(`${message.member.displayName} has played roulette!`)
-        .setDescription(`${util.addCommas(Math.abs(Math.round((newCoins - oldCoins) * 100) / 100))} coin${Math.abs(Math.round((newCoins - oldCoins) * 100) / 100) === 1 ? '' : 's'} ha${Math.abs(Math.round((newCoins - oldCoins) * 100) / 100) === 1 ? 's' : 've'} been ${oldCoins > newCoins ? 'taken away for losing.' : 'awarded for winning!'}`)
+        .setDescription(`${util.addCommas(Math.abs(Math.round((newCoins - oldCoins) * 100) / 100))} coin${Math.abs(Math.round((newCoins - oldCoins) * 100) / 100) === 1 ? '' : 's'} ha${Math.abs(Math.round((newCoins - oldCoins) * 100) / 100) === 1 ? 's' : 've'} been ${oldCoins > newCoins ? 'taken away for losing.' : 'awarded for winning!'}\n${oldCoins > newCoins ? `Losing Streak: ${streak}` : `Winning Streak: ${streak}`}${additionalMessage}`)
         .addField('Additional Info', [`Bet: ${util.addCommas(SelectedCoins)} coins`,
                 `Guess: ${lookingFor} (${getDescription(lookingFor)})`,
                 `Result: ${getRouletteColor(randNumb)} ${randNumb === 37 ? '00' : randNumb}`,
@@ -139,8 +139,20 @@ makeEmbed = (message, randNumb, lookingFor, SelectedCoins, oldCoins, newCoins) =
  */
 awardPoints = (message, randNumb, lookingFor, SelectedCoins, coinsToAdd) => {
     let result = util.addStats(message, message.member, coinsToAdd, "coins");
-    util.sendMessage(util.getLogChannel(message), makeEmbed(message, randNumb, lookingFor, SelectedCoins, result.oldPoints, result.newPoints));
-    util.sendMessage(message.channel, makeEmbed(message, randNumb, lookingFor, SelectedCoins, result.oldPoints, result.newPoints));
+    util.addStats(message, message.member, coinsToAdd, "net_roulette_earnings");
+    util.addStats(message, message.member, 1, "roulette_played");
+    util.addStats(message, message.member, 1, "roulette_wins");
+    util.addStats(message, message.member, SelectedCoins, "coins_bet_in_roulette");
+    util.addStats(message, message.member, coinsToAdd, "coins_earned_in_roulette");
+    let streak = util.addStats(message, message.member, 1, "roulette_winning_streak").newPoints;
+    let additionalMessage = "";
+    if (streak > util.getStats(message, message.member, "roulette_longest_win_streak")) {
+        util.setStats(message, message.member, streak, "roulette_longest_win_streak");
+        additionalMessage = " (new personal best!)";
+    }
+    util.setStats(message, message.member, 0, "roulette_losing_streak");
+    util.sendMessage(util.getLogChannel(message), makeEmbed(message, randNumb, lookingFor, SelectedCoins, result.oldPoints, result.newPoints, streak, additionalMessage));
+    util.sendMessage(message.channel, makeEmbed(message, randNumb, lookingFor, SelectedCoins, result.oldPoints, result.newPoints, streak, additionalMessage));
 };
 
 /**
@@ -152,8 +164,20 @@ awardPoints = (message, randNumb, lookingFor, SelectedCoins, coinsToAdd) => {
  */
 removePoints = (message, randNumb, lookingFor, coinsToRemove) => {
     let result = util.addStats(message, message.member, -coinsToRemove, "coins");
-    util.sendMessage(util.getLogChannel(message), makeEmbed(message, randNumb, lookingFor, coinsToRemove, result.oldPoints, result.newPoints));
-    util.sendMessage(message.channel, makeEmbed(message, randNumb, lookingFor, coinsToRemove, result.oldPoints, result.newPoints));
+    util.addStats(message, message.member, coinsToRemove, "net_roulette_earnings");
+    util.addStats(message, message.member, 1, "roulette_played");
+    util.addStats(message, message.member, 1, "roulette_losses");
+    util.addStats(message, message.member, coinsToRemove, "coins_bet_in_roulette");
+    util.addStats(message, message.member, coinsToRemove, "coins_lost_in_roulette");
+    let streak = util.addStats(message, message.member, 1, "roulette_losing_streak").newPoints;
+    let additionalMessage = "";
+    if (streak > util.getStats(message, message.member, "roulette_longest_losing_streak")) {
+        util.setStats(message, message.member, streak, "roulette_longest_losing_streak");
+        additionalMessage = " (new personal best!)";
+    }
+    util.setStats(message, message.member, 0, "roulette_winning_streak");
+    util.sendMessage(util.getLogChannel(message), makeEmbed(message, randNumb, lookingFor, coinsToRemove, result.oldPoints, result.newPoints, streak, additionalMessage));
+    util.sendMessage(message.channel, makeEmbed(message, randNumb, lookingFor, coinsToRemove, result.oldPoints, result.newPoints, streak, additionalMessage));
 };
 
 /**

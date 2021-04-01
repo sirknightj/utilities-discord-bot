@@ -354,13 +354,13 @@ module.exports = {
      */
     addStats: function (message, target, number, stat) {
         if (!target) {
-            throw new InvalidUsageException('Missing target.');
+            throw 'Missing target.';
         }
         if (!number) {
-            // throw new InvalidUsageException('Missing number of points.');
+            throw 'Missing number of points.';
         }
         if (!stat) {
-            throw new InvalidUsageException('Missing stat.')
+            throw 'Missing stat.';
         }
 
         var allStats = {};
@@ -396,6 +396,87 @@ module.exports = {
             oldPoints: previousStat,
             newPoints: guildStats[target.user.id][stat]
         };
+    },
+
+    /**
+     * Sets points to the target's point total.
+     * @param {Discord.Message} message any message sent in the guild.
+     * @param {Discord.GuildMember} target the target whose points need updating.
+     * @param {number} number the stat number to award.
+     * @param {string} stat the property the number is awarded to.
+     * @returns {StatTransaction} this transaction.
+     */
+     setStats: function (message, target, number, stat) {
+        if (!target) {
+            throw 'Missing target.';
+        }
+        if (typeof number !== "number") {
+            throw 'Invalid number';
+        }
+        if (!stat) {
+            throw 'Missing stat.';
+        }
+
+        var allStats = {};
+        const fileLocation = `${config.resources_folder_file_path}stats.json`;
+
+        if (fs.existsSync(fileLocation)) {
+            allStats = jsonFile.readFileSync(fileLocation);
+        } else {
+            message.channel.send("stats.json has not been properly configured.")
+                .then(msg => msg.delete({ timeout: (config.delete_delay) })
+                    .catch(error => channel.send(`Error: ${error}`)));
+            return;
+        }
+
+        const guildStats = allStats[message.guild.id];
+
+        if (!(target.user.id in guildStats)) {
+            guildStats[target.user.id] = { // Sets all of the normal stats to 0.
+                id: target.user.id,
+                points: 0,
+                coins: 0,
+                last_message: 0,
+                vc_session_started: 0,
+                time_spent_in_vc: 0,
+                participating_messages: 0
+            };
+        }
+        guildStats[target.user.id][stat] = guildStats[target.user.id][stat] ? guildStats[target.user.id][stat] : 0;
+        let previousStat = guildStats[target.user.id][stat];
+        guildStats[target.user.id][stat] = Math.round(number * 100) / 100;
+        jsonFile.writeFileSync(fileLocation, allStats);
+        return {
+            oldPoints: previousStat,
+            newPoints: guildStats[target.user.id][stat]
+        };
+    },
+
+    /**
+     * Returns the number (like 1k) in number form (1000).
+     * @param {string} number the number to parse.
+     * @returns {number} the number. 0 if not parsable.
+     */
+    convertNumber: function (inputNumber) {
+        if (/^\d+\.\d+$/.test(inputNumber) || /^-?\d+$/.test(inputNumber) || /\.\d+$/.test(inputNumber)) {
+            return parseFloat(inputNumber);
+        } else if (inputNumber.slice(-1).toLowerCase() === 'k') {
+            inputNumber = inputNumber.slice(0, -1);
+            if (/^\d+\.\d+$/.test(inputNumber) || /^-?\d+$/.test(inputNumber) || /\.\d+$/.test(inputNumber)) {
+                return parseFloat(inputNumber) * 1000;
+            }
+        } else if (inputNumber.slice(-1).toLowerCase() === 'm') {
+            inputNumber = inputNumber.slice(0, -1);
+            if (/^\d+\.\d+$/.test(inputNumber) || /^-?\d+$/.test(inputNumber) || /\.\d+$/.test(inputNumber)) {
+                return parseFloat(inputNumber * 1000000);
+            }
+        } else if (inputNumber.slice(-1).toLowerCase() === 'b') {
+            inputNumber = inputNumber.slice(0, -1);
+            if (/^\d+\.\d+$/.test(inputNumber) || /^-?\d+$/.test(inputNumber) || /\.\d+$/.test(inputNumber)) {
+                SelectedCoins = parseFloat(inputNumber * 100000000);
+            }
+        }
+        return 0;
     },
 
     /**

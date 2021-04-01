@@ -37,7 +37,7 @@ module.exports = {
             if (arg2.toLowerCase() === 'all') {
                 removeAllPoints = true;
             } else {
-                pointsToRemove = parseFloat(arg2);
+                pointsToRemove = util.convertNumber(arg2);
                 if (pointsToRemove <= 0) {
                     throw 'Points cannot be negative.';
                 }

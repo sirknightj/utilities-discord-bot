@@ -30,7 +30,7 @@ module.exports = {
             throw 'Invalid stat name.';
         }
 
-        let pointsToAdd = parseFloat(args.pop());
+        let pointsToAdd = util.convertNumber(args.pop());
         if (pointsToAdd <= 0) {
             throw 'Points cannot be negative.';
         }
