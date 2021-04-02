@@ -473,7 +473,7 @@ module.exports = {
         } else if (inputNumber.slice(-1).toLowerCase() === 'b') {
             inputNumber = inputNumber.slice(0, -1);
             if (/^\d+\.\d+$/.test(inputNumber) || /^-?\d+$/.test(inputNumber) || /\.\d+$/.test(inputNumber)) {
-                SelectedCoins = parseFloat(inputNumber * 100000000);
+                return parseFloat(inputNumber * 1000000000);
             }
         }
         return 0;
