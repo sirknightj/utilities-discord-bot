@@ -247,10 +247,10 @@ module.exports = {
      */
     addPoints: function (message, target, number, reason) {
         if (!target) {
-            throw new InvalidUsageException('Missing target.');
+            throw 'Missing target.';
         }
         if (!number) {
-            throw new InvalidUsageException('Missing number of points.');
+            throw 'Missing number of points.';
         }
 
         var allStats = {};
@@ -323,10 +323,10 @@ module.exports = {
      */
     getStats: function (message, target, stat) {
         if (!target) {
-            throw new InvalidUsageException('Missing target.');
+            throw 'Missing target.';
         }
         if (!stat) {
-            throw new InvalidUsageException('Missing stat.');
+            throw 'Missing stat.';
         }
 
         var allStats = {};
@@ -571,7 +571,7 @@ module.exports = {
             }
             jsonFile.writeFileSync(fileLocation, allStats);
         } else {
-            throw new InvalidArgumentException(`Member ${memberToDeleteID} does not exist.`);
+            throw `Member ${memberToDeleteID} does not exist.`;
         }
     },
 

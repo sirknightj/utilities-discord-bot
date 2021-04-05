@@ -164,7 +164,7 @@ bot.on('message', message => {
                     botCommand.execute(bot, message, args, user);
                 } catch (error) {
                     util.safeDelete(message);
-                    util.sendTimedMessage(message.channel, `Invalid usage. ${config.prefix}${command} ${botCommand.usage}`);
+                    util.sendTimedMessage(message.channel, `Invalid usage. ${config.prefix}${command} ${botCommand.usage}\nAdditional info: ${error}`);
                 }
                 return;
             }
@@ -174,7 +174,7 @@ bot.on('message', message => {
             } catch (error) {
                 util.safeDelete(message);
                 console.log(error)
-                util.sendTimedMessage(message.channel, `Invalid usage. ${config.prefix}${command} ${botCommand.usage}`);
+                util.sendTimedMessage(message.channel, `Invalid usage. ${config.prefix}${command} ${botCommand.usage}\nAdditional info: ${error}`);
             }
             return;
             // If the command doesn't exist...
