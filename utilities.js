@@ -356,7 +356,7 @@ module.exports = {
         if (!target) {
             throw 'Missing target.';
         }
-        if (!number) {
+        if (typeof number !== 'number') {
             throw 'Missing number of points.';
         }
         if (!stat) {

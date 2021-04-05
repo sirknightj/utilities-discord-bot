@@ -36,7 +36,7 @@ module.exports = {
                 streakResult = util.addStats(message, message.member, 1, 'daily_rewards_streak'); 
             } else {
                 // Streak broken. Set to 1.
-                streakResult = util.addStats(message, message.member, -util.getStats(message, message.member, 'daily_rewards_streak') + 1, 'daily_rewards_streak');
+                streakResult = util.setStats(message, message.member, 1, 'daily_rewards_streak');
             }
             let coinsToAward;
             if (streakResult.newPoints > 11) { // Half the growth after 11 days (10 days in a row).
