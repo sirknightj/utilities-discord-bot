@@ -182,7 +182,7 @@ awardPoints = (message, randNumb, lookingFor, SelectedCoins, coinsToAdd) => {
     util.addStats(message, message.member, 1, "roulette_wins");
     util.addStats(message, message.member, SelectedCoins, "coins_bet_in_roulette");
     let won = util.addStats(message, message.member, coinsToAdd, "coins_earned_in_roulette");
-    util.setStats(message, message.member, won.newPoints - util.getStats(message, message.member, "coins_lose_in_roulette"), "net_roulette_earnings");
+    util.setStats(message, message.member, won.newPoints - util.getStats(message, message.member, "coins_lost_in_roulette"), "net_roulette_earnings");
     let streak = util.addStats(message, message.member, 1, "roulette_winning_streak").newPoints;
     let additionalMessage = "";
     if (streak > util.getStats(message, message.member, "roulette_longest_win_streak")) {
