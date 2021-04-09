@@ -10,7 +10,8 @@ const statNames = ["points", "tickets", "coins"];
 module.exports = {
     name: ['removestats', 'removepoints'],
     description: "Removes a user's points. Requires KICK_MEMBERS.",
-    usage: `<user/everyone> <points-to-remove/all> <${getAllowedInputs()}> (optional: delete entry: true/false)`,
+    usage: `<user/everyone> <number/all> <${getAllowedInputs()}> (optional: delete entry: true/false)`,
+    requiresArgs: true,
     requiredPermissions: 'KICK_MEMBERS',
 
     execute(bot, message, args) {
@@ -39,7 +40,7 @@ module.exports = {
             } else {
                 pointsToRemove = util.convertNumber(arg2);
                 if (pointsToRemove <= 0) {
-                    throw 'Points cannot be negative.';
+                    throw `\`${arg2}\` is an invalid number!`;
                 }
             }
         } else {
@@ -77,7 +78,7 @@ module.exports = {
         try {
             if (everyone) {
                 if (!statNames.includes(statName)) {
-                    throw 'Invalid stat name.';
+                    throw `\`${statName}\` is not a valid stat name.`;
                 }
 
                 let sortedArray = [];

@@ -50,7 +50,7 @@ module.exports = {
                         info.push(`${properties[i]}: ${util.toFormattedTime(userStats[properties[i]])}`);
                     } else if (properties[i] === 'daily_reward_last_claimed') {
                         info.push(`${properties[i]}: ${new Date(userStats[properties[i]])}`);
-                     }else {
+                    } else {
                         info.push(`${properties[i]}: ${util.addCommas(userStats[properties[i]])}`);
                     }
                 }

@@ -11,15 +11,54 @@ const BETS = ["even", "odd", "low", "high", "red", "black", "green", "column1", 
 
 module.exports = {
     name: ["roulette", "r"],
-    description: "Spins the roulette wheel.",
-    usage: `<coins/half/all> <${BETS.join('/')}>`,
+    description: "Spins the roulette wheel. Or shows roulette stats.",
+    usage: `<coins/half/all> <${BETS.join('/')}> OR <stats> (optional: user)`,
     requiresArgs: true,
 
     execute(bot, message, args) {
         let lookingFor = args[1];
         let SelectedCoins = -1;
-        
-        if (args[0].toLowerCase() === 'all') {
+
+        if (args[0].toLowerCase() === 'stats') {
+            let target = message.member;
+            if (args[1]) {
+                target = util.getUserFromMention(message, args[1]);
+            }
+            if (!target) {
+                throw `Could not find user ${args[1]}!`;
+            }
+
+            let stats = util.getMemberStats(message, target);
+            if (!stats.roulette_played) {
+                util.safeDelete(message);
+                util.sendTimedMessage(message.channel, `${util.fixNameFormat(target.displayName)} has not played roulette yet! Tell them to give it a go!`);
+                return;
+            }
+            util.sendTimedMessage(message.channel, new Discord.MessageEmbed()
+                .setTitle(`${util.fixNameFormat(target.displayName)}'s Roulette Stats`)
+                .addField('Roulette Earnings',
+                    [`Total Coins Bet: ${util.addCommas(stats.coins_bet_in_roulette)}`,
+                    `Total Coins Earned: ${util.addCommas(stats.coins_earned_in_roulette)}`,
+                    `Total Coins Lost: ${util.addCommas(stats.coins_lost_in_roulette)}`,
+                    `Net Earnings: ${util.addCommas(stats.net_roulette_earnings)}`
+                    ])
+                .addField('Roulette Winrate',
+                    [`Total Plays: ${util.addCommas(stats.roulette_played)}`,
+                    `Wins: ${util.addCommas(stats.roulette_wins)}`,
+                    `Losses: ${util.addCommas(stats.roulette_losses)}`,
+                    `Win rate: ${Math.round(stats.roulette_wins / stats.roulette_played * 100 * 100) / 100}%`
+                    ])
+                .addField('Streaks',
+                    [`Current ${stats.roulette_winning_streak > stats.roulette_losing_streak ? "Winning" : "Losing"} Streak: ${util.addCommas(Math.max(stats.roulette_winning_streak, stats.roulette_losing_streak))}`,
+                    `Longest Win Streak: ${util.addCommas(stats.roulette_longest_win_streak)}`,
+                    `Longest Losing Streak: ${util.addCommas(stats.roulette_longest_losing_streak)}`
+                    ])
+                .setColor(Colors.GOLD)
+                .setAuthor(target.displayName, target.user.displayAvatarURL({ dynamic: true }))
+                .setFooter(`This message will be automatically deleted in ${config.longer_delete_delay / 1000} seconds.`), config.longer_delete_delay);
+            util.safeDelete(message);
+            return;
+        } else if (args[0].toLowerCase() === 'all') {
             SelectedCoins = util.getStats(message, message.member, 'coins');
             if (!SelectedCoins) {
                 util.sendMessage(message.channel, 'You have no coins.');
@@ -69,12 +108,12 @@ module.exports = {
     }
 };
 
- /**
-  * Returns the winning payout multiplier (e.g. 1-to-1 --> 1) if they win. 
-  * guess: String - the guess to be checked
-  * randNumb: Number - the winning number
-  */
- isWin = (guess, randNumb) => {
+/**
+ * Returns the winning payout multiplier (e.g. 1-to-1 --> 1) if they win. 
+ * guess: String - the guess to be checked
+ * randNumb: Number - the winning number
+ */
+isWin = (guess, randNumb) => {
     guess = guess.toLowerCase();
     switch (guess) {
         case "green":
@@ -121,10 +160,10 @@ makeEmbed = (message, randNumb, lookingFor, SelectedCoins, oldCoins, newCoins, s
         .setTitle(`${message.member.displayName} has played roulette!`)
         .setDescription(`${util.addCommas(Math.abs(Math.round((newCoins - oldCoins) * 100) / 100))} coin${Math.abs(Math.round((newCoins - oldCoins) * 100) / 100) === 1 ? '' : 's'} ha${Math.abs(Math.round((newCoins - oldCoins) * 100) / 100) === 1 ? 's' : 've'} been ${oldCoins > newCoins ? 'taken away for losing.' : 'awarded for winning!'}\n${oldCoins > newCoins ? `Losing Streak: ${streak}` : `Winning Streak: ${streak}`}${additionalMessage}`)
         .addField('Additional Info', [`Bet: ${util.addCommas(SelectedCoins)} coins`,
-                `Guess: ${lookingFor} (${getDescription(lookingFor)})`,
-                `Result: ${getRouletteColor(randNumb)} ${randNumb === 37 ? '00' : randNumb}`,
-                `Coins: ${util.addCommas(oldCoins)} » ${util.addCommas(newCoins)}`
-            ])
+        `Guess: ${lookingFor} (${getDescription(lookingFor)})`,
+        `Result: ${getRouletteColor(randNumb)} ${randNumb === 37 ? '00' : randNumb}`,
+        `Coins: ${util.addCommas(oldCoins)} » ${util.addCommas(newCoins)}`
+        ])
         .setColor(Colors.BLUE)
         .setTimestamp()
         .setThumbnail(target.user.displayAvatarURL({ dynamic: true }));
@@ -139,11 +178,11 @@ makeEmbed = (message, randNumb, lookingFor, SelectedCoins, oldCoins, newCoins, s
  */
 awardPoints = (message, randNumb, lookingFor, SelectedCoins, coinsToAdd) => {
     let result = util.addStats(message, message.member, coinsToAdd, "coins");
-    util.addStats(message, message.member, coinsToAdd, "net_roulette_earnings");
     util.addStats(message, message.member, 1, "roulette_played");
     util.addStats(message, message.member, 1, "roulette_wins");
     util.addStats(message, message.member, SelectedCoins, "coins_bet_in_roulette");
-    util.addStats(message, message.member, coinsToAdd, "coins_earned_in_roulette");
+    let won = util.addStats(message, message.member, coinsToAdd, "coins_earned_in_roulette");
+    util.setStats(message, message.member, won.newPoints - util.getStats(message, message.member, "coins_lose_in_roulette"), "net_roulette_earnings");
     let streak = util.addStats(message, message.member, 1, "roulette_winning_streak").newPoints;
     let additionalMessage = "";
     if (streak > util.getStats(message, message.member, "roulette_longest_win_streak")) {
@@ -164,11 +203,11 @@ awardPoints = (message, randNumb, lookingFor, SelectedCoins, coinsToAdd) => {
  */
 removePoints = (message, randNumb, lookingFor, coinsToRemove) => {
     let result = util.addStats(message, message.member, -coinsToRemove, "coins");
-    util.addStats(message, message.member, coinsToRemove, "net_roulette_earnings");
     util.addStats(message, message.member, 1, "roulette_played");
     util.addStats(message, message.member, 1, "roulette_losses");
     util.addStats(message, message.member, coinsToRemove, "coins_bet_in_roulette");
-    util.addStats(message, message.member, coinsToRemove, "coins_lost_in_roulette");
+    let lost = util.addStats(message, message.member, coinsToRemove, "coins_lost_in_roulette");
+    util.setStats(message, message.member, util.getStats(message, message.member, "coins_earned_in_roulette") - lost.newPoints, "net_roulette_earnings");
     let streak = util.addStats(message, message.member, 1, "roulette_losing_streak").newPoints;
     let additionalMessage = "";
     if (streak > util.getStats(message, message.member, "roulette_longest_losing_streak")) {

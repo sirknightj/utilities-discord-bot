@@ -49,6 +49,14 @@ bot.once('ready', () => {
           (err) => console.error
         );
       }, 1000 * 60 * 60); // 1 hour
+      setInterval(() => {
+        fs.copyFile(
+          `${config.resources_folder_file_path}stats.json`,
+          `${config.resources_folder_file_path}daily_backup_stats.json`,
+          (err) => console.error
+        );
+        console.log(`Daily backup made on ${new Date(Date.now())}`);
+      }, 1000 * 60 * 60 * 24); // 24 hours
 });
 
 bot.on('message', message => {
@@ -140,8 +148,8 @@ bot.on('message', message => {
             // Checks if the command requires arguments to be inputted. If the user did not put any, say the correct usage.
             if (botCommand.requiresArgs) {
                 if (args.length == 0) {
-                    util.safeDelete(message);
-                    util.sendTimedMessage(message.channel, `Invalid usage. ${config.prefix}${command} ${botCommand.usage}`);
+                    util.safeDelete(message, config.delete_delay)
+                    util.sendTimedMessage(message.channel, `Invalid usage.\n\`${config.prefix}${command} ${botCommand.usage}\``);
                     return;
                 }
             }
@@ -154,8 +162,8 @@ bot.on('message', message => {
 
                 // Throws an error if there is no user found.
                 if (!user) {
-                    util.safeDelete(message);
-                    util.sendTimedMessage(message.channel, `Invalid usage. ${config.prefix}${command} ${botCommand.usage}`);
+                    util.safeDelete(message, config.delete_delay)
+                    util.sendTimedMessage(message.channel, `Invalid usage.\n\`${config.prefix}${command} ${botCommand.usage}\``);
                     return;
                 }
 
@@ -163,8 +171,8 @@ bot.on('message', message => {
                 try {
                     botCommand.execute(bot, message, args, user);
                 } catch (error) {
-                    util.safeDelete(message);
-                    util.sendTimedMessage(message.channel, `Invalid usage. ${config.prefix}${command} ${botCommand.usage}\nAdditional info: ${error}`);
+                    util.safeDelete(message, config.delete_delay)
+                    util.sendTimedMessage(message.channel, `Invalid usage.\n\`${config.prefix}${command} ${botCommand.usage}\`\nAdditional info: ${error}`);
                 }
                 return;
             }
@@ -172,9 +180,9 @@ bot.on('message', message => {
             try {
                 botCommand.execute(bot, message, args);
             } catch (error) {
-                util.safeDelete(message);
+                util.safeDelete(message, config.delete_delay)
                 console.log(error)
-                util.sendTimedMessage(message.channel, `Invalid usage. ${config.prefix}${command} ${botCommand.usage}\nAdditional info: ${error}`);
+                util.sendTimedMessage(message.channel, `Invalid usage.\n\`${config.prefix}${command} ${botCommand.usage}\`\nAdditional info: ${error}`);
             }
             return;
             // If the command doesn't exist...
@@ -441,6 +449,8 @@ bot.on('guildMemberRemove', (memberAffected) => {
                     if (properties[i] !== 'last_message' && properties[i] !== 'vc_session_started') {
                         if (properties[i] === 'time_spent_in_vc') {
                             info.push(`${properties[i]}: ${util.toFormattedTime(userStats[properties[i]])}`)
+                        } else if (properties[i] === 'daily_reward_last_claimed') {
+                            info.push(`${properties[i]}: ${new Date(userStats[properties[i]])}`);
                         } else {
                             info.push(`${properties[i]}: ${util.addCommas(userStats[properties[i]])}`);
                         }

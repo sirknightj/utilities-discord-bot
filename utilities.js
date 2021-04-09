@@ -215,10 +215,11 @@ module.exports = {
     /**
      * Deletes the message, catching any errors, such as lack of permissions, or if the message is already deleted.
      * @param {Discord.Message} message the message to be deleted
+     * @param {number} delete_delay how long to wait before deleting your message (in milliseconds)
      */
-    safeDelete: function (message) {
+    safeDelete: function (message, delete_delay = 0) {
         if (message) {
-            message.delete().catch(error => message.channel.send(`Error: ${error.message}`).then(msg => msg.delete({ timeout: config.delete_delay })));
+            message.delete({timeout: delete_delay}).catch(error => message.channel.send(`Error: ${error.message}`).then(msg => msg.delete({ timeout: config.delete_delay })));
         }
     },
 
@@ -342,6 +343,31 @@ module.exports = {
         }
 
         return allStats[message.guild.id][target.user.id][stat] ? allStats[message.guild.id][target.user.id][stat] : 0;
+    },
+
+    /**
+     * Retrieves the stats object of a guild member
+     * @param {Discord.Message} message any message sent in the guild.
+     * @param {Discord.GuildMember} target the target who you want to retrieve the stats of.
+     * @returns {Object} the stat object
+     */
+    getMemberStats: function(message, target) {
+        if (!target) {
+            throw 'Missing target.';
+        }
+        var allStats = {};
+        const fileLocation = `${config.resources_folder_file_path}stats.json`;
+
+        if (fs.existsSync(fileLocation)) {
+            allStats = jsonFile.readFileSync(fileLocation);
+        } else {
+            message.channel.send("stats.json has not been properly configured.")
+                .then(msg => msg.delete({ timeout: (config.delete_delay) })
+                    .catch(error => channel.send(`Error: ${error}`)));
+            return;
+        }
+
+        return allStats[message.guild.id][target.user.id];
     },
 
     /**
