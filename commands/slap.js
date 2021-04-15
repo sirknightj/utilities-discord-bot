@@ -3,7 +3,7 @@ const config = require('../config.json');
 const resources_folder_file_path = config.resources_folder_file_path;
 
 module.exports = {
-    name: ['slap', 'punch', 'smack', 'squish'],
+    name: ['slap', 'punch', 'smack', 'squish', 'hug', 'scam', 'jumpscare', 'scare', 'spank', 'frame'],
     description: 'Says that you slapped the target.',
     usage: `(optional: user slapping) <user target being slapped> (optional: channel-name)`,
     requiresTarget: true,
@@ -19,10 +19,10 @@ module.exports = {
             let slapper;
             let target = util.getUserFromMention(message, args[0]);
             if (target) {
-                slapper = user.displayName;
+                slapper = user;
                 args.shift();
             } else {
-                slapper = message.member.displayName;
+                slapper = message.member;
                 target = user;
             }
 
@@ -39,10 +39,32 @@ module.exports = {
                 sendingChannel = message.channel;
             }
 
+            if (!message.member.permissionsIn(sendingChannel).has('SEND_MESSAGES', true) || !message.member.permissionsIn(sendingChannel).has('VIEW_CHANNEL', true)) {
+                util.safeDelete(message);
+                util.sendTimedMessage(message.channel, 'Sorry, you do not have permission to send messages in that channel.', config.longer_delete_delay);
+                return;
+            }
+
+            if (!slapper.permissionsIn(sendingChannel).has('SEND_MESSAGES', true) || !slapper.permissionsIn(sendingChannel).has('VIEW_CHANNEL', true)) {
+                util.safeDelete(message);
+                util.sendTimedMessage(message.channel, `Sorry, ${util.fixNameFormat(slapper.displayName)} does not have permission to send messages in that channel.`, config.longer_delete_delay);
+                return;
+            }
+
             if (action === 'slap') {
                 action = 'slapp';
+            } else if (action === 'hug') {
+                action = 'hugg';
+            } else if (action === 'scam') {
+                action = 'scamm';
+            } else if (action === 'jumpscare') {
+                action = 'jumpscar';
+            } else if (action === 'scare') {
+                action = 'scar';
+            } else if (action === 'frame') {
+                action = 'fram';
             }
-            util.sendMessage(sendingChannel, `<@${target.id}>, ${slapper} ${action}ed you!`);
+            util.sendMessage(sendingChannel, `<@${target.id}>, ${slapper.displayName} ${action}ed you!`);
             playNoiseInVoiceChannel(target.voice.channel, message);
         } else {
             // Prevents the user from slapping themselves.
@@ -51,9 +73,27 @@ module.exports = {
                 util.sendTimedMessage(message.channel, `You cannot ${action} yourself.`);
                 return;
             }
+
+            if (!message.member.permissionsIn(message.channel).has('SEND_MESSAGES', true) || !message.member.permissionsIn(message.channel).has('VIEW_CHANNEL', true)) {
+                util.safeDelete(message);
+                util.sendTimedMessage(message.channel, 'Sorry, you do not have permission to send messages in that channel.', config.longer_delete_delay);
+                return;
+            }
+
             if (action === 'slap') {
                 action = 'slapp';
+            } else if (action === 'hug') {
+                action = 'hugg';
+            } else if (action === 'scam') {
+                action = 'scamm';
+            } else if (action === 'jumpscare') {
+                action = 'jumpscar';
+            } else if (action === 'scare') {
+                action = 'scar';
+            } else if (action === 'frame') {
+                action = 'fram';
             }
+
             playNoiseInVoiceChannel(user.voice.channel, message);
             util.sendMessage(message.channel, `<@${user.id}>, ${message.member.displayName} ${action}ed you!`);
         }

@@ -61,7 +61,7 @@ module.exports = {
             for (userIDs of sortedArray) {
                 let guildMember = message.guild.members.cache.get(userIDs);
                 if (guildMember) {
-                    if ((guildStats[userIDs][keyword] || 0) > 0) {
+                    if ((guildStats[userIDs][keyword] || 0) !== 0) {
                         if (previousPoints === guildStats[userIDs][keyword]) {
                             previousPosition++;
                         } else {
@@ -73,7 +73,7 @@ module.exports = {
                     if (userIDs === message.author.id) {
                         pointBoard += '**';
                     }
-                    if ((guildStats[userIDs][keyword] || 0) > 0 || userIDs == message.author.id) {
+                    if ((guildStats[userIDs][keyword] || 0) !== 0 || userIDs == message.author.id) {
                         if (isTime) {
                             pointBoard += `${guildMember.displayName}: ${util.toFormattedTime((guildStats[userIDs][keyword] || 0))}`
                         } else {
@@ -83,7 +83,7 @@ module.exports = {
                     if (userIDs === message.author.id) {
                         pointBoard += '**';
                     }
-                    if ((guildStats[userIDs][keyword] || 0) > 0 || userIDs == message.author.id) {
+                    if ((guildStats[userIDs][keyword] || 0) !== 0 || userIDs == message.author.id) {
                         position++;
                         pointBoard += '\n';
                     }
