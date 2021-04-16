@@ -12,7 +12,7 @@ const BETS = ["even", "odd", "low", "high", "red", "black", "green", "column1", 
 module.exports = {
     name: ["roulette", "r"],
     description: "Spins the roulette wheel. Or shows roulette stats.",
-    usage: `<coins/half/all> <${BETS.join('/')}> OR <stats> (optional: user)`,
+    usage: `<coins/half/all> <${BETS.join('/')}> OR <stats> (optional: user) OR <statwipe> <user>`,
     requiresArgs: true,
 
     execute(bot, message, args) {
@@ -56,6 +56,67 @@ module.exports = {
                 .setColor(Colors.GOLD)
                 .setAuthor(target.displayName, target.user.displayAvatarURL({ dynamic: true }))
                 .setFooter(`This message will be automatically deleted in ${config.longer_delete_delay / 1000} seconds.`), config.longer_delete_delay);
+            util.safeDelete(message);
+            return;
+        } else if (args[0].toLowerCase() === 'statwipe') {
+            if (!message.member.hasPermission('KICK_MEMBERS', {checkAdmin: true, checkOwner: true})) {
+                util.safeDelete(message);
+                util.sendTimedMessage(message.channel, 'You do not have permission to use this command. It requires KICK_MEMBERS.', config.longer_delete_delay);
+                return;
+            }
+            if (args[1]) {
+                target = util.getUserFromMention(message, args[1]);
+            } else {
+                throw 'Missing target!'
+            }
+            if (!target) {
+                throw `Could not find user ${args[1]}!`;
+            }
+
+            let stats = util.getMemberStats(message, target);
+            if (!stats.roulette_played) {
+                util.safeDelete(message);
+                util.sendTimedMessage(message.channel, `${util.fixNameFormat(target.displayName)} has not played roulette yet! There are no stats to wipe!`);
+                return;
+            }
+            let statEmbed = new Discord.MessageEmbed()
+            .setTitle(`${util.fixNameFormat(message.member.displayName)} has wiped ${util.fixNameFormat(target.displayName)}'s Roulette Stats!`)
+            .setDescription(`${util.fixNameFormat(target.displayName)}'s roulette stats before wiping:`)
+            .addField('Roulette Earnings',
+                [`Total Coins Bet: ${util.addCommas(stats.coins_bet_in_roulette)}`,
+                `Total Coins Earned: ${util.addCommas(stats.coins_earned_in_roulette)}`,
+                `Total Coins Lost: ${util.addCommas(stats.coins_lost_in_roulette)}`,
+                `Net Earnings: ${util.addCommas(stats.net_roulette_earnings)}`
+                ])
+            .addField('Roulette Winrate',
+                [`Total Plays: ${util.addCommas(stats.roulette_played)}`,
+                `Wins: ${util.addCommas(stats.roulette_wins)}`,
+                `Losses: ${util.addCommas(stats.roulette_losses)}`,
+                `Win rate: ${Math.round(stats.roulette_wins / stats.roulette_played * 100 * 100) / 100}%`
+                ])
+            .addField('Streaks',
+                [`Current ${stats.roulette_winning_streak > stats.roulette_losing_streak ? "Winning" : "Losing"} Streak: ${util.addCommas(Math.max(stats.roulette_winning_streak, stats.roulette_losing_streak))}`,
+                `Longest Win Streak: ${util.addCommas(stats.roulette_longest_win_streak)}`,
+                `Longest Losing Streak: ${util.addCommas(stats.roulette_longest_losing_streak)}`
+                ])
+            .setColor(Colors.BRIGHT_RED)
+            .setThumbnail(target.user.displayAvatarURL({ dynamic: true }))
+            .setAuthor(message.member.displayName, message.member.user.displayAvatarURL({ dynamic: true }))
+            .setTimestamp();
+            util.sendMessage(message.channel, statEmbed);
+            util.sendMessage(util.getLogChannel(message), statEmbed);
+            util.setStats(message, target, 0, 'coins_bet_in_roulette');
+            util.setStats(message, target, 0, 'coins_earned_in_roulette');
+            util.setStats(message, target, 0, 'coins_lost_in_roulette');
+            util.setStats(message, target, 0, 'net_roulette_earnings');
+            util.setStats(message, target, 0, 'roulette_played');
+            util.setStats(message, target, 0, 'coins_earned_in_roulette');
+            util.setStats(message, target, 0, 'roulette_wins');
+            util.setStats(message, target, 0, 'roulette_losses');
+            util.setStats(message, target, 0, 'roulette_winning_streak');
+            util.setStats(message, target, 0, 'roulette_losing_streak');
+            util.setStats(message, target, 0, 'roulette_longest_win_streak');
+            util.setStats(message, target, 0, 'roulette_longest_losing_streak');
             util.safeDelete(message);
             return;
         } else if (args[0].toLowerCase() === 'all') {
