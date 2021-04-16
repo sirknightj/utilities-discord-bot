@@ -36,7 +36,9 @@ module.exports = {
             }
 
             let keyword;
-            if (args[0]) {
+            if (args[1]) {
+                keyword = args.join('_');
+            } else if (args[0]) {
                 if (args[0].toLowerCase() === 'vc') {
                     keyword = 'time_spent_in_vc';
                 } else if (args[0].toLowerCase() === 'messages') {
