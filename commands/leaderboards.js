@@ -45,6 +45,8 @@ module.exports = {
                     keyword = 'participating_messages';
                 } else if (args[0].toLowerCase() === 'streaks') {
                     keyword = 'daily_rewards_streak';
+                } else if (args[0].toLowerCase() === 'ticket') {
+                    keyword = 'tickets';
                 } else {
                     keyword = args[0].toLowerCase();
                 }
@@ -58,7 +60,11 @@ module.exports = {
             let position = 1; // the current position of the leaderboard
             let previousPoints = -1; // if there is a tie, this is the value of the tie
             let previousPosition = 0; // if there is a tie, how many people have the same ranking
-            let isTime = (keyword === 'time_spent_in_vc');
+            let isTime = keyword === 'time_spent_in_vc' || keyword === 'vc_session_started';
+            let isDate = keyword === 'daily_reward_last_claimed';
+            let wantTotal = keyword === 'tickets';
+            wantTotal = true;
+            let total = 0;
 
             for (userIDs of sortedArray) {
                 let guildMember = message.guild.members.cache.get(userIDs);
@@ -77,9 +83,14 @@ module.exports = {
                     }
                     if ((guildStats[userIDs][keyword] || 0) !== 0 || userIDs == message.author.id) {
                         if (isTime) {
-                            pointBoard += `${guildMember.displayName}: ${util.toFormattedTime((guildStats[userIDs][keyword] || 0))}`
+                            pointBoard += `${guildMember.displayName}: ${util.toFormattedTime((guildStats[userIDs][keyword] || 0))}`;
+                        } else if (isDate) {
+                            pointBoard += `${guildMember.displayName}: ${(new Date(guildStats[userIDs][keyword]))}`;
                         } else {
-                            pointBoard += `${guildMember.displayName}: ${util.addCommas(guildStats[userIDs][keyword] || 0)} ${(keyword === 'points' || keyword === 'participating_messages') ? (keyword === 'points' ? 'pts' : (guildStats[userIDs][keyword] === 1 ? 'msg' : 'msgs')) : (keyword === 'daily_rewards_streak' ? 'streak' : keyword)}`;
+                            pointBoard += `${guildMember.displayName}: ${util.addCommas(guildStats[userIDs][keyword] || 0)}`;
+                        }
+                        if (wantTotal) {
+                            total += guildStats[userIDs][keyword] || 0;
                         }
                     }
                     if (userIDs === message.author.id) {
@@ -102,9 +113,18 @@ module.exports = {
             LeaderboardEmbed.setTitle(`${capitalizedWords.join(' ')} Leaderboard`);
             let formattedPrint = pointBoard.replace(/_/g, "\\_");
             let pos = 0, i = 0;
+            if (total) {
+                if (isTime) {
+                    total = util.toFormattedTime(total);
+                } else if (isDate) {
+                    total = 0
+                } else {
+                    total = util.addCommas(Math.round(total * 100) / 100);
+                }
+            }
             while (pos < formattedPrint.length) {
                 pos = Math.min(formattedPrint.length, getPositionOf(formattedPrint, '\n', 50 * (i + 1)));
-                LeaderboardEmbed.setDescription(`${formattedPrint.slice(getPositionOf(formattedPrint, '\n', 50 * i), pos)}`);
+                LeaderboardEmbed.setDescription(`${wantTotal && total ? `${total} total ${keyword}\n` : ''}${formattedPrint.slice(getPositionOf(formattedPrint, '\n', 50 * i), pos)}`);
                 util.sendTimedMessage(message.channel, LeaderboardEmbed, config.longer_delete_delay);
                 i++;
             }
