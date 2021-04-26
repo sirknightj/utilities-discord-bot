@@ -14,34 +14,42 @@ module.exports = {
         if (config.role_id_required_to_use_shop) {
             if (!message.member.roles.cache.some(role => role.id === config.role_id_required_to_use_shop)) {
                 util.safeDelete(message);
-                util.sendTimedMessage(message.channel, `Sorry, you don't have the role required to use the shop.\nRequired role(s): \`${getRolesRequired(message)}\``);
+                let requiredRoles = getRolesRequired(message);
+                util.sendTimedMessage(message.channel, `Sorry, you don't have the role required to use the shop.\nRequired role${requiredRoles.length > 1 ? "s" : ""}: \`${requiredRoles}\``);
                 return;
             }
         }
 
         let purchase = true;
-        if (args[0].toLowerCase() !== 'purchase' && args[0].toLowerCase() !== 'refund') {
-            throw 'First argument must be purchase';
+        let upgrade = false;
+        if (args[0].toLowerCase() !== 'purchase' && args[0].toLowerCase() !== 'refund' && args[0].toLowerCase() !== 'upgrade') {
+            throw 'Purchase or refund?';
         } else {
             if (args[0].toLowerCase() === 'refund') {
                 purchase = false;
+            } else if (args[0].toLowerCase() === 'upgrade') {
+                upgrade = true;
             }
         }
 
         let quantity = 1;
-        if (/^\d+$/.test(args[2])) {
-            quantity = parseInt(args[2]);
-        } else if (args[2] && args[2].toLowerCase() !== 'all') {
-            util.safeDelete(message);
-            util.sendTimedMessage(message.channel, `Nice try, ${util.fixNameFormat(message.member.displayName)}. That is an invalid quantity.`);
-            return;
+        if (!upgrade) {
+            if (/^\d+$/.test(args[2])) {
+                quantity = parseInt(args[2]);
+            } else if (args[2] && args[2].toLowerCase() !== 'all') {
+                util.safeDelete(message);
+                util.sendTimedMessage(message.channel, `Nice try, ${util.fixNameFormat(message.member.displayName)}. That is an invalid quantity.`);
+                return;
+            }
         }
 
-        if (!args[1]) {
+        if (!args[1] && !upgrade) {
             throw 'Missing item to purchase or refund.';
         }
 
-        args[1] = args[1].toLowerCase();
+        if (args[1]) {
+            args[1] = args[1].toLowerCase();
+        }
 
         let coinBalance = util.getStats(message, message.member, 'coins');
 
@@ -78,6 +86,65 @@ module.exports = {
                 } else {
                     util.safeDelete(message);
                     util.sendTimedMessage(message.channel, `Sorry ${util.fixNameFormat(message.member.displayName)}, you don't have enough coins to purchase this item. It costs ${cost} coin${addS(cost)} to purchase ${quantity} ticket${addS(quantity)}, and you only have ${coinBalance} coin${addS(coinBalance)}.`);
+                }
+            } else if (upgrade) {
+                args.shift();
+                if (args[0] && args[0].toLowerCase() === 'daily') {
+                    args.shift();
+                    if (args[0] && args[0].toLowerCase() === 'cooldown') {
+                        let level = util.getStats(message, message.member, 'upgrade_daily_reward_cooldown');
+                        let cost = getNextUpgradeCost(level);
+                        if (level === UPGRADE_MAX_LEVEL) {
+                            util.sendMessage(message.channel, `This is already at max level!`);
+                            return;
+                        }
+                        if (coinBalance < cost) {
+                            util.sendMessage(message.channel, `Sorry, ${util.fixNameFormat(message.member.displayName)}, you don't have enough coins. It costs ${util.addCommas(cost)} coins, but you only have ${util.addCommas(coinBalance)}.`);
+                            return;
+                        }
+                        let levelTransaction = util.addStats(message, message.member, 1, 'upgrade_daily_reward_cooldown');
+                        let coinTransaction = util.addStats(message, message.member, -cost, 'coins');
+                        let upgradeEmbed = getUpgradesEmbed(message, 'Daily Rewards Cooldown', getDailyCooldownStatus(levelTransaction.newPoints), levelTransaction, coinTransaction);
+                        util.sendMessage(message.channel, upgradeEmbed);
+                        util.sendMessage(util.getLogChannel(message), upgradeEmbed);
+                        return;
+                    } else if (args[0] === 'grace') {
+                        let level = util.getStats(message, message.member, 'upgrade_daily_reward_extended_grace');
+                        let cost = getNextUpgradeCost(level);
+                        if (level === UPGRADE_MAX_LEVEL) {
+                            util.sendMessage(message.channel, `This is already at max level!`);
+                            return;
+                        }
+                        if (coinBalance < cost) {
+                            util.sendMessage(message.channel, `Sorry, ${util.fixNameFormat(message.member.displayName)}, you don't have enough coins. It costs ${util.addCommas(cost)} coins, but you only have ${util.addCommas(coinBalance)}.`);
+                            return;
+                        }
+                        let levelTransaction = util.addStats(message, message.member, 1, 'upgrade_daily_reward_extended_grace');
+                        let coinTransaction = util.addStats(message, message.member, -cost, 'coins');
+                        let upgradeEmbed = getUpgradesEmbed(message, 'Daily Rewards Grace Period', getDailyGraceStatus(levelTransaction.newPoints), levelTransaction, coinTransaction);
+                        util.sendMessage(message.channel, upgradeEmbed);
+                        util.sendMessage(util.getLogChannel(message), upgradeEmbed);
+                        return;
+                    } else if (args[0] === 'bonus') {
+                        let level = util.getStats(message, message.member, 'upgrade_daily_reward_coin_bonus');
+                        let cost = getNextUpgradeCost(level, -400, 0.05);
+                        if (level === UPGRADE_MAX_LEVEL) {
+                            util.sendMessage(message.channel, `This is already at max level!`);
+                            return;
+                        }
+                        if (coinBalance < cost) {
+                            util.sendMessage(message.channel, `Sorry, ${util.fixNameFormat(message.member.displayName)}, you don't have enough coins. It costs ${util.addCommas(cost)} coins, but you only have ${util.addCommas(coinBalance)}.`);
+                            return;
+                        }
+                        let levelTransaction = util.addStats(message, message.member, 1, 'upgrade_daily_reward_coin_bonus');
+                        let coinTransaction = util.addStats(message, message.member, -cost, 'coins');
+                        let upgradeEmbed = getUpgradesEmbed(message, 'Daily Rewards Coin Bonus', getDailyBonusStatus(levelTransaction.newPoints), levelTransaction, coinTransaction);
+                        util.sendMessage(message.channel, upgradeEmbed);
+                        util.sendMessage(util.getLogChannel(message), upgradeEmbed);
+                        return;
+                    }
+                } else {
+                    util.sendMessage(message.channel, getUpgradeInfo(message));
                 }
             } else {
                 throw 'Invalid argument.';
@@ -171,4 +238,135 @@ function getRoleName(message, roleID) {
     } else {
         return 'Invalid role.';
     }
+}
+
+const UPGRADE_MAX_LEVEL = 10;
+
+/**
+ * Returns the upgrade transaction embed.
+ * 
+ * @param {Discord.Message} message any message sent within the guild
+ * @param {string} statName the name of the stat updated
+ * @param {string} statInfo more information about this stat
+ * @param {import('../utilities').StatTransaction} levelTransaction the StatTransaction object for the level
+ * @param {import('../utilities').StatTransaction} coinTransaction the StatTransaction object for the coins
+ * @returns the role's name
+ */
+function getUpgradesEmbed(message, statName, statInfo, levelTransaction, coinTransaction) {
+    return new Discord.MessageEmbed()
+        .setTitle(`Upgrade Purchased For ${util.addCommas(Math.round((coinTransaction.oldPoints - coinTransaction.newPoints) * 100) / 100)} Coins!`)
+        .setAuthor(message.member.displayName, message.member.user.displayAvatarURL({ dynamic: true }))
+        .setColor(Colors.YELLOW)
+        .addField('Upgrade Information', statInfo)
+        .addField('Additional Info',
+            [`Coins: ${util.addCommas(coinTransaction.oldPoints)} » ${util.addCommas(coinTransaction.newPoints)}`,
+            `${util.capitalizeFirstLetter(statName)}: ${util.addCommas(levelTransaction.oldPoints)} » ${util.addCommas(levelTransaction.newPoints)}${levelTransaction.newPoints === UPGRADE_MAX_LEVEL ? " (MAX)" : ""}`
+            ])
+}
+
+
+function getUpgradeInfo(message) {
+    return new Discord.MessageEmbed()
+        .setTitle('Upgrades Info')
+        .setAuthor(message.member.displayName, message.member.user.displayAvatarURL({ dynamic: true }))
+        .setColor(Colors.YELLOW)
+        .addField(`Daily Rewards Cooldown`, [`\`${config.prefix}shop upgrade daily cooldown\``,
+        ...getDailyCooldownStatus(util.getStats(message, message.member, 'upgrade_daily_reward_cooldown'), true)])
+        .addField(`Daily Rewards Streak Grace Period`, [`\`${config.prefix}shop upgrade daily grace\``,
+        ...getDailyGraceStatus(util.getStats(message, message.member, 'upgrade_daily_reward_extended_grace'), true)])
+        .addField(`Daily Rewards Coin Bonus`, [`\`${config.prefix}shop upgrade daily bonus\``,
+        ...getDailyBonusStatus(util.getStats(message, message.member, 'upgrade_daily_reward_coin_bonus'), true)])
+}
+
+/**
+ * Returns the description of the daily cooldown upgrade.
+ * Each level grants -1% daily reward cooldown.
+ * 
+ * @param {number} level 
+ * @param {boolean} dontShow true if you just leveled up. False if not.
+ * @returns {string} description of the daily cooldown upgrade.
+ */
+function getDailyCooldownStatus(level, dontShow = false) {
+    let info = [`Each level decreases the cooldown between claiming \`${config.prefix}daily\`.`];
+    info.push(`Cooldown Level ${level}/${UPGRADE_MAX_LEVEL}`);
+    if (level === UPGRADE_MAX_LEVEL) {
+        info[0] += ' (MAX)';
+    }
+    if (level === 0 || dontShow) {
+        info.push(`Current Cooldown: \`${util.toFormattedTime(Math.floor(config.daily_reward_cooldown * (100 - level)) / 100)}\``);
+    } else {
+        info.push(`Current Cooldown: \`${util.toFormattedTime(Math.floor(config.daily_reward_cooldown * (100 - (level - 1))) / 100)}\` » \`${util.toFormattedTime(Math.floor(config.daily_reward_cooldown * (100 - level)) / 100)}\``)
+    }
+    if (level !== UPGRADE_MAX_LEVEL) {
+        info.push(`Next Upgrade: ${util.addCommas(getNextUpgradeCost(level))} coins`,
+        `Next Cooldown: \`${util.toFormattedTime(Math.floor(config.daily_reward_cooldown * (100 - (level + 1))) / 100)}\``);
+    }
+    return info;
+}
+
+/**
+ * Returns the description of the daily grace upgrade.
+ * Each level grants +1d before resetting your streak.
+ * 
+ * @param {number} level 
+ * @param {boolean} dontShow true if you just leveled up. False if not.
+ * @returns {string} description of the daily cooldown upgrade.
+ */
+function getDailyGraceStatus(level, dontShow = false) {
+    let info = [`Each level increases the grace period before resetting your \`${config.prefix}daily\` streak.`]
+    info.push(`Extended Grace Level ${level}/${UPGRADE_MAX_LEVEL}`);
+    if (level === UPGRADE_MAX_LEVEL) {
+        info[0] += ' (MAX)';
+    }
+    info.push();
+    if (level === 0 || dontShow) {
+        info.push(`Current Grace Period: \`${util.toFormattedTime(config.daily_reward_streak_grace_period + (43200000 * level))}\``);
+    } else {
+        info.push(`Current Grace Period: \`${util.toFormattedTime(Math.floor(config.daily_reward_streak_grace_period + (43200000 * (level - 1))))}\` » \`${util.toFormattedTime(Math.floor(config.daily_reward_streak_grace_period + (43200000 * level)))}\``)
+    }
+    if (level !== UPGRADE_MAX_LEVEL) {
+        info.push(`Next Upgrade: ${util.addCommas(getNextUpgradeCost(level))} coins`,
+        `Next Grace Period: \`${util.toFormattedTime(Math.floor(config.daily_reward_streak_grace_period + 43200000 * (level + 1)))}\``);
+    }
+    return info;
+}
+
+/**
+ * Returns the description of the daily grace upgrade.
+ * Each level grants +12h before resetting your streak.
+ * 
+ * @param {number} level 
+ * @param {boolean} dontShow true if you just leveled up. False if not.
+ * @returns {string} description of the daily cooldown upgrade.
+ */
+ function getDailyBonusStatus(level, dontShow = false) {
+    let info = [`Each level increases the coins you get from \`${config.prefix}daily\` by 1%.`]
+    info.push(`Bonus Coins Level ${level}/${UPGRADE_MAX_LEVEL}`);
+    if (level === UPGRADE_MAX_LEVEL) {
+        info[0] += ' (MAX)';
+    }
+    info.push();
+    if (level === 0 || dontShow) {
+        info.push(`Current Coin Bonus: \`${level}%\``);
+    } else {
+        info.push(`Current Coin Bonus: \`${level - 1}%\` » \`${level}%\``)
+    }
+    if (level !== UPGRADE_MAX_LEVEL) {
+        info.push(`Next Upgrade: ${util.addCommas(getNextUpgradeCost(level, -400, 0.05))} coins`,
+        `Next Coin Bonus: \`${level + 1}%\``);
+    }
+    return info;
+}
+
+/**
+ * Returns the cost to upgrade to the next level.
+ * Cost = (2000 + difficulty) * (1.2 + scaling) ^ (level of upgrade)
+ * 
+ * @param {number} currentLevel the current level 
+ * @param {number} scaling offset the exponent of this upgrade. Default: 0.
+ * @param {number} difficulty additional base cost of this upgrade. Default: 0. 
+ * @returns the cost to upgrade to the next level
+ */
+function getNextUpgradeCost(currentLevel, difficulty = 0, scaling = 0) {
+    return Math.floor((2000 + difficulty) * (1.2 + scaling) ** (currentLevel + 1));
 }

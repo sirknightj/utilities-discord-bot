@@ -4,7 +4,7 @@ const Discord = require('discord.js');
 const Colors = require('../resources/colors.json');
 
 module.exports = {
-    name: 'daily',
+    name: ['daily', 'd'],
     description: 'Claim some free coins every 23 hours!',
     usage: "",
     execute(bot, message, args) {
@@ -29,9 +29,12 @@ module.exports = {
         let now = Date.now();
         let difference = now - whenClaimed;
 
-        if (!whenClaimed || difference >= 82800000) { // 23 hours = 82,800,000 ms
+        let dailyCooldown = Math.floor(config.daily_reward_cooldown * (100 - util.getStats(message, message.member, 'upgrade_daily_reward_cooldown'))) / 100;
+        let dailyGracePeriod = Math.floor(config.daily_reward_streak_grace_period + (43200000 * util.getStats(message, message.member, 'upgrade_daily_reward_extended_grace')));
+
+        if (!whenClaimed || difference >= dailyCooldown) { // 23 hours = 82,800,000 ms
             let streakResult;
-            if (!whenClaimed || difference <= 172800000) { // 48 hours = 172,800,000 ms
+            if (!whenClaimed || difference <= dailyGracePeriod) { // 48 hours = 172,800,000 ms
                 // Streak maintained. Increase by 1.
                 streakResult = util.addStats(message, message.member, 1, 'daily_rewards_streak'); 
             } else {
@@ -44,6 +47,7 @@ module.exports = {
             } else {
                 coinsToAward = config.daily_reward_coin_amount + (streakResult.newPoints - 1) * config.daily_reward_coin_increment_per_streak_day;
             }
+            coinsToAward *= (1 + (util.getStats(message, message.member, 'upgrade_daily_reward_coin_bonus') * 0.01));
             coinsToAward = Math.round(coinsToAward * 100) / 100;
             let coinTransaction = util.addStats(message, message.member, coinsToAward, 'coins');
 
@@ -52,7 +56,7 @@ module.exports = {
                 `Streak: ${util.addCommas(streakResult.oldPoints)} » ${util.addCommas(streakResult.newPoints)}`
             ];
 
-            if (streakResult.newPoints === 1 && streakResult.oldPoints !== 0) {
+            if (streakResult.oldPoints !== 0) {
                 additionalInfo.push(`Previously claimed: ${util.toFormattedTime(difference)}`, `At: ${new Date(whenClaimed)}`);
             }
            
@@ -86,11 +90,11 @@ module.exports = {
             util.sendTimedMessage(message.channel, new Discord.MessageEmbed()
                 .setTitle('Not time yet')
                 .setColor(Colors.GOLD)
-                .setDescription([`Sorry, ${util.fixNameFormat(message.member.displayName)}, it hasn't been 23 hours yet since you last claimed your daily reward.`,
-                    `You need to wait ${util.toFormattedTime(whenClaimed + 82800000 - Date.now())}.`
+                .setDescription([`Sorry, ${util.fixNameFormat(message.member.displayName)}, it hasn't been \`${util.toFormattedTime(dailyCooldown)}\` yet since you last claimed your daily reward.`,
+                    `You need to wait \`${util.toFormattedTime(whenClaimed + dailyCooldown - Date.now())}\`.`
                     ])
                 .addField('Additional Info', [`You last claimed it at ${new Date(whenClaimed)}`,
-                `You can claim it again on ${new Date(whenClaimed + 82800000)}`])
+                `You can claim it again on ${new Date(whenClaimed + dailyCooldown)}`])
                 .setThumbnail(message.author.displayAvatarURL({ dynamic: true }))
                 .setFooter(`This message will automatically be deleted in ${config.longer_delete_delay / 1000} seconds.`), config.longer_delete_delay);
             util.safeDelete(message);
