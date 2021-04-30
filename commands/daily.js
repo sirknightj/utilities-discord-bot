@@ -47,7 +47,7 @@ module.exports = {
             } else {
                 coinsToAward = config.daily_reward_coin_amount + (streakResult.newPoints - 1) * config.daily_reward_coin_increment_per_streak_day;
             }
-            coinsToAward *= (1 + (util.getStats(message, message.member, 'upgrade_daily_reward_coin_bonus') * 0.01));
+            coinsToAward *= (1 + (util.getStats(message, message.member, 'upgrade_daily_reward_coin_bonus') * 0.02));
             coinsToAward = Math.round(coinsToAward * 100) / 100;
             let coinTransaction = util.addStats(message, message.member, coinsToAward, 'coins');
 
@@ -65,7 +65,7 @@ module.exports = {
             let embed = new Discord.MessageEmbed()
                 .setTitle(`${message.member.displayName} has claimed their daily reward!`)
                 .setColor(Colors.YELLOW)
-                .setDescription([`${message.member.displayName} has been awarded ${coinsToAward} coin${coinsToAward === 1 ? '' : 's'}.`, 
+                .setDescription([`${message.member.displayName} has been awarded ${coinsToAward} coin${coinsToAward === 1 ? '' : 's'}${util.getStats(message, message.member, 'upgrade_daily_reward_coin_bonus') ? ` (+${2 * util.getStats(message, message.member, 'upgrade_daily_reward_coin_bonus')}% bonus!)` : '.'}`, 
                     `${streakResult.newPoints > streakResult.oldPoints ? (streakResult.oldPoints === 0 ? "Streak started!" : "Streak maintained!") : "Streak reset!"}`])
                 .addField('Additional Info', additionalInfo)
                 .setTimestamp(now)

@@ -1,6 +1,8 @@
 {
     "RED": "#cc271f",
     "RED_RED": "#FF0000",
+    "MEDIUM_RED": "#E74C3C",
+    "MEDIUM_GREEN": "#2ECC71",
     "YELLOW": "#e3e027",
     "GOLD": "#ffb236",
     "GREEN": "#59c957",
@@ -10,5 +12,6 @@
     "BRIGHT_RED": "#FF2D00",
     "PURPLE": "#9400D3",
     "BLUE": "#45b6fe",
-    "LIGHT_BLUE": "#5dade2"
+    "LIGHT_BLUE": "#5dade2",
+    "TURQUOISE": "#00ced1"
 }

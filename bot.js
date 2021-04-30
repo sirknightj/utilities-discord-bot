@@ -158,12 +158,13 @@ bot.on('message', message => {
             if (botCommand.requiresTarget) {
 
                 // Attempts to find the user from the first argument args[0].
-                const user = util.getUserFromMention(message, args.shift());
+                let lookingFor = args.shift();
+                const user = util.getUserFromMention(message, lookingFor);
 
                 // Throws an error if there is no user found.
                 if (!user) {
                     util.safeDelete(message, config.delete_delay)
-                    util.sendTimedMessage(message.channel, `Invalid usage.\n\`${config.prefix}${command} ${botCommand.usage}\``);
+                    util.sendTimedMessage(message.channel, `Invalid usage.\n\`${config.prefix}${command} ${botCommand.usage}\`\nAdditional Info: Could not find user \`${lookingFor}\`.`);
                     return;
                 }
 
@@ -374,13 +375,15 @@ bot.on('voiceStateUpdate', async (oldState, newState) => {
             let nowTimeSpentInVC = userStats['time_spent_in_vc'];
 
             let previousCoins = userStats.coins ? userStats.coins : 0;
-            userStats.coins = Math.round((userStats.coins + pointsToAdd) * 100) / 100;
+            let bonus = userStats.upgrade_vc_earnings ? userStats.upgrade_vc_earnings * 20 : 0;
+            let coinsToAdd = Math.round(((pointsToAdd) * 100) * (1 + bonus/100)) / 100;
+            userStats.coins = Math.round((userStats.coins + coinsToAdd) * 100) / 100;
 
             util.sendMessage(logChannel, new Discord.MessageEmbed()
                 .setColor(Colors.YELLOW)
                 .setTitle("Earned Points")
                 .setAuthor(target.displayName, target.user.displayAvatarURL({ dynamic: true }))
-                .setDescription(`Awarded ${target.displayName} ${util.addCommas(pointsToAdd)} points and ${util.addCommas(pointsToAdd)} coins for being in a VC for ${util.addCommas(Math.floor(minutesSpent / 60))}h ${minutesSpent % 60}m ${secondsSpent % 60}s.`)
+                .setDescription(`Awarded ${target.displayName} ${util.addCommas(pointsToAdd)} points and ${util.addCommas(coinsToAdd)} coins${bonus ? ` (+${bonus}% bonus!)` : ''} for being in a VC for ${util.addCommas(Math.floor(minutesSpent / 60))}h ${minutesSpent % 60}m ${secondsSpent % 60}s.`)
                 .addField('Additional Info', [
                     `Joined: ${new Date(userStats.vc_session_started)}`,
                     `Left: ${new Date(now)}`,
@@ -555,13 +558,14 @@ function manageStats(message) {
 
     const userStats = guildStats[message.author.id];
 
-    // Adds 3 points if their last message was more than 10 minutes ago.
-    if (Date.now() - userStats.last_message >= 600000) {
+    // Adds 3 points if their last message was more than 5 minutes ago.
+    if (Date.now() - userStats.last_message >= 300000) {
         const pointsToAdd = 3;
+        const coinsToAdd = 3 + (userStats['upgrade_message_earnings'] ? userStats['upgrade_message_earnings'] : 0);
         let previousPoints = userStats.points ? userStats.points : 0;
         userStats.points = Math.round((previousPoints + pointsToAdd) * 100) / 100;
         let previousCoins = userStats.coins ? userStats.coins : 0;
-        userStats.coins = Math.round((previousCoins + pointsToAdd) * 100) / 100;
+        userStats.coins = Math.round((previousCoins + coinsToAdd) * 100) / 100;
         userStats.last_message = Date.now();
         if (!userStats.participating_messages) {
             userStats.participating_messages = 0;
@@ -570,7 +574,7 @@ function manageStats(message) {
             .setColor(Colors.YELLOW)
             .setTitle("Earned Points")
             .setAuthor(target.displayName, target.user.displayAvatarURL({ dynamic: true }))
-            .setDescription(`Awarded ${target.displayName} ${pointsToAdd} points and ${pointsToAdd} coins for sending a message in the Discord.`)
+            .setDescription(`Awarded ${target.displayName} ${pointsToAdd} points and ${coinsToAdd} coins${userStats.upgrade_message_earnings ? ` (+${userStats.upgrade_message_earnings} bonus!)` : ''} for sending a message in the Discord.`)
             .addField('Additional Info', [
                 `Points: ${util.addCommas(previousPoints)} » ${util.addCommas(userStats.points)}`,
                 `Coins: ${util.addCommas(previousCoins)} » ${util.addCommas(userStats.coins)}`,

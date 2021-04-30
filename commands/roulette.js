@@ -46,7 +46,8 @@ module.exports = {
                     [`Total Plays: ${util.addCommas(stats.roulette_played)}`,
                     `Wins: ${util.addCommas(stats.roulette_wins)}`,
                     `Losses: ${util.addCommas(stats.roulette_losses)}`,
-                    `Win rate: ${Math.round(stats.roulette_wins / stats.roulette_played * 100 * 100) / 100}%`
+                    `Win rate: ${stats.roulette_wins ? Math.round(stats.roulette_wins / stats.roulette_played * 100 * 100) / 100 : 0}%`,
+                    `Times saved by Safety Net upgrade: ${util.addCommas(stats.roulette_safety_net_saves)}`
                     ])
                 .addField('Streaks',
                     [`Current ${stats.roulette_winning_streak > stats.roulette_losing_streak ? "Winning" : "Losing"} Streak: ${util.addCommas(Math.max(stats.roulette_winning_streak, stats.roulette_losing_streak))}`,
@@ -59,7 +60,7 @@ module.exports = {
             util.safeDelete(message);
             return;
         } else if (args[0].toLowerCase() === 'statwipe') {
-            if (!message.member.hasPermission('KICK_MEMBERS', {checkAdmin: true, checkOwner: true})) {
+            if (!message.member.hasPermission('KICK_MEMBERS', { checkAdmin: true, checkOwner: true })) {
                 util.safeDelete(message);
                 util.sendTimedMessage(message.channel, 'You do not have permission to use this command. It requires KICK_MEMBERS.', config.longer_delete_delay);
                 return;
@@ -80,29 +81,30 @@ module.exports = {
                 return;
             }
             let statEmbed = new Discord.MessageEmbed()
-            .setTitle(`${util.fixNameFormat(message.member.displayName)} has wiped ${util.fixNameFormat(target.displayName)}'s Roulette Stats!`)
-            .setDescription(`${util.fixNameFormat(target.displayName)}'s roulette stats before wiping:`)
-            .addField('Roulette Earnings',
-                [`Total Coins Bet: ${util.addCommas(stats.coins_bet_in_roulette)}`,
-                `Total Coins Earned: ${util.addCommas(stats.coins_earned_in_roulette)}`,
-                `Total Coins Lost: ${util.addCommas(stats.coins_lost_in_roulette)}`,
-                `Net Earnings: ${util.addCommas(stats.net_roulette_earnings)}`
-                ])
-            .addField('Roulette Winrate',
-                [`Total Plays: ${util.addCommas(stats.roulette_played)}`,
-                `Wins: ${util.addCommas(stats.roulette_wins)}`,
-                `Losses: ${util.addCommas(stats.roulette_losses)}`,
-                `Win rate: ${Math.round(stats.roulette_wins / stats.roulette_played * 100 * 100) / 100}%`
-                ])
-            .addField('Streaks',
-                [`Current ${stats.roulette_winning_streak > stats.roulette_losing_streak ? "Winning" : "Losing"} Streak: ${util.addCommas(Math.max(stats.roulette_winning_streak, stats.roulette_losing_streak))}`,
-                `Longest Win Streak: ${util.addCommas(stats.roulette_longest_win_streak)}`,
-                `Longest Losing Streak: ${util.addCommas(stats.roulette_longest_losing_streak)}`
-                ])
-            .setColor(Colors.BRIGHT_RED)
-            .setThumbnail(target.user.displayAvatarURL({ dynamic: true }))
-            .setAuthor(message.member.displayName, message.member.user.displayAvatarURL({ dynamic: true }))
-            .setTimestamp();
+                .setTitle(`${util.fixNameFormat(message.member.displayName)} has wiped ${util.fixNameFormat(target.displayName)}'s Roulette Stats!`)
+                .setDescription(`${util.fixNameFormat(target.displayName)}'s roulette stats before wiping:`)
+                .addField('Roulette Earnings',
+                    [`Total Coins Bet: ${util.addCommas(stats.coins_bet_in_roulette)}`,
+                    `Total Coins Earned: ${util.addCommas(stats.coins_earned_in_roulette)}`,
+                    `Total Coins Lost: ${util.addCommas(stats.coins_lost_in_roulette)}`,
+                    `Net Earnings: ${util.addCommas(stats.net_roulette_earnings)}`
+                    ])
+                .addField('Roulette Winrate',
+                    [`Total Plays: ${util.addCommas(stats.roulette_played)}`,
+                    `Wins: ${util.addCommas(stats.roulette_wins)}`,
+                    `Losses: ${util.addCommas(stats.roulette_losses)}`,
+                    `Win rate: ${stats.roulette_wins ? Math.round(stats.roulette_wins / stats.roulette_played * 100 * 100) / 100 : 0}%`,
+                    `Times saved by Safety Net upgrade: ${util.addCommas(stats.roulette_safety_net_saves)}`
+                    ])
+                .addField('Streaks',
+                    [`Current ${stats.roulette_winning_streak > stats.roulette_losing_streak ? "Winning" : "Losing"} Streak: ${util.addCommas(Math.max(stats.roulette_winning_streak, stats.roulette_losing_streak))}`,
+                    `Longest Win Streak: ${util.addCommas(stats.roulette_longest_win_streak)}`,
+                    `Longest Losing Streak: ${util.addCommas(stats.roulette_longest_losing_streak)}`
+                    ])
+                .setColor(Colors.BRIGHT_RED)
+                .setThumbnail(target.user.displayAvatarURL({ dynamic: true }))
+                .setAuthor(message.member.displayName, message.member.user.displayAvatarURL({ dynamic: true }))
+                .setTimestamp();
             util.sendMessage(message.channel, statEmbed);
             util.sendMessage(util.getLogChannel(message), statEmbed);
             util.setStats(message, target, 0, 'coins_bet_in_roulette');
@@ -117,6 +119,7 @@ module.exports = {
             util.setStats(message, target, 0, 'roulette_losing_streak');
             util.setStats(message, target, 0, 'roulette_longest_win_streak');
             util.setStats(message, target, 0, 'roulette_longest_losing_streak');
+            util.setStats(message, target, 0, 'roulette_safety_net_saves')
             util.safeDelete(message);
             return;
         } else if (args[0].toLowerCase() === 'all') {
@@ -149,7 +152,7 @@ module.exports = {
 
         try {
             if (SelectedCoins === 0) {
-                throw 'You may not play with 0 coins. You can, however, play with partial coins, rounded down to the nearest hundredth.';
+                throw `Invalid \`<coins/half/all>\` argument: \`${args[0]}\`${BETS.includes(args[0].toLowerCase()) && args[1] ? `, did you mean \`${config.prefix}roulette ${args[1]} ${args[0]}\`?` : ''}\n\`${config.prefix}roulette ${this.usage}\``;
             }
 
             if (util.getStats(message, message.member, "coins") >= SelectedCoins) {
@@ -157,7 +160,13 @@ module.exports = {
                 if (winner) {
                     awardPoints(message, RANDOM_NUMBER, lookingFor, SelectedCoins, SelectedCoins * winner);
                 } else {
-                    removePoints(message, RANDOM_NUMBER, lookingFor, SelectedCoins);
+                    let upgradeLevel = util.getStats(message, message.member, 'upgrade_roulette_safety_net');
+                    let savingChance = 0;
+                    if (upgradeLevel > 0) {
+                        let numbersGuessed = getGuessSize(lookingFor);
+                        savingChance = numbersGuessed * 0.0002 * upgradeLevel;
+                    }
+                    removePoints(message, RANDOM_NUMBER, lookingFor, SelectedCoins, savingChance);
                 }
             } else {
                 util.sendTimedMessage(message.channel, `You do not have enough coins. You have ${util.getStats(message, message.member, "coins")} coins.`, config.longer_delete_delay);
@@ -174,7 +183,7 @@ module.exports = {
  * guess: String - the guess to be checked
  * randNumb: Number - the winning number
  */
-isWin = (guess, randNumb) => {
+function isWin(guess, randNumb) {
     guess = guess.toLowerCase();
     switch (guess) {
         case "green":
@@ -209,6 +218,45 @@ isWin = (guess, randNumb) => {
 };
 
 /**
+ * Returns the number of numbers in the guess
+ * guess: String - the guess to be checked
+ * @returns {number} the number of numbers in the guess
+ */
+function getGuessSize(guess) {
+    guess = guess.toLowerCase();
+    switch (guess) {
+        case "green":
+            return 2; // 0 or 00
+        case "even":
+            return 18; // 0 is neither even or odd.
+        case "odd":
+            return 18; // 0 is neither even or odd
+        case "high":
+            return 18; // 19-36
+        case "low":
+            return 18; // 1-18
+        case "red":
+            return 18;
+        case "black":
+            return 18;
+        case "column1":
+            return 12; // 1, 4, 7, ..., 31, 34
+        case "column2":
+            return 12; // 2, 5, 8, ..., 32, 35
+        case "column3":
+            return 12; // 3, 6, 9, ..., 33, 36
+        case "dozen1":
+            return 12; // 1-12
+        case "dozen2":
+            return 12; // 13-24
+        case "dozen3":
+            return 12; // 25-36
+        default:
+            throw `Invalid bet!\nValid bets: \`${BETS.join('`/`')}\``;
+    }
+};
+
+/**
  * Returns an embed representing this gambling session
  * message: Discord.Message() - any message sent in this guild
  * randNumb: Number - the winning number chosen
@@ -216,7 +264,21 @@ isWin = (guess, randNumb) => {
  * coinsToAdd: Number - the number of coins to remove from the player
  * Returns: Discord.messageEmbed() - the embed representing the game, and coins transaction
  */
-makeEmbed = (message, randNumb, lookingFor, SelectedCoins, oldCoins, newCoins, streak, additionalMessage = "") => {
+function makeEmbed(message, randNumb, lookingFor, SelectedCoins, oldCoins, newCoins, streak, additionalMessage = "", safetySaves = null) {
+    if (safetySaves) {
+        return new Discord.MessageEmbed()
+            .setTitle(`${message.member.displayName} has played roulette!`)
+            .setDescription(`**Saved by safety net upgrade!**\n${util.addCommas(SelectedCoins)} coin${Math.abs(Math.round((SelectedCoins) * 100) / 100) === 1 ? '' : 's'} would've been taken away for losing, but your upgrade saved you and reduced it to 0!\nLosing Streak: ${streak}${additionalMessage}`)
+            .addField('Additional Info', [`Bet: ${util.addCommas(SelectedCoins)} coins`,
+            `Guess: ${lookingFor} (${getDescription(lookingFor)})`,
+            `Result: ${getRouletteColor(randNumb)} ${randNumb === 37 ? '00' : randNumb}`,
+            `Coins: ${util.addCommas(oldCoins)} » ${util.addCommas(newCoins)}`,
+            `Times Saved By Safety Net: ${util.addCommas(safetySaves.oldPoints)} » ${util.addCommas(safetySaves.newPoints)}`
+            ])
+            .setColor(Colors.YELLOW)
+            .setTimestamp()
+            .setThumbnail(target.user.displayAvatarURL({ dynamic: true }));
+    }
     return new Discord.MessageEmbed()
         .setTitle(`${message.member.displayName} has played roulette!`)
         .setDescription(`${util.addCommas(Math.abs(Math.round((newCoins - oldCoins) * 100) / 100))} coin${Math.abs(Math.round((newCoins - oldCoins) * 100) / 100) === 1 ? '' : 's'} ha${Math.abs(Math.round((newCoins - oldCoins) * 100) / 100) === 1 ? 's' : 've'} been ${oldCoins > newCoins ? 'taken away for losing.' : 'awarded for winning!'}\n${oldCoins > newCoins ? `Losing Streak: ${streak}` : `Winning Streak: ${streak}`}${additionalMessage}`)
@@ -225,7 +287,7 @@ makeEmbed = (message, randNumb, lookingFor, SelectedCoins, oldCoins, newCoins, s
         `Result: ${getRouletteColor(randNumb)} ${randNumb === 37 ? '00' : randNumb}`,
         `Coins: ${util.addCommas(oldCoins)} » ${util.addCommas(newCoins)}`
         ])
-        .setColor(Colors.BLUE)
+        .setColor(`${oldCoins > newCoins ? Colors.MEDIUM_RED : Colors.MEDIUM_GREEN}`)
         .setTimestamp()
         .setThumbnail(target.user.displayAvatarURL({ dynamic: true }));
 };
@@ -237,7 +299,7 @@ makeEmbed = (message, randNumb, lookingFor, SelectedCoins, oldCoins, newCoins, s
  * lookingFor: String - the player's guess
  * coinsToAdd: Number - the number of coins to add to the player
  */
-awardPoints = (message, randNumb, lookingFor, SelectedCoins, coinsToAdd) => {
+function awardPoints(message, randNumb, lookingFor, SelectedCoins, coinsToAdd) {
     let result = util.addStats(message, message.member, coinsToAdd, "coins");
     util.addStats(message, message.member, 1, "roulette_played");
     util.addStats(message, message.member, 1, "roulette_wins");
@@ -251,8 +313,9 @@ awardPoints = (message, randNumb, lookingFor, SelectedCoins, coinsToAdd) => {
         additionalMessage = " (new personal best!)";
     }
     util.setStats(message, message.member, 0, "roulette_losing_streak");
-    util.sendMessage(util.getLogChannel(message), makeEmbed(message, randNumb, lookingFor, SelectedCoins, result.oldPoints, result.newPoints, streak, additionalMessage));
-    util.sendMessage(message.channel, makeEmbed(message, randNumb, lookingFor, SelectedCoins, result.oldPoints, result.newPoints, streak, additionalMessage));
+    let embed = makeEmbed(message, randNumb, lookingFor, SelectedCoins, result.oldPoints, result.newPoints, streak, additionalMessage)
+    util.sendMessage(util.getLogChannel(message), embed);
+    util.sendMessage(message.channel, embed);
 };
 
 /**
@@ -262,8 +325,18 @@ awardPoints = (message, randNumb, lookingFor, SelectedCoins, coinsToAdd) => {
  * lookingFor: String - the player's guess
  * coinsToRemove: Number - the number of coins to remove from the player
  */
-removePoints = (message, randNumb, lookingFor, coinsToRemove) => {
-    let result = util.addStats(message, message.member, -coinsToRemove, "coins");
+function removePoints(message, randNumb, lookingFor, coinsToRemove, savingChance = 0) {
+    let result;
+    let safetySaves;
+    if (savingChance > 0) {
+        if (Math.random() < safetySaves) { // saved by upgrade
+            result = { oldPoints: util.getStats(message, message.member, 'coins'), newPoints: util.getStats(message, message.member, 'coins') };
+            safetySaves = util.addStats(message, message.member, 1, 'roulette_safety_net_saves')
+        }
+    }
+    if (!result) {
+        result = util.addStats(message, message.member, -coinsToRemove, "coins");
+    }
     util.addStats(message, message.member, 1, "roulette_played");
     util.addStats(message, message.member, 1, "roulette_losses");
     util.addStats(message, message.member, coinsToRemove, "coins_bet_in_roulette");
@@ -276,15 +349,16 @@ removePoints = (message, randNumb, lookingFor, coinsToRemove) => {
         additionalMessage = " (new personal best!)";
     }
     util.setStats(message, message.member, 0, "roulette_winning_streak");
-    util.sendMessage(util.getLogChannel(message), makeEmbed(message, randNumb, lookingFor, coinsToRemove, result.oldPoints, result.newPoints, streak, additionalMessage));
-    util.sendMessage(message.channel, makeEmbed(message, randNumb, lookingFor, coinsToRemove, result.oldPoints, result.newPoints, streak, additionalMessage));
+    let embed = makeEmbed(message, randNumb, lookingFor, coinsToRemove, result.oldPoints, result.newPoints, streak, additionalMessage, safetySaves);
+    util.sendMessage(util.getLogChannel(message), embed);
+    util.sendMessage(message.channel, embed);
 };
 
 /**
  * Returns the roulette color for the number
  * randNumb: Number - the number whose color to be returned
  */
-getRouletteColor = (randNumb) => {
+function getRouletteColor(randNumb) {
     if (randNumb === 0 || randNumb === 37) { // green when 0 or 00
         return ROULETTE_COLORS[0];
     } else if ((randNumb >= 1 && randNumb <= 10) || (randNumb >= 19 && randNumb <= 28)) { // between 1-10 and 19-28, odd is red, and even is black
