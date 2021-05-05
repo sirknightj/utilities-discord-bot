@@ -53,5 +53,6 @@
     "purge_limit": 100,
     "delete_delay": 20000,
     "longer_delete_delay": 45000,
+    "longest_delete_delay": 120000,
     "ghost_ping_limit": 100
 }

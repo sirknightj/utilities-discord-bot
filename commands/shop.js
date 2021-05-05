@@ -7,7 +7,7 @@ const { getUsage } = require('../utilities');
 module.exports = {
     name: ['shop', 'store'],
     description: "Lets you purchase items from the store. 'All' purchases as many of that item as you can.",
-    usage: `<purchase/refund> <ShopItem: ${getAllowedInputs()}> (optional: quantity/all)`,
+    usage: [`<purchase/refund> <ShopItem: ${getAllowedInputs()}> (optional: quantity/all)`, `upgrade`],
     requiresArgs: true,
     requiredPermissions: "CHANGE_NICKNAME",
 
@@ -65,12 +65,12 @@ module.exports = {
                     return;
                 }
             }
-            if (args[1] === 'ticket' || args[1] === 'tickets') {
+            if ((args[1] === 'ticket' || args[1] === 'tickets') && (args[0] === 'purchase' || args[0] === 'refund')) {
                 if (quantity === 0) {
                     util.sendMessage(message.channel, `${util.fixNameFormat(message.member.displayName)}, you have purchased 0 tickets. Congratulations.`);
                     return;
                 }
-                let cost = config.shop_ticket_cost * quantity;
+                let cost = Math.floor(config.shop_ticket_cost * quantity * 100 * (1 - (util.getStats(message, message.member, 'upgrade_ticket_discount')*0.02))) / 100;
                 if (purchase && coinBalance >= cost) {
                     let ticketResult = util.addStats(message, message.member, quantity, 'tickets');
                     let coinResult = util.addStats(message, message.member, -cost, 'coins');
@@ -88,6 +88,9 @@ module.exports = {
                     util.safeDelete(message);
                     util.sendTimedMessage(message.channel, `Sorry ${util.fixNameFormat(message.member.displayName)}, you don't have enough coins to purchase this item. It costs ${cost} coin${addS(cost)} to purchase ${quantity} ticket${addS(quantity)}, and you only have ${coinBalance} coin${addS(coinBalance)}.`);
                 }
+            } else if (args[1] === 'role') {
+                util.sendMessage(message.channel, 'Coming soon!');
+                return;
             } else if (upgrade) {
                 args.shift();
                 if (args[0] && args[0].toLowerCase() === 'daily') {
@@ -208,6 +211,39 @@ module.exports = {
                         util.sendMessage(message.channel, upgradeEmbed);
                         util.sendMessage(util.getLogChannel(message), upgradeEmbed);
                         return;
+                    } else if (args[0] && args[0].toLowerCase() === 'tickets') {
+                        let level = util.getStats(message, message.member, 'upgrade_ticket_discount');
+                        let cost = getNextUpgradeCost(level, -1750, 0.1);
+                        if (level === UPGRADE_MAX_LEVEL) {
+                            util.sendMessage(message.channel, `This is already at max level!`);
+                            return;
+                        }
+                        if (coinBalance < cost) {
+                            util.sendMessage(message.channel, `Sorry, ${util.fixNameFormat(message.member.displayName)}, you don't have enough coins. It costs ${util.addCommas(cost)} coins, but you only have ${util.addCommas(coinBalance)}.`);
+                            return;
+                        }
+                        let levelTransaction = util.addStats(message, message.member, 1, 'upgrade_ticket_discount');
+                        let coinTransaction = util.addStats(message, message.member, -cost, 'coins');
+                        let upgradeEmbed = getUpgradesEmbed(message, 'Tickets Discount', getCheaperTicketsStatus(levelTransaction.newPoints), levelTransaction, coinTransaction);
+                        util.sendMessage(message.channel, upgradeEmbed);
+                        util.sendMessage(util.getLogChannel(message), upgradeEmbed);
+
+                        // Refund cost of current tickets.
+                        let ticketCount = util.getStats(message, message.member, 'tickets');
+                        if (ticketCount > 0) {
+                            let refundAmount = Math.floor(ticketCount * config.shop_ticket_cost * 0.02 * 100) / 100;
+                            let coinTransaction = util.addStats(message, message.member, refundAmount, 'coins')
+                            let embed = new Discord.MessageEmbed()
+                                .setTitle('Refund for cheaper tickets!')
+                                .setAuthor(message.member.displayName, message.member.user.displayAvatarURL({ dynamic: true }))
+                                .setColor(Colors.GOLD)
+                                .setDescription([`Your ${util.addCommas(ticketCount)} tickets are now 2% cheaper than before.`,
+                                `You have been refunded ${util.addCommas(refundAmount)} coins.`,
+                                `Coins: ${util.addCommas(coinTransaction.oldPoints)} » ${util.addCommas(coinTransaction.newPoints)}`])
+                            util.sendMessage(message.channel, embed);
+                            util.sendMessage(util.getLogChannel(message), embed);
+                        }
+                        return;
                     } else if (args[0] && args[0].toLowerCase() !== 'help') {
                         util.sendMessage(message.channel, `Invalid <upgradeName> \`${args[0]}\`\nUsage: \`${config.prefix}shop upgrade other <help/upgradeName>\``);
                     } else {
@@ -257,7 +293,7 @@ function sendShopEmbed(message, oldPoints, newPoints, stat, purchase, oldPoints2
         .setColor(Colors.LIGHT_BLUE)
         .setTitle(`Shop ${purchase ? 'Purchase' : 'Refund'}`)
         .setAuthor(target.displayName, target.user.displayAvatarURL({ dynamic: true }))
-        .setDescription(`${util.fixNameFormat(message.guild.me.displayName)} (bot) completed ${util.fixNameFormat(target.displayName)}'s ${stat} ${purchase ? 'purchase' : 'refund'}!`)
+        .setDescription(`${util.fixNameFormat(message.guild.me.displayName)} (bot) completed ${util.fixNameFormat(target.displayName)}'s ${stat} ${purchase ? 'purchase' : 'refund'}!${stat2 ? `\nEach ${stat} costs ${util.addCommas(Math.abs(Math.floor((newPoints2 - oldPoints2)/(newPoints - oldPoints)*100)/100))} ${stat2}.` : ''}`)
         .addField('Additional Info', additionalInfo)
         .setTimestamp();
 
@@ -329,6 +365,7 @@ function getUpgradeCategoryInfo(message) {
                 `\`${config.prefix}shop upgrade other\` - View upgrades to ticket costs and coins earned from participation`
             ])
         .setColor(Colors.YELLOW)
+        .setFooter(`You have 💰 ${util.addCommas(util.getStats(message, message.member, 'coins'))} coins.`)
         .setAuthor(message.member.displayName, message.member.user.displayAvatarURL({ dynamic: true }));
 }
 
@@ -366,12 +403,13 @@ function getDailyUpgradeInfo(message) {
         .setTitle('Daily Upgrades Info')
         .setAuthor(message.member.displayName, message.member.user.displayAvatarURL({ dynamic: true }))
         .setColor(Colors.TURQUOISE)
-        .addField(`Daily Rewards Cooldown`, [`\`${config.prefix}shop upgrade daily cooldown\``,
+        .addField(`:fast_forward: Daily Rewards Cooldown`, [`\`${config.prefix}shop upgrade daily cooldown\``,
         ...getDailyCooldownStatus(util.getStats(message, message.member, 'upgrade_daily_reward_cooldown'), true)])
-        .addField(`Daily Rewards Streak Grace Period`, [`\`${config.prefix}shop upgrade daily grace\``,
+        .addField(`:fire: Daily Rewards Streak Grace Period`, [`\`${config.prefix}shop upgrade daily grace\``,
         ...getDailyGraceStatus(util.getStats(message, message.member, 'upgrade_daily_reward_extended_grace'), true)])
-        .addField(`Daily Rewards Coin Bonus`, [`\`${config.prefix}shop upgrade daily bonus\``,
+        .addField(`:moneybag: Daily Rewards Coin Bonus`, [`\`${config.prefix}shop upgrade daily bonus\``,
         ...getDailyBonusStatus(util.getStats(message, message.member, 'upgrade_daily_reward_coin_bonus'), true)])
+        .setFooter(`You have 💰 ${util.addCommas(util.getStats(message, message.member, 'coins'))} coins.`)
 }
 
 function getRouletteUpgradeInfo(message) {
@@ -381,6 +419,7 @@ function getRouletteUpgradeInfo(message) {
         .setColor(Colors.TURQUOISE)
         .addField(`Roulette Safety Net`, [`\`${config.prefix}shop upgrade roulette safety\``,
         ...getRouletteSafetyNetStatus(util.getStats(message, message.member, 'upgrade_roulette_safety_net'), true)])
+        .setFooter(`You have 💰 ${util.addCommas(util.getStats(message, message.member, 'coins'))} coins.`)
 }
 
 function getOtherUpgradeInfo(message) {
@@ -388,10 +427,13 @@ function getOtherUpgradeInfo(message) {
         .setTitle('Misc Upgrades Info')
         .setAuthor(message.member.displayName, message.member.user.displayAvatarURL({ dynamic: true }))
         .setColor(Colors.TURQUOISE)
-        .addField(`Coins Earned From Messages`, [`\`${config.prefix}shop upgrade other messages\``,
+        .addField(`:moneybag: Coins Earned From Messages`, [`\`${config.prefix}shop upgrade other messages\``,
         ...getMessageEarningStatus(util.getStats(message, message.member, 'upgrade_message_earnings'), true)])
-        .addField(`Coins Earned From VC`, [`\`${config.prefix}shop upgrade other vc\``,
+        .addField(`:moneybag: Coins Earned From VC`, [`\`${config.prefix}shop upgrade other vc\``,
         ...getVCEarningStatus(util.getStats(message, message.member, 'upgrade_vc_earnings'), true)])
+        .addField(`:tickets: Ticket Discount`, [`\`${config.prefix}shop upgrade other tickets\``,
+        ...getCheaperTicketsStatus(util.getStats(message, message.member, 'upgrade_ticket_discount'), true)])
+        .setFooter(`You have 💰 ${util.addCommas(util.getStats(message, message.member, 'coins'))} coins.`)
 }
 
 const DAILY_COOLDOWN_MAX_LEVEL = 12;
@@ -555,6 +597,33 @@ const MESSAGE_EARNINGS_MAX_LEVEL = 12;
     if (level !== UPGRADE_MAX_LEVEL) {
         info.push(`Next Upgrade: ${util.addCommas(getNextUpgradeCost(level, -1951, 0.34))} coins`,
             `Next Bonus: \`+${(level + 1)*20}%\` coins from VC.`);
+    }
+    return info;
+}
+
+/**
+ * Returns the description of the cheaper tickets upgrade.
+ * Each level grants -1% cost of tickets.
+ * 
+ * @param {number} level 
+ * @param {boolean} dontShow true if you just leveled up. False if not.
+ * @returns {string} description of the daily cooldown upgrade.
+ */
+ function getCheaperTicketsStatus(level, dontShow = false) {
+    let info = [`Each level grants you \`2%\` cheaper tickets!`];
+    info.push(`Cheaper Tickets Level ${level}/${UPGRADE_MAX_LEVEL}`);
+    if (level === UPGRADE_MAX_LEVEL) {
+        info[1] += ' (MAX)';
+    }
+    info.push();
+    if (level === 0 || dontShow) {
+        info.push(`Current Bonus: \`${level * 2}%\` cheaper tickets.`);
+    } else {
+        info.push(`Current Bonus: \`${(level - 1)*2}%\` » \`${level*2}%\` cheaper tickets.`);
+    }
+    if (level !== UPGRADE_MAX_LEVEL) {
+        info.push(`Next Upgrade: ${util.addCommas(getNextUpgradeCost(level, -1750, 0.1))} coins`,
+            `Next Bonus: \`+${(level + 1)*2}%\` cheaper tickets.`);
     }
     return info;
 }

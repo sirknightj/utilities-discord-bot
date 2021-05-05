@@ -94,8 +94,8 @@ bot.on('message', message => {
                     util.sendTimedMessage(message.channel, new Discord.MessageEmbed()
                         .setTitle('Here are all of my commands:')
                         .setDescription(helpMessage)
-                        .setFooter(`This message will be automatically deleted in ${config.longer_delete_delay / 1000} seconds.`),
-                    config.longer_delete_delay);
+                        .setFooter(`This message will be automatically deleted in ${config.longest_delete_delay / 1000} seconds.`),
+                    config.longest_delete_delay);
                     count = 0;
                     helpMessage = '';
                 }
@@ -103,8 +103,8 @@ bot.on('message', message => {
             util.sendTimedMessage(message.channel, new Discord.MessageEmbed()
                 .setTitle('Here are all of my commands:')
                 .setDescription(helpMessage)
-                .setFooter(`This message will be automatically deleted in ${config.longer_delete_delay / 1000} seconds.`),
-                config.longer_delete_delay);
+                .setFooter(`This message will be automatically deleted in ${config.longest_delete_delay / 1000} seconds.`),
+                config.longest_delete_delay);
             return;
         }
 
@@ -130,7 +130,7 @@ bot.on('message', message => {
                 for (var permission of requiredPerms) {
                     if (!message.member.hasPermission(permission)) {
                         util.safeDelete(message);
-                        util.sendMessage(message.channel, "You do not have permission to use this command.");
+                        util.sendMessage(message.channel, `You do not have permission to use this command.\nMissing \`${permission}\`.`);
                         return;
                     }
                 }
@@ -139,8 +139,33 @@ bot.on('message', message => {
             // If the first word after the command name is "help" or "usage", then display how to use it.
             if (args[0]) {
                 if (args[0].toLowerCase() === 'help' || args[0].toLowerCase() === 'usage') {
-                    util.safeDelete(message);
-                    util.sendTimedMessage(message.channel, `\`!${command}\`\nDescription: ${botCommand.description}\nUsage: \`${config.prefix}${command} ${botCommand.usage}\`\n_This message will automatically be deleted in ${config.longer_delete_delay / 1000} seconds_`, config.longer_delete_delay);
+                    util.safeDelete(message, config.longer_delete_delay);
+                    let embed = new Discord.MessageEmbed()
+                        .setTitle(`${config.prefix}${command}`)
+                        .setAuthor(message.member.displayName, message.member.user.displayAvatarURL({ dynamic: true }))
+                        .setDescription(botCommand.description);
+
+                    if (botCommand.usage && botCommand.usage.length > 0) {
+                        if (typeof botCommand.usage === 'string') {
+                            embed.addField(`Usage`, `\`${config.prefix}${command} ${botCommand.usage}\``);
+                        } else {
+                            embed.addField(`Usage`, [...botCommand.usage].map((item) => `\`${config.prefix}${command} ${item}\``).join('\n'));
+                        }
+                    } else {
+                        embed.addField(`Usage`, `\`${config.prefix}${command}\``);
+                    }
+                    if (botCommand.requiredPermissions) {
+                        if (typeof botCommand.requiredPermissions === 'string') {
+                            embed.addField('Permissions Required To Use:', botCommand.requiredPermissions);
+                        } else {
+                            embed.addField('Permissions Required To Use:', botCommand.requiredPermissions.join(', '));
+                        }
+                    }
+                    embed.addField('Aliases', botCommand.name.join(', '))
+                        .setFooter([`< > = required argument, ( ) = optional argument`, `This message will automatically be deleted in ${config.longer_delete_delay / 1000} seconds.`])
+                        .setColor(Colors.BLACK)
+                        .setTimestamp();
+                    util.sendTimedMessage(message.channel, embed, config.longer_delete_delay);
                     return;
                 }
             }

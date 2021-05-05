@@ -16,7 +16,7 @@ module.exports = {
         try {
             let LeaderboardEmbed = new Discord.MessageEmbed()
                 .setColor("#ffb236")
-                .setFooter(`This message will be automatically deleted in ${config.longer_delete_delay / 1000} seconds.`);
+                .setFooter(`This message will be automatically deleted in ${config.longest_delete_delay / 1000} seconds.`);
 
             var allStats = {};
             const fileLocation = `${config.resources_folder_file_path}stats.json`;
@@ -125,7 +125,7 @@ module.exports = {
             while (pos < formattedPrint.length) {
                 pos = Math.min(formattedPrint.length, getPositionOf(formattedPrint, '\n', 50 * (i + 1)));
                 LeaderboardEmbed.setDescription(`${wantTotal && total ? `${total} total ${keyword}\n` : ''}${formattedPrint.slice(getPositionOf(formattedPrint, '\n', 50 * i), pos)}`);
-                util.sendTimedMessage(message.channel, LeaderboardEmbed, config.longer_delete_delay);
+                util.sendTimedMessage(message.channel, LeaderboardEmbed, config.longest_delete_delay);
                 i++;
             }
         } catch (err) {

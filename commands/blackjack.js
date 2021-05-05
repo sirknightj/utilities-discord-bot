@@ -5,7 +5,7 @@ const Colors = require('../resources/colors.json')
 
 module.exports = {
     name: ['blackjack', 'bj'],
-    description: 'Gets the avatar of the user',
+    description: 'Play backjack against the bot!',
     usage: '<coins/half/all>',
     requiresArgs: true,
 
@@ -151,6 +151,7 @@ module.exports = {
                 .setAuthor(player.displayName, player.user.displayAvatarURL({ dynamic: true }))
                 .setDescription(`${description}\n${gameDone ? '' : `You bet ${util.addCommas(bet)} coins.`}`)
                 .setTimestamp()
+                .setColor(Colors.BLUE)
                 .addField('Your Hand', `${this.handToString(playerHand)}\nis worth: ${this.computeValue(playerHand).value}`, true)
                 .addField("Dealer's Hand", `${this.handToString(computerHand, isComputerHidden)}\nis worth: ${this.computeValue(computerHand, isComputerHidden).value}${isComputerHidden ? ' + ?' : ''}`, true)
             if (gameDone) {
@@ -159,33 +160,46 @@ module.exports = {
                 let playerValue = this.computeValue(playerHand).value;
                 let computerValue = this.computeValue(computerHand).value;
                 if (playerValue === computerValue && (isPlayerBlackJack === isComputerBlackJack)) {
+                    embed.setColor(Colors.YELLOW);
                     embed.addField('Additional Info', 'Tie!')
+                    util.addStats(message, player, 1, 'blackjack_played');
+                    util.addStats(message, player, 1, 'blackjack_tied');
+                    util.addStats(message, player, 1, 'coins_bet_in_blackjack');
+                    util.setStats(message, player, 0, 'blackjack_winning_streak');
+                    util.setStats(message, player, 0, 'blackjack_losing_streak');
                 } else if (isPlayerBlackJack) {
                     let winnings = Math.floor(1.5 * bet * 100) / 100;
                     let transaction = util.addStats(msg, player, winnings, 'coins');
                     let result = this.awardWinningStats(msg, player, winnings, bet);
+                    util.addStats(message, player, 1, 'blackjack_blackjacks');
+                    embed.setColor(Colors.GREEN);
                     embed.addField('Additional Info', [`Congrats! You got a blackjack. Your payout is 3:2.`, `Win Streak: ${util.addCommas(result.winStreak)}${result.newRecord ? ' (new personal best!)' : ''}`, `Your bet: ${util.addCommas(bet)}`, `Payout: ${util.addCommas(winnings)}`, `Coins: ${util.addCommas(transaction.oldPoints)} » ${util.addCommas(transaction.newPoints)}`]);
                 } else if (isComputerBlackJack) {
                     let losings = bet;
                     let transaction = util.addStats(msg, player, -losings, 'coins');
                     let result = this.awardLosingStats(msg, player, losings, bet);
+                    embed.setColor(Colors.MEDIUM_RED);
                     embed.addField('Additional Info', [`Sorry, you lose your bet. The dealer got a blackjack and won.`, `Losing Streak: ${util.addCommas(result.losingStreak)}${result.newRecord ? ' (new personal best!)' : ''}`, `Your bet: ${util.addCommas(bet)}`, `Coins: ${util.addCommas(transaction.oldPoints)} » ${util.addCommas(transaction.newPoints)}`]);
                 } else if (playerValue > computerValue && playerValue <= 21) {
                     let winnings = bet;
                     let transaction = util.addStats(msg, player, winnings, 'coins');
                     let result = this.awardWinningStats(msg, player, winnings, bet);
+                    embed.setColor(Colors.MEDIUM_GREEN);
                     embed.addField('Additional Info', [`Congrats! You beat the dealer. Your payout is 1:1.`, `Win Streak: ${util.addCommas(result.winStreak)}${result.newRecord ? ' (new personal best!)' : ''}`, `Your bet: ${util.addCommas(bet)}`, `Coins: ${util.addCommas(transaction.oldPoints)} » ${util.addCommas(transaction.newPoints)}`]);
                 } else if (computerValue > 21) {
                     let winnings = bet;
                     let transaction = util.addStats(msg, player, winnings, 'coins');
                     let result = this.awardWinningStats(msg, player, winnings, bet);
+                    embed.setColor(Colors.MEDIUM_GREEN);
                     embed.addField('Additional Info', [`Dealer busts! You win! Your payout is 1:1.`, `Win Streak: ${util.addCommas(result.winStreak)}${result.newRecord ? ' (new personal best!)' : ''}`, `Your bet: ${util.addCommas(bet)}`, `Coins: ${util.addCommas(transaction.oldPoints)} » ${util.addCommas(transaction.newPoints)}`]);
                 } else {
                     let losings = bet;
                     let transaction = util.addStats(msg, player, -losings, 'coins');
                     let result = this.awardLosingStats(msg, player, losings, bet);
+                    embed.setColor(Colors.MEDIUM_RED);
                     embed.addField('Additional Info', [`Sorry, you lose your bet. The dealer wins.`, `Losing Streak: ${util.addCommas(result.losingStreak)}${result.newRecord ? ' (new personal best!)' : ''}`, `Your bet: ${util.addCommas(bet)}`, `Coins: ${util.addCommas(transaction.oldPoints)} » ${util.addCommas(transaction.newPoints)}`]);
                 }
+                util.sendMessage(util.getLogChannel(msg), embed);
             } else if (!isComputerThinking) {
                 embed.addField('React With', `${HIT_EMOJI} to hit\n${STAND_EMOJI} to stand`)
             } else {
@@ -289,8 +303,15 @@ module.exports = {
             bet = Math.floor(bet * 100) / 100;
         }
 
-        if (!bet) {
+        if (bet <= 0) {
             throw 'Invalid bet!';
+        }
+
+        let balance = util.getStats(message, message.member, 'coins');
+        if (bet > balance) {
+            util.sendTimedMessage(message.channel, `You do not have enough coins. You bet ${util.addCommas(bet)}, but you only have ${util.addCommas(balance)}.`, config.delete_delay);
+            util.safeDelete(message, config.delete_delay);
+            return;
         }
 
         // Draw 2 cards. Player, dealer, player, dealer
@@ -336,14 +357,14 @@ module.exports = {
                                 playerHand.push(draw);
                                 if (this.computeValue(playerHand).value >= 21) {
                                     let playerValue = this.computeValue(playerHand);
-                                    msg.edit(this.getBlackJackEmbed(msg, playerHand, computerHand, false, `You drew a ${this.cardToString(draw)}!${playerValue.value > 21 ? ` Bust!\nYou lost your bet of ${util.addCommas(bet)} coins.` : (playerValue.value >= 21 ? ` Your turn has automatically ended.` : '')}`, bet, playerValue.value > 21, playerValue.value <= 21, message.member))
-                                    collector.stop();
                                     let dealerValue = this.computeValue(computerHand);
+                                    msg.edit(this.getBlackJackEmbed(msg, playerHand, computerHand, false, `You drew a ${this.cardToString(draw)}!${playerValue.value > 21 ? ` Bust!\nYou lost your bet of ${util.addCommas(bet)} coins.` : (playerValue.value >= 21 ? ` Your turn has automatically ended.` : '')}`, bet, playerValue.value > 21 || !(playerValue.value > dealerValue.value && ((dealerValue.isSoft && dealerValue.value < 21) || (!dealerValue.isSoft && dealerValue.value <= 17)) && playerValue.value <= 21), playerValue.value <= 21, message.member))
+                                    collector.stop();
                                     if (playerValue.value > dealerValue.value && ((dealerValue.isSoft && dealerValue.value < 21) || (!dealerValue.isSoft && dealerValue.value <= 17)) && playerValue.value <= 21) {
                                         setTimeout(() => {
                                             this.dealerMove(message, msg, cards, playerHand, computerHand, bet)
                                         }, 5000)
-                                    }
+                                    } 
                                 } else {
                                     msg.edit(this.getBlackJackEmbed(msg, playerHand, computerHand, true, `You drew a ${this.cardToString(draw)}!${this.computeValue(playerHand).value > 21 ? ` Bust!\nYou lost your bet of ${util.addCommas(bet)} coins.` : ''}`, bet, false, false, message.member))
                                     reaction.users.remove(reaction.users.cache.filter(user => user.id === message.member.id).first().id);

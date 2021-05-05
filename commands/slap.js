@@ -5,7 +5,7 @@ const Discord = require('discord.js');
 
 module.exports = {
     name: ['slap', 'punch', 'smack', 'squish', 'hug', 'scam', 'jumpscare', 'scare', 'spank', 'frame', 'pat'],
-    description: 'Says that you slapped the target.',
+    description: 'Says that you did something to the target.',
     usage: `(optional: user slapping) <user target being slapped> (optional: channel-name)`,
     requiresTarget: true,
 

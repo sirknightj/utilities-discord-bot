@@ -5,12 +5,12 @@ const fs = require('fs');
 const Colors = require('../resources/colors.json');
 const Discord = require('discord.js');
 
-const statNames = ["points", "tickets", "coins"];
+const statNames = ["points", "tickets", "coins", '...'];
 
 module.exports = {
     name: ['removestats', 'removepoints'],
-    description: "Removes a user's points. Requires KICK_MEMBERS.",
-    usage: `<user/everyone> <number/all> <${getAllowedInputs()}> (optional: delete entry: true/false)`,
+    description: "Removes a user's points.",
+    usage: `<user/everyone> <number/all> <${getAllowedInputs()}> (optional: delete entry? true/false)`,
     requiresArgs: true,
     requiredPermissions: 'KICK_MEMBERS',
 

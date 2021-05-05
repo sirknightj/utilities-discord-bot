@@ -218,8 +218,10 @@ module.exports = {
      * @param {number} delete_delay how long to wait before deleting your message (in milliseconds)
      */
     safeDelete: function (message, delete_delay = 0) {
-        if (message) {
+        if (isNaN(message.content)) {
             message.delete({timeout: delete_delay}).catch(error => message.channel.send(`Error: ${error.message}`).then(msg => msg.delete({ timeout: config.delete_delay })));
+        } else {
+            console.log('Error! util.safeDelete was not used correctly. message is not a message.');
         }
     },
 
