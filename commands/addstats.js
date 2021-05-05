@@ -9,8 +9,8 @@ const statNames = ["points", "tickets", "coins"];
 
 module.exports = {
     name: ['addstats', 'addpoints'],
-    description: "Adds to a user's points. Requires KICK_MEMBERS.",
-    usage: `<user> <points-to-add> <${getAllowedInputs()}>`,
+    description: "Adds to a user's points.",
+    usage: `<user> <number> <${getAllowedInputs()}>`,
     requiresArgs: true,
     requiredPermissions: 'KICK_MEMBERS',
 

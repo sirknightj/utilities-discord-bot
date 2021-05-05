@@ -5,7 +5,7 @@ const fs = require('fs');
 
 module.exports = {
     name: ['setpoints', 'setstats'],
-    description: "Sets a user's points. Requires ADMINISTRATOR.",
+    description: "Sets a user's points.",
     usage: `<user> <new point number>`,
     requiredPermissions: 'MANAGE_GUILD',
 

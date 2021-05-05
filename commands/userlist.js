@@ -5,7 +5,7 @@ const Colors = require('../resources/colors.json');
 
 module.exports = {
     name: ['userlist', 'roles', 'rolequery', 'listusers'],
-    description: 'Prints out all of the users with the specified role.',
+    description: 'Prints out all of the users with the specified role, sorted alphabetically.',
     usage: '<role name>',
     requiresArgs: true,
 

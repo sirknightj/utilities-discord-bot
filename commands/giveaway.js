@@ -7,7 +7,7 @@ const Discord = require('discord.js');
 
 module.exports = {
     name: ['giveaway'],
-    description: "Randomly selects some unique winners from everyone who has tickets. Default: 3 winners. Requires MANAGE_GUILD.",
+    description: "Randomly selects some unique winners from everyone who has tickets. Default: 3 winners.",
     usage: `(optional: number of winners)`,
     requiredPermissions: 'MANAGE_GUILD',
 
