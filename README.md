@@ -17,6 +17,9 @@ With very simple, fun, and useful commands that are very easy-to-use and intuiti
 #### `!help`
 * Prints the available commands, along with their usage and description.
 
+#### `!<command> help`
+* Gives the usage of the command, aliases for the command, and the required permissions to use it!
+
 #### `!avatar <user>`
 * Returns a link to the `<user>`'s profile photo. 
 
@@ -95,38 +98,53 @@ With very simple, fun, and useful commands that are very easy-to-use and intuiti
 * Sets up a Connect 4 game between you and your target.
 * You can even play against yourself!
 
-#### `!roulette <coins/all> <guess>`
+#### `!tictactoe <target>`
+* Sets up a Tic Tac Toe between you and your target.
+* You can even play against yourself!
+
+#### `!roulette <bet> <guess>`
 * Lets you play around with the coins the bot awards you for Discord participation!
+* `bet` can be a number, `half`, or `all`.
 * `guess` can be even/odd/red/black/high/low/green
-* green (0 or 00) is a 7-to-1 multiplier. All the other guesses are a 1-to-1 multiplier.
+* green (0 or 00) is a 17-to-1 multiplier. Columns and dozens are 2-to-1 multipliers. All the other guesses are a 1-to-1 multiplier.
+
+#### `!blackjack <bet> (optional: dealerMovesInstantly? true/false`
+* Plays blackjack against the bot!
+* `bet` can be a number, `half`, or `all`. Uses the `coins` you earned from Discord participation.
+* `(dealerMovesInstantly) defaults to false. If true, then the dealer won't wait 3 seconds in between its moves, allowing for faster games. 
 
 ## Keeps Track of Discord Participation!
 * Coins system - spend coins on giveaway entry tickets!
 * Points system - keep track of someone's total points!
 * Leaderboards system - keep track of who has the most coins/points!
 
-#### `!leaderboards (optional: stat-name)>`
+#### `!leaderboards (optional: stat-name)`
 * Prints out the entire leaderboards, sorted from most to least.
-* Defaults to `points` if no `(stat-name)` is provided. Some stat names include `points`, `coins`, and `tickets`
+* Defaults to `points` if no `(stat-name)` is provided. Some stat names include `points`, `coins`, and `tickets`. You can view the `stat-name` of every stat when using `!stats`.
 
-#### `!stats (optional: user)`
+#### `!stats (optional: user) (optional: dontDelete? true/false)`
 * Prints out the stat card of a user (displaying their time spent in vc, coins, points, and more!)
 * If `(user)` is unspecified, then it defaults to you.
+* The stats embed deletes itself after 2 minutes. If you don't want to delete it, then `(dontDelete)` should be `true`.
 
 #### `!addstats <user> <amount> <stat-name>`
-* Adds a specific stat to the target. Requires the message author to have `Administrator` permission.
+* Adds a specific stat to the target. Requires the message author to have `KICK_MEMBERS` permission.
 
 #### `!removestats <user/everyone> <amount/all> <stat-name> (optional: delete entry: true/false)`
-* Removes a specific stat from the target. Requires the message author to have the `Administrator` permission.
+* Removes a specific stat from the target. Requires the message author to have the `KICK_MEMBERS` permission.
 * Delete entry: defaults to false. Essentially, stats.json will have "0" as the number for that stat. If delete entry is true, then the stat will not exist in stats.json.
 * Example on how to clear tickets after a giveaway: `!removestats everyone all tickets true`.
 
 #### `!shop purchase ticket (optional: amount/all)`
-* Purchases a giveaway entry ticket from the shop.
+* Purchases a giveaway entry ticket from the shop. Requires the message author to have the `CHANGE_NICKNAME` permission. Costs the `coins` you got from Discord participation.
 * If amount is unspecified, then defaults to 1. If all is specified, then purchases as many tickets as the user can.
 
-#### `!giveaway`
-* Randomly selects three unique winners from everyone who has giveaway entry tickets. Essentially, draws 3 names out of a hat, starting from 1st place, discarding duplicates. Also prints out the participants list.
+#### `!shop upgrade`
+* Takes you to the upgrades system. Costs the `coins` you got from Discord participation.
+* Purchase upgrades to earn coins faster, improve your odds in roulette, and help you maintain your `!daily` streak!
+
+#### `!giveaway (optional: numberOfWinners)`
+* Randomly selects three unique winners from everyone who has giveaway entry tickets. Essentially, draws 3 names out of a hat, starting from 1st place, discarding duplicates. Also prints out the participants list. If you want a different number (say, 1), then specify.
 * Note: this command does not change any user's ticket totals. If you want to clear all the tickets after each giveaway, then use `!removestats everyone all tickets true`.
 
 ## Misc. Commands
