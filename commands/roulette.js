@@ -152,7 +152,7 @@ module.exports = {
 
         try {
             if (SelectedCoins === 0) {
-                throw `Invalid \`<coins/half/all>\` argument: \`${args[0]}\`${BETS.includes(args[0].toLowerCase()) && args[1] ? `, did you mean \`${config.prefix}roulette ${args[1]} ${args[0]}\`?` : ''}\n\`${config.prefix}roulette ${this.usage}\``;
+                throw `Invalid \`<coins/half/all>\` argument: \`${args[0]}\`${BETS.includes(args[0].toLowerCase()) && args[1] ? `, did you mean \`${config.prefix}roulette ${args[1]} ${args[0]}\`?` : ''}\n\`${config.prefix}roulette ${this.usage.join(`\`\n\`${config.prefix}roulette `)}\``;
             }
 
             if (util.getStats(message, message.member, "coins") >= SelectedCoins) {
