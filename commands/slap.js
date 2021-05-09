@@ -19,8 +19,13 @@ module.exports = {
         'https://tenor.com/view/anime-anime-headrub-anime-headpat-loli-kawaii-gif-16085284', 
         'https://tenor.com/view/charlotte-pat-blush-embarrassed-shy-gif-5081286', 
         'https://tenor.com/view/pet-cute-anime-head-pat-good-job-gif-16919214',
-        'https://tenor.com/view/korone-inugami-korone-f%C4%B1t%C4%B1t%C4%B1-headpat-anime-gif-18455155'
-    ]
+        'https://tenor.com/view/korone-inugami-korone-f%C4%B1t%C4%B1t%C4%B1-headpat-anime-gif-18455155',
+        'https://media.giphy.com/media/osYdfUptPqV0s/giphy.gif',
+        'https://media.giphy.com/media/PHZ7v9tfQu0o0/giphy.gif',
+        'https://media.giphy.com/media/Z7x24IHBcmV7W/giphy.gif',
+        'https://media.giphy.com/media/3oz8xDLT82QiURnPS8/giphy.gif',
+        'https://media.giphy.com/media/4HP0ddZnNVvKU/giphy.gif'
+        ]
 
         if (args.length != 0) {
             if (args.length > 2) {
