@@ -3,10 +3,12 @@ const config = require('../config.json');
 const Discord = require('discord.js');
 const Colors = require('../resources/colors.json')
 
+const DEALER_MOVE_DELAY = 3000; // the time it takes the dealer to "think"
+
 module.exports = {
     name: ['blackjack', 'bj'],
     description: 'Play backjack against the bot!',
-    usage: '<coins/half/all>',
+    usage: '<coins/half/all> (optional: dealerMovesInstantly? true/false)',
     requiresArgs: true,
 
     execute(bot, message, args) {
@@ -274,13 +276,17 @@ module.exports = {
                 message_.edit(this.getBlackJackEmbed(message_, playerHand, computerHand, false, `The dealer is programmed to hit. They draw a ${this.cardToString(randCard)}.`, bet, false, true, msg.member));
                 setTimeout(() => {
                     this.dealerMove(msg, message_, cards, playerHand, dealerHand, bet);
-                }, 5000);
+                }, this.skipDealer ? 0 : DEALER_MOVE_DELAY);
             } else if (this.computeValue(dealerHand).value > 21) {
                 message_.edit(this.getBlackJackEmbed(message_, playerHand, computerHand, false, `Congratulations!`, bet, true, false, msg.member));
             } else {
                 // Dealer chooses to stand.
                 message_.edit(this.getBlackJackEmbed(message_, playerHand, computerHand, false, `The dealer is programmed to stand.`, bet, true, false, msg.member));
             }
+        }
+
+        if (args[2]) {
+            throw 'Too many arguments!';    
         }
 
         let bet = 0;
@@ -305,6 +311,13 @@ module.exports = {
 
         if (bet <= 0) {
             throw 'Invalid bet!';
+        }
+
+        this.skipDealer = false;
+        if (args[1]) {
+            if (args[1].toLowerCase() === 'true') {
+                this.skipDealer = true;
+            }
         }
 
         let balance = util.getStats(message, message.member, 'coins');
@@ -350,7 +363,7 @@ module.exports = {
                                 if (doesDealerHaveTurn) {
                                     setTimeout(() => {
                                         this.dealerMove(message, msg, cards, playerHand, computerHand, bet)
-                                    }, 5000)
+                                    }, this.skipDealer ? 0 : DEALER_MOVE_DELAY)
                                 }
                             } else if (reaction.emoji.name === HIT_EMOJI) {
                                 let draw = this.drawRandomCard(cards);
@@ -358,12 +371,12 @@ module.exports = {
                                 if (this.computeValue(playerHand).value >= 21) {
                                     let playerValue = this.computeValue(playerHand);
                                     let dealerValue = this.computeValue(computerHand);
-                                    msg.edit(this.getBlackJackEmbed(msg, playerHand, computerHand, false, `You drew a ${this.cardToString(draw)}!${playerValue.value > 21 ? ` Bust!\nYou lost your bet of ${util.addCommas(bet)} coins.` : (playerValue.value >= 21 ? ` Your turn has automatically ended.` : '')}`, bet, playerValue.value > 21 || !(playerValue.value > dealerValue.value && ((dealerValue.isSoft && dealerValue.value < 21) || (!dealerValue.isSoft && dealerValue.value <= 17)) && playerValue.value <= 21), playerValue.value <= 21, message.member))
+                                    msg.edit(this.getBlackJackEmbed(msg, playerHand, computerHand, false, `You drew a ${this.cardToString(draw)}!${playerValue.value > 21 ? ` Bust!\nYou lost your bet of ${util.addCommas(bet)} coins.` : (playerValue.value >= 21 ? ` Your turn has automatically ended becuase your hand is worth 21.` : '')}`, bet, playerValue.value > 21 || !(playerValue.value > dealerValue.value && ((dealerValue.isSoft && dealerValue.value < 21) || (!dealerValue.isSoft && dealerValue.value <= 17)) && playerValue.value <= 21), playerValue.value <= 21, message.member))
                                     collector.stop();
                                     if (playerValue.value > dealerValue.value && ((dealerValue.isSoft && dealerValue.value < 21) || (!dealerValue.isSoft && dealerValue.value <= 17)) && playerValue.value <= 21) {
                                         setTimeout(() => {
                                             this.dealerMove(message, msg, cards, playerHand, computerHand, bet)
-                                        }, 5000)
+                                        }, this.skipDealer ? 0 : DEALER_MOVE_DELAY)
                                     } 
                                 } else {
                                     msg.edit(this.getBlackJackEmbed(msg, playerHand, computerHand, true, `You drew a ${this.cardToString(draw)}!${this.computeValue(playerHand).value > 21 ? ` Bust!\nYou lost your bet of ${util.addCommas(bet)} coins.` : ''}`, bet, false, false, message.member))
@@ -382,7 +395,7 @@ module.exports = {
                                 if (doesDealerHaveTurn) {
                                     setTimeout(() => {
                                         this.dealerMove(message, msg, cards, playerHand, computerHand, bet)
-                                    }, 5000)
+                                    }, this.skipDealer ? 0 : DEALER_MOVE_DELAY)
                                 }
                             }
                         })
