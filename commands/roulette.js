@@ -112,7 +112,6 @@ module.exports = {
             util.setStats(message, target, 0, 'coins_lost_in_roulette');
             util.setStats(message, target, 0, 'net_roulette_earnings');
             util.setStats(message, target, 0, 'roulette_played');
-            util.setStats(message, target, 0, 'coins_earned_in_roulette');
             util.setStats(message, target, 0, 'roulette_wins');
             util.setStats(message, target, 0, 'roulette_losses');
             util.setStats(message, target, 0, 'roulette_winning_streak');
