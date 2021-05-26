@@ -101,17 +101,12 @@ module.exports = {
                 .setTimestamp();
             util.sendMessage(message.channel, statEmbed);
             util.sendMessage(util.getLogChannel(message), statEmbed);
-            util.setStats(message, target, 0, 'coins_bet_in_coinflip');
-            util.setStats(message, target, 0, 'coins_earned_in_coinflip');
-            util.setStats(message, target, 0, 'coins_lost_in_coinflip');
-            util.setStats(message, target, 0, 'coinflip_net_earnings');
-            util.setStats(message, target, 0, 'coinflip_played');
-            util.setStats(message, target, 0, 'coinflip_wins');
-            util.setStats(message, target, 0, 'coinflip_losses');
-            util.setStats(message, target, 0, 'coinflip_winning_streak');
-            util.setStats(message, target, 0, 'coinflip_losing_streak');
-            util.setStats(message, target, 0, 'coinflip_longest_win_streak');
-            util.setStats(message, target, 0, 'coinflip_longest_losing_streak');
+            
+            let coinflipStatNames = ['coinflip_played', 'coinflip_wins', 'coinflip_losses', 'coins_bet_in_coinflip', 'coins_earned_in_coinflip',
+            'coins_lost_in_coinflip', 'coinflip_net_earnings', 'coinflip_longest_win_streak', 'coinflip_longest_losing_streak', 'coinflip_winning_streak',
+            'coinflip_winning_streak', 'coinflip_losing_streak'];
+
+            coinflipStatNames.forEach((statName) => util.setStats(message, target, 0, statName));
             return;
         }
 

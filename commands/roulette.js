@@ -107,19 +107,11 @@ module.exports = {
                 .setTimestamp();
             util.sendMessage(message.channel, statEmbed);
             util.sendMessage(util.getLogChannel(message), statEmbed);
-            util.setStats(message, target, 0, 'coins_bet_in_roulette');
-            util.setStats(message, target, 0, 'coins_earned_in_roulette');
-            util.setStats(message, target, 0, 'coins_lost_in_roulette');
-            util.setStats(message, target, 0, 'net_roulette_earnings');
-            util.setStats(message, target, 0, 'roulette_played');
-            util.setStats(message, target, 0, 'roulette_wins');
-            util.setStats(message, target, 0, 'roulette_losses');
-            util.setStats(message, target, 0, 'roulette_winning_streak');
-            util.setStats(message, target, 0, 'roulette_losing_streak');
-            util.setStats(message, target, 0, 'roulette_longest_win_streak');
-            util.setStats(message, target, 0, 'roulette_longest_losing_streak');
-            util.setStats(message, target, 0, 'roulette_safety_net_saves')
-            util.safeDelete(message);
+
+            let rouletteStatNames = ['roulette_played', 'roulette_wins', 'roulette_losses', 'coins_bet_in_roulette',
+            'coins_earned_in_roulette', 'coins_lost_in_roulette', 'net_roulette_earnings', 'roulette_safety_net_saves',
+            'roulette_longest_win_streak', 'roulette_longest_losing_streak', 'roulette_winning_streak', 'roulette_losing_streak'];
+            rouletteStatNames.forEach((statName) => util.setStats(message, target, 0, statName));
             return;
         } else if (args[0].toLowerCase() === 'all') {
             SelectedCoins = util.getStats(message, message.member, 'coins');

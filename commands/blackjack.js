@@ -8,13 +8,117 @@ const DEALER_MOVE_DELAY = 3000; // the time it takes the dealer to "think"
 module.exports = {
     name: ['blackjack', 'bj'],
     description: 'Play backjack against the bot!',
-    usage: '<coins/half/all> (optional: dealerMovesInstantly? true/false)',
+    usage: ['<coins/half/all> (optional: dealerMovesInstantly? true/false)', 'stats (optional: user)', 'statwipe <user>'],
     requiresArgs: true,
 
     execute(bot, message, args) {
         let cards = [...Array(52).keys()];
         let playerHand = new Array();
         let computerHand = new Array();
+
+        if (args[0].toLowerCase() === 'stats') {
+            let target = message.member;
+            if (args[1]) {
+                args.shift();
+                target = util.getUserFromMention(message, args.join(' '));
+            }
+            if (!target) {
+                throw `Couldn't find user ${args.join(' ')}`;
+            }
+
+            let stats = util.getMemberStats(message, target);
+            if (!stats.blackjack_played) {
+                util.sendMessage(message.channel, `${util.fixNameFormat(target.displayName)} has not played blackjack yet! Tell them to give it a go!`);
+                return;
+            }
+
+            util.sendTimedMessage(message.channel, new Discord.MessageEmbed()
+                .setTitle(`${util.fixNameFormat(target.displayName)}'s Blackjack Stats`)
+                .addField('Blackjack Earnings',
+                    [`Total Coins Bet: ${util.addCommas(stats.coins_bet_in_blackjack)}`,
+                    `Total Coins Earned: ${util.addCommas(stats.coins_earned_in_blackjack)}`,
+                    `Total Coins Lost: ${util.addCommas(stats.coins_lost_in_blackjack)}`,
+                    `Net Earnings: ${util.addCommas(stats.blackjack_net_earnings)}`
+                    ])
+                .addField('Blackjack Winrate',
+                    [`Total Plays: ${util.addCommas(stats.blackjack_played)}`,
+                    `Wins: ${util.addCommas(stats.blackjack_wins)}`,
+                    `Losses: ${util.addCommas(stats.blackjack_losses)}`,
+                    `Win Rate: ${stats.blackjack_wins ? Math.round(stats.blackjack_wins / stats.blackjack_played * 100 * 100) / 100 : 0}%`,
+                    `Blackjacks: ${util.addCommas(stats.blackjack_blackjacks)}`,
+                    `Blackjack Rate: ${stats.blackjack_blackjacks ? Math.round(stats.blackjack_blackjacks / stats.blackjack_played * 100 * 100) / 100 : 0}%`,
+                    `Ties: ${util.addCommas(stats.blackjack_tied)}`,
+                    `Tie Rate: ${stats.blackjack_tied ? Math.round(stats.blackjack_tied / stats.blackjack_played * 100 * 100) / 100 : 0}%`
+                    ])
+                .addField('Streaks',
+                    [`Current ${stats.blackjack_winning_streak > stats.blackjack_losing_streak ? "Winning" : "Losing"} Streak: ${util.addCommas(Math.max(stats.blackjack_winning_streak, stats.blackjack_losing_streak))}`,
+                    `Longest Win Streak: ${util.addCommas(stats.blackjack_longest_win_streak)}`,
+                    `Longest Losing Streak: ${util.addCommas(stats.blackjack_longest_losing_streak)}`
+                    ])
+                .setColor(Colors.GOLD)
+                .setAuthor(target.displayName, target.user.displayAvatarURL({ dynamic: true }))
+                .setFooter(`This message will be automatically deleted in ${config.longest_delete_delay / 1000} seconds.`), config.longest_delete_delay);
+            util.safeDelete(message);
+            return;
+        } else if (args[0].toLowerCase() === 'statwipe') {
+            if (!message.member.hasPermission('KICK_MEMBERS', { checkAdmin: true, checkOwner: true })) {
+                util.safeDelete(message);
+                util.sendTimedMessage(message.channel, 'You do not have permission to use this command. It requires KICK_MEMBERS.', config.longer_delete_delay);
+                return;
+            }
+            
+            if (args[1]) {
+                args.shift()
+                target = util.getUserFromMention(message, args.join(' '));
+            } else {
+                throw 'Missing target!'
+            }
+            if (!target) {
+                throw `Could not find user ${args[1]}!`;
+            }
+
+            let stats = util.getMemberStats(message, target);
+            if (!stats.coinflip_played) {
+                util.sendMessage(message.channel, `${util.fixNameFormat(target.displayName)} has not played blackjack yet! There are no stats to wipe!`);
+            }
+            
+            let statEmbed = new Discord.MessageEmbed()
+                .setTitle(`${util.fixNameFormat(message.member.displayName)} has wiped ${util.fixNameFormat(target.displayName)}'s Blackjack Stats!`)
+                .setDescription(`${util.fixNameFormat(target.displayName)}'s Blackjack stats before wiping:`)
+                .addField('Blackjack Earnings',
+                    [`Total Coins Bet: ${util.addCommas(stats.coins_bet_in_blackjack)}`,
+                    `Total Coins Earned: ${util.addCommas(stats.coins_earned_in_blackjack)}`,
+                    `Total Coins Lost: ${util.addCommas(stats.coins_lost_in_blackjack)}`,
+                    `Net Earnings: ${util.addCommas(stats.blackjack_net_earnings)}`
+                    ])
+                .addField('Blackjack Winrate',
+                    [`Total Plays: ${util.addCommas(stats.blackjack_played)}`,
+                    `Wins: ${util.addCommas(stats.blackjack_wins)}`,
+                    `Losses: ${util.addCommas(stats.blackjack_losses)}`,
+                    `Win Rate: ${stats.blackjack_wins ? Math.round(stats.blackjack_wins / stats.blackjack_played * 100 * 100) / 100 : 0}%`,
+                    `Blackjacks: ${util.addCommas(stats.blackjack_blackjacks)}`,
+                    `Blackjack Rate: ${stats.blackjack_blackjacks ? Math.round(stats.blackjack_blackjacks / stats.blackjack_played * 100 * 100) / 100 : 0}%`,
+                    `Ties: ${util.addCommas(stats.blackjack_tied)}`,
+                    `Tie Rate: ${stats.blackjack_tied ? Math.round(stats.blackjack_tied / stats.blackjack_played * 100 * 100) / 100 : 0}%`
+                    ])
+                .addField('Streaks',
+                    [`Current ${stats.blackjack_winning_streak > stats.blackjack_losing_streak ? "Winning" : "Losing"} Streak: ${util.addCommas(Math.max(stats.blackjack_winning_streak, stats.blackjack_losing_streak))}`,
+                    `Longest Win Streak: ${util.addCommas(stats.blackjack_longest_win_streak)}`,
+                    `Longest Losing Streak: ${util.addCommas(stats.blackjack_longest_losing_streak)}`
+                    ])
+                .setColor(Colors.BRIGHT_RED)
+                .setThumbnail(target.user.displayAvatarURL({ dynamic: true }))
+                .setAuthor(message.member.displayName, message.member.user.displayAvatarURL({ dynamic: true }))
+                .setTimestamp();
+            util.sendMessage(message.channel, statEmbed);
+            util.sendMessage(util.getLogChannel(message), statEmbed);
+
+            let blackjackStatNames = ['blackjack_played', 'blackjack_wins', 'blackjack_blackjacks', 'blackjack_tied', 'blackjack_losses',
+            'coins_bet_in_blackjack', 'coins_earned_in_blackjack', 'coins_lost_in_blackjack', 'blackjack_net_earnings',
+            'blackjack_longest_win_streak', 'blackjack_longest_losing_streak', 'blackjack_winning_streak', 'blackjack_losing_streak'];
+            blackjackStatNames.forEach((statName) => util.setStats(message, target, 0, statName));
+            return;
+        }
 
         const HIT_EMOJI = '⬆️';
         const STAND_EMOJI = '✅';

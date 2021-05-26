@@ -147,7 +147,7 @@ module.exports = {
                         util.sendMessage(message.channel, upgradeEmbed);
                         util.sendMessage(util.getLogChannel(message), upgradeEmbed);
                         return;
-                    } else if (args[0] && args[0].toLowercase() !== 'help') {
+                    } else if (args[0] && args[0].toLowerCase() !== 'help') {
                         util.sendMessage(message.channel, `Invalid <upgradeName> \`${args[0]}\`\nUsage: \`${config.prefix}shop upgrade daily <help/upgradeName>\``);
                     } else {
                         util.sendMessage(message.channel, getDailyUpgradeInfo(message));

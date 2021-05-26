@@ -66,21 +66,21 @@ module.exports = {
 
             let rouletteStatNames = ['roulette_played', 'roulette_wins', 'roulette_losses', 'coins_bet_in_roulette',
                 'coins_earned_in_roulette', 'coins_lost_in_roulette', 'net_roulette_earnings', 'roulette_safety_net_saves',
-                'roulette_longest_win_streak', 'roulette_longest_losing_streak', 'roulette_winning_streak', 'roulette_losing_streak']
+                'roulette_longest_win_streak', 'roulette_longest_losing_streak', 'roulette_winning_streak', 'roulette_losing_streak'];
             let rouletteStats = userStats['roulette_played'] ?
                 rouletteStatNames.map(statName => `${statName}: ${util.addCommas(userStats[statName])}`) :
                 `\`${config.prefix}roulette\` has not been used yet!`;
 
             let blackjackStatNames = ['blackjack_played', 'blackjack_wins', 'blackjack_blackjacks', 'blackjack_tied', 'blackjack_losses',
-                'coins_bet_in_blackjack', 'coins_earned_in_blackjack', 'coins_lost_in_blackjack', 'blackjack_net_earnings', 'blackjack_safety_net_saves',
-                'blackjack_longest_win_streak', 'blackjack_longest_losing_streak', 'blackjack_winning_streak', 'blackjack_losing_streak']
+                'coins_bet_in_blackjack', 'coins_earned_in_blackjack', 'coins_lost_in_blackjack', 'blackjack_net_earnings',
+                'blackjack_longest_win_streak', 'blackjack_longest_losing_streak', 'blackjack_winning_streak', 'blackjack_losing_streak'];
             let blackjackStats = userStats[blackjackStatNames[0]] ?
                 blackjackStatNames.map(statName => `${statName}: ${util.addCommas(userStats[statName])}`) :
                 `\`${config.prefix}blackjack\` has not been used yet!`;
 
             let coinflipStatNames = ['coinflip_played', 'coinflip_wins', 'coinflip_losses', 'coins_bet_in_coinflip', 'coins_earned_in_coinflip',
                 'coins_lost_in_coinflip', 'coinflip_net_earnings', 'coinflip_longest_win_streak', 'coinflip_longest_losing_streak', 'coinflip_winning_streak',
-                'coinflip_winning_streak', 'coinflip_losing_streak']
+                'coinflip_winning_streak', 'coinflip_losing_streak'];
             let coinflipStats = userStats['coinflip_played'] ?
                 coinflipStatNames.map(statName => `${statName}: ${util.addCommas(userStats[statName])}`) :
                 `\`${config.prefix}coinflip\` has not been used yet!`;
