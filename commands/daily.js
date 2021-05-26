@@ -3,6 +3,8 @@ const util = require('../utilities');
 const Discord = require('discord.js');
 const Colors = require('../resources/colors.json');
 
+const DAILY_COIN_BONUS_PER_LEVEL = 0.05; // 5% per level
+
 module.exports = {
     name: ['daily', 'd'],
     description: 'Claim some free coins every 23 hours!',
@@ -29,7 +31,7 @@ module.exports = {
         let now = Date.now();
         let difference = now - whenClaimed;
 
-        let dailyCooldown = Math.floor(config.daily_reward_cooldown * (100 - util.getStats(message, message.member, 'upgrade_daily_reward_cooldown'))) / 100;
+        let dailyCooldown = Math.floor(config.daily_reward_cooldown * (100 - 2 * util.getStats(message, message.member, 'upgrade_daily_reward_cooldown'))) / 100;
         let dailyGracePeriod = Math.floor(config.daily_reward_streak_grace_period + (43200000 * util.getStats(message, message.member, 'upgrade_daily_reward_extended_grace')));
 
         if (!whenClaimed || difference >= dailyCooldown) { // 23 hours = 82,800,000 ms
@@ -47,7 +49,7 @@ module.exports = {
             } else {
                 coinsToAward = config.daily_reward_coin_amount + (streakResult.newPoints - 1) * config.daily_reward_coin_increment_per_streak_day;
             }
-            coinsToAward *= (1 + (util.getStats(message, message.member, 'upgrade_daily_reward_coin_bonus') * 0.02));
+            coinsToAward *= (1 + (util.getStats(message, message.member, 'upgrade_daily_reward_coin_bonus') * DAILY_COIN_BONUS_PER_LEVEL));
             coinsToAward = Math.round(coinsToAward * 100) / 100;
             let coinTransaction = util.addStats(message, message.member, coinsToAward, 'coins');
 
@@ -65,7 +67,7 @@ module.exports = {
             let embed = new Discord.MessageEmbed()
                 .setTitle(`${message.member.displayName} has claimed their daily reward!`)
                 .setColor(Colors.YELLOW)
-                .setDescription([`${message.member.displayName} has been awarded ${coinsToAward} coin${coinsToAward === 1 ? '' : 's'}${util.getStats(message, message.member, 'upgrade_daily_reward_coin_bonus') ? ` (+${2 * util.getStats(message, message.member, 'upgrade_daily_reward_coin_bonus')}% bonus!)` : '.'}`, 
+                .setDescription([`${message.member.displayName} has been awarded ${coinsToAward} coin${coinsToAward === 1 ? '' : 's'}${util.getStats(message, message.member, 'upgrade_daily_reward_coin_bonus') ? ` (+${DAILY_COIN_BONUS_PER_LEVEL * 100 * util.getStats(message, message.member, 'upgrade_daily_reward_coin_bonus')}% bonus!)` : '.'}`, 
                     `${streakResult.newPoints > streakResult.oldPoints ? (streakResult.oldPoints === 0 ? "Streak started!" : "Streak maintained!") : "Streak reset!"}`])
                 .addField('Additional Info', additionalInfo)
                 .setTimestamp(now)

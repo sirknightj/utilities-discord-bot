@@ -36,19 +36,25 @@ module.exports = {
             }
 
             let keyword;
+            let isVC = false;
             if (args[1]) {
-                keyword = args.join('_');
-            } else if (args[0]) {
-                if (args[0].toLowerCase() === 'vc') {
+                args[0] = args.join('_');
+            }
+            if (args[0]) {
+                args[0] = args[0].toLowerCase()
+                if (args[0] === 'vc') {
                     keyword = 'time_spent_in_vc';
-                } else if (args[0].toLowerCase() === 'messages') {
+                } else if (args[0] === 'messages') {
                     keyword = 'participating_messages';
-                } else if (args[0].toLowerCase() === 'streaks') {
+                } else if (args[0] === 'streaks') {
                     keyword = 'daily_rewards_streak';
-                } else if (args[0].toLowerCase() === 'ticket') {
+                } else if (args[0] === 'ticket') {
                     keyword = 'tickets';
+                } else if (args[0] === 'in_vc' || args[0] === 'vc_session') {
+                    keyword = 'vc_session_started';
+                    isVC = true;
                 } else {
-                    keyword = args[0].toLowerCase();
+                    keyword = args[0];
                 }
             } else {
                 keyword = 'points';
@@ -60,8 +66,8 @@ module.exports = {
             let position = 1; // the current position of the leaderboard
             let previousPoints = -1; // if there is a tie, this is the value of the tie
             let previousPosition = 0; // if there is a tie, how many people have the same ranking
-            let isTime = keyword === 'time_spent_in_vc' || keyword === 'vc_session_started';
-            let isDate = keyword === 'daily_reward_last_claimed';
+            let isTime = keyword === 'time_spent_in_vc';
+            let isDate = keyword === 'daily_reward_last_claimed' || keyword === 'vc_session_started';
             let wantTotal = keyword === 'tickets';
             wantTotal = true;
             let total = 0;
@@ -84,8 +90,20 @@ module.exports = {
                     if ((guildStats[userIDs][keyword] || 0) !== 0 || userIDs == message.author.id) {
                         if (isTime) {
                             pointBoard += `${guildMember.displayName}: ${util.toFormattedTime((guildStats[userIDs][keyword] || 0))}`;
+                        } else if (isVC) {
+                            if ((guildStats[userIDs][keyword] || 0) !== 0) {
+                                pointBoard += `${guildMember.displayName}: ${util.toFormattedTime(Date.now() - guildStats[userIDs][keyword])}`;
+                            } else {
+                                // The user is not in VC.
+                                pointBoard += `${guildMember.displayName}: ${util.toFormattedTime(0)}`;
+                            }
                         } else if (isDate) {
-                            pointBoard += `${guildMember.displayName}: ${(new Date(guildStats[userIDs][keyword]))}`;
+                            if ((guildStats[userIDs][keyword] || 0) !== 0) {
+                                pointBoard += `${guildMember.displayName}: ${(new Date(guildStats[userIDs][keyword]))}`;
+                            } else {
+                                // The user has a 0 date.
+                                pointBoard += `${guildMember.displayName}: n/a`;
+                            }
                         } else {
                             pointBoard += `${guildMember.displayName}: ${util.addCommas(guildStats[userIDs][keyword] || 0)}`;
                         }

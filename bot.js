@@ -44,19 +44,19 @@ bot.once('ready', () => {
     console.log('online!');
     setInterval(() => {
         fs.copyFile(
-          `${config.resources_folder_file_path}stats.json`,
-          `${config.resources_folder_file_path}backup_stats.json`,
-          (err) => console.error
+            `${config.resources_folder_file_path}stats.json`,
+            `${config.resources_folder_file_path}backup_stats.json`,
+            (err) => console.error
         );
-      }, 1000 * 60 * 60); // 1 hour
-      setInterval(() => {
+    }, 1000 * 60 * 60); // 1 hour
+    setInterval(() => {
         fs.copyFile(
-          `${config.resources_folder_file_path}stats.json`,
-          `${config.resources_folder_file_path}daily_backup_stats.json`,
-          (err) => console.error
+            `${config.resources_folder_file_path}stats.json`,
+            `${config.resources_folder_file_path}daily_backup_stats.json`,
+            (err) => console.error
         );
         console.log(`Daily backup made on ${new Date(Date.now())}`);
-      }, 1000 * 60 * 60 * 24); // 24 hours
+    }, 1000 * 60 * 60 * 24); // 24 hours
 });
 
 bot.on('message', message => {
@@ -95,7 +95,7 @@ bot.on('message', message => {
                         .setTitle('Here are all of my commands:')
                         .setDescription(helpMessage)
                         .setFooter(`This message will be automatically deleted in ${config.longest_delete_delay / 1000} seconds.`),
-                    config.longest_delete_delay);
+                        config.longest_delete_delay);
                     count = 0;
                     helpMessage = '';
                 }
@@ -129,7 +129,6 @@ bot.on('message', message => {
                 // Loop through all required permissions. If the user is missing any of them, then don't perform the command.
                 for (var permission of requiredPerms) {
                     if (!message.member.hasPermission(permission)) {
-                        util.safeDelete(message);
                         util.sendMessage(message.channel, `You do not have permission to use this command.\nMissing \`${permission}\`.`);
                         return;
                     }
@@ -146,11 +145,7 @@ bot.on('message', message => {
                         .setDescription(botCommand.description);
 
                     if (botCommand.usage && botCommand.usage.length > 0) {
-                        if (typeof botCommand.usage === 'string') {
-                            embed.addField(`Usage`, `\`${config.prefix}${command} ${botCommand.usage}\``);
-                        } else {
-                            embed.addField(`Usage`, [...botCommand.usage].map((item) => `\`${config.prefix}${command} ${item}\``).join('\n'));
-                        }
+                        embed.addField('Usage', usageToString(command, botCommand.usage));
                     } else {
                         embed.addField(`Usage`, `\`${config.prefix}${command}\``);
                     }
@@ -174,7 +169,7 @@ bot.on('message', message => {
             if (botCommand.requiresArgs) {
                 if (args.length == 0) {
                     util.safeDelete(message, config.delete_delay)
-                    util.sendTimedMessage(message.channel, `Invalid usage.\n\`${config.prefix}${command} ${botCommand.usage}\``);
+                    util.sendTimedMessage(message.channel, `Invalid usage.\n${usageToString(command, botCommand.usage)}`);
                     return;
                 }
             }
@@ -189,7 +184,7 @@ bot.on('message', message => {
                 // Throws an error if there is no user found.
                 if (!user) {
                     util.safeDelete(message, config.delete_delay)
-                    util.sendTimedMessage(message.channel, `Invalid usage.\n\`${config.prefix}${command} ${botCommand.usage}\`\nAdditional Info: Could not find user \`${lookingFor}\`.`);
+                    util.sendTimedMessage(message.channel, `Invalid usage.\n${usageToString(command, botCommand.usage)}\nAdditional Info: Could not find user \`${lookingFor}\`.`);
                     return;
                 }
 
@@ -198,7 +193,7 @@ bot.on('message', message => {
                     botCommand.execute(bot, message, args, user);
                 } catch (error) {
                     util.safeDelete(message, config.delete_delay)
-                    util.sendTimedMessage(message.channel, `Invalid usage.\n\`${config.prefix}${command} ${botCommand.usage}\`\nAdditional info: ${error}`);
+                    util.sendTimedMessage(message.channel, `Invalid usage.\n${usageToString(command, botCommand.usage)}\nAdditional info: ${error}`);
                 }
                 return;
             }
@@ -208,7 +203,7 @@ bot.on('message', message => {
             } catch (error) {
                 util.safeDelete(message, config.delete_delay)
                 console.log(error)
-                util.sendTimedMessage(message.channel, `Invalid usage.\n\`${config.prefix}${command} ${botCommand.usage}\`\nAdditional info: ${error}`);
+                util.sendTimedMessage(message.channel, `Invalid usage.\n${usageToString(command, botCommand.usage)}\nAdditional info: ${error}`);
             }
             return;
             // If the command doesn't exist...
@@ -401,7 +396,7 @@ bot.on('voiceStateUpdate', async (oldState, newState) => {
 
             let previousCoins = userStats.coins ? userStats.coins : 0;
             let bonus = userStats.upgrade_vc_earnings ? userStats.upgrade_vc_earnings * 20 : 0;
-            let coinsToAdd = Math.round(((pointsToAdd) * 100) * (1 + bonus/100)) / 100;
+            let coinsToAdd = Math.round(((pointsToAdd) * 100) * (1 + bonus / 100)) / 100;
             userStats.coins = Math.round((userStats.coins + coinsToAdd) * 100) / 100;
 
             util.sendMessage(logChannel, new Discord.MessageEmbed()
@@ -435,7 +430,7 @@ bot.on('voiceStateUpdate', async (oldState, newState) => {
 
 bot.on('guildMemberAdd', (newMember) => {
     updateServerStats(newMember.guild);
-    if (!config.welcome_new_members || !config.welcome_message) {
+    if (!config.welcome_new_members || !config.welcome_message || newMember.user.bot) {
         return;
     }
     const welcomeChannel = newMember.guild.channels.cache.get(config.welcome_channel_id);
@@ -446,7 +441,7 @@ bot.on('guildMemberAdd', (newMember) => {
     util.sendMessage(welcomeChannel, `<@${newMember.id}>, ${config.welcome_message}`);
 });
 
-bot.on('guildMemberRemove', (memberAffected) => {
+bot.on('guildMemberRemove', async (memberAffected) => {
     console.log(memberAffected);
     console.log(`^ is no longer in this discord server. Timestamp: ${new Date(Date.now())}`);
     updateServerStats(memberAffected.guild);
@@ -454,6 +449,7 @@ bot.on('guildMemberRemove', (memberAffected) => {
         const logChannel = memberAffected.guild.channels.cache.get(config.log_channel_id);
         if (logChannel) {
             let info = [];
+            let userStats;
             try {
                 var allStats = {};
                 const fileLocation = `${config.resources_folder_file_path}stats.json`;
@@ -465,22 +461,21 @@ bot.on('guildMemberRemove', (memberAffected) => {
                     return;
                 }
 
-                const userStats = (allStats[memberAffected.guild.id])[memberAffected.user.id];
+                userStats = (allStats[memberAffected.guild.id])[memberAffected.user.id];
 
                 if (!userStats) {
                     util.sendTimedMessage(logChannel, `${memberAffected.displayName} had 0 points.`);
-                    return;
-                }
-
-                let properties = Object.keys(userStats);
-                for (var i = 0; i < properties.length; i++) {
-                    if (properties[i] !== 'last_message' && properties[i] !== 'vc_session_started') {
-                        if (properties[i] === 'time_spent_in_vc') {
-                            info.push(`${properties[i]}: ${util.toFormattedTime(userStats[properties[i]])}`)
-                        } else if (properties[i] === 'daily_reward_last_claimed') {
-                            info.push(`${properties[i]}: ${new Date(userStats[properties[i]])}`);
-                        } else {
-                            info.push(`${properties[i]}: ${util.addCommas(userStats[properties[i]])}`);
+                } else {
+                    let properties = Object.keys(userStats);
+                    for (let i = 0; i < properties.length; i++) {
+                        if (properties[i] !== 'last_message' && properties[i] !== 'vc_session_started') {
+                            if (properties[i] === 'time_spent_in_vc') {
+                                info.push(`${properties[i]}: ${util.toFormattedTime(userStats[properties[i]])}`)
+                            } else if (properties[i] === 'daily_reward_last_claimed') {
+                                info.push(`${properties[i]}: ${new Date(userStats[properties[i]])}`);
+                            } else {
+                                info.push(`${properties[i]}: ${util.addCommas(userStats[properties[i]])}`);
+                            }
                         }
                     }
                 }
@@ -488,25 +483,45 @@ bot.on('guildMemberRemove', (memberAffected) => {
                 util.sendTimedMessage(logChannel, "Error fetching stats.json.")
                 console.log(err);
             }
-            if (!info) {
+            if (!info || info.length === 0) {
                 info = ["0 points."];
             }
-            logChannel.send(new Discord.MessageEmbed()
+
+            const auditLogEntries = await memberAffected.guild.fetchAuditLogs({
+                limit: 1,
+                type: 'MEMBER_KICK'
+            });
+
+            const auditLogEntry = auditLogEntries.entries.first();
+
+            const embed = new Discord.MessageEmbed()
                 .setColor(Colors.PINK)
                 .setTitle('Is No Longer In The Discord Server')
                 .setAuthor(memberAffected.displayName, memberAffected.user.displayAvatarURL({ dynamic: true }))
-                .setDescription(`${memberAffected.displayName} left or was kicked from this Discord Server.`)
-                .addField('Timestamps', [
-                    `Discord Tag: ${memberAffected.user.tag}`,
-                    `User ID: ${memberAffected.id}`,
-                    `Roles: ${memberAffected.roles.cache.array().toString().replace(/,/g, ', ') || "None"}`,
-                    `Joined: ${memberAffected.joinedAt}`,
-                    `Left: ${new Date(Date.now())}`,
-                ])
-                .addField('Point Insights', info))
-                .then(msg => {
+                .setDescription(`${memberAffected.displayName} ${auditLogEntry && auditLogEntry.target.id === memberAffected.id ? `was kicked from ${memberAffected.guild.name} by ${auditLogEntry.executor.tag}` : `has left ${memberAffected.guild.name}`}.`)
+            
+            if (auditLogEntry && auditLogEntry.target.id === memberAffected.id && auditLogEntry.reason) {
+                embed.addField('Kick Reason', auditLogEntry.reason)
+            }
+
+            let roles = memberAffected.roles.cache.array();
+            if (roles.length > 1) {
+                roles.sort((o1, o2) => Discord.Role.comparePositions(o1, o2));
+            }
+            
+            embed.addField('Timestamps', [
+                `Discord Tag: ${memberAffected.user.tag}`,
+                `User ID: ${memberAffected.id}`,
+                `Roles: ${roles.length > 0 ? roles.join(', ') : "None"}`,
+                `Joined: ${memberAffected.joinedAt}`,
+                `Left: ${new Date(Date.now())}`,
+            ]).addField('Point Insights', info);
+                
+            logChannel.send(embed).then(msg => {
+                if (userStats) {
                     util.deleteEntry(msg, memberAffected);
-                });
+                }
+            });
         } else {
             console.log(`Your log channel has not been configured properly.\n${memberAffected.displayName} has left/been removed from the server.\nUser ID: ${memberAffected.id}.\nTimestamp: ${new Date(Date.now())}`);
         }
@@ -515,38 +530,75 @@ bot.on('guildMemberRemove', (memberAffected) => {
     }
 });
 
-bot.on('guildBanAdd', (guild, userAffected) => {
+bot.on('guildBanAdd', async (guild, userAffected) => {
     updateServerStats(guild);
-    console.log(userAffected);
     const logChannel = guild.channels.cache.get(config.log_channel_id);
     if (!logChannel) {
         console.log(`guildBanAdd: config.json is not set up correctly.\n${userAffected.tag} has been banned from the server ${userAffected.name}.`);
         return;
     }
-    logChannel.send(new Discord.MessageEmbed()
+    const auditLogEntries = await guild.fetchAuditLogs({
+        limit: 1,
+        type: 'MEMBER_BAN_ADD'
+    });
+
+    const auditLogEntry = auditLogEntries.entries.first();
+
+    if (!auditLogEntry) {
+        console.log(`${userAffected.tag} was banned from ${guild.name} but no audit log entry was located...`);
+    }
+
+    const embed = new Discord.MessageEmbed()
         .setColor(Colors.PURPLE)
         .setTitle('Is Now Banned From This Discord Server')
         .setAuthor(userAffected.tag, userAffected.displayAvatarURL({ dynamic: true }))
-        .setDescription(`${userAffected.tag} has just been banned from this discord server.`)
-        .addField('Timestamps', [
-            `User ID: ${userAffected.id}`,
-            `Banned: ${new Date(Date.now())}`,
-        ]));
+        .setDescription(`${userAffected.tag} has just been banned from this discord server${auditLogEntry.executor && auditLogEntry.target.id === userAffected.id ? ` by ${auditLogEntry.executor.tag}` : ''}.`)
+
+    if (auditLogEntry && auditLogEntry.reason && auditLogEntry.target.id === userAffected.id) {
+        embed.addField('Reason', auditLogEntry.reason);
+    }
+
+    if (auditLogEntry && auditLogEntry.executor && auditLogEntry.target.id === userAffected.id) {
+        embed.setThumbnail(auditLogEntry.executor.displayAvatarURL({ dynamic: true }))
+    }
+
+    logChannel.send(embed.addField('Timestamps', [
+        `User ID: ${userAffected.id}`,
+        `Banned: ${new Date(Date.now())}`,
+    ]));
 });
 
-bot.on('guildBanRemove', (guild, userAffected) => {
+bot.on('guildBanRemove', async (guild, userAffected) => {
     updateServerStats(guild);
     const logChannel = guild.channels.cache.get(config.log_channel_id);
     if (!logChannel) {
         console.log(`guildBanRemove: config.json is not set up correctly.\n${userAffected.tag} has been unbanned from the server ${guild.name}.`);
         return;
     }
-    logChannel.send(new Discord.MessageEmbed()
+
+    const auditLogEntries = await guild.fetchAuditLogs({
+        limit: 1,
+        type: 'MEMBER_BAN_REMOVE'
+    });
+
+    const auditLogEntry = auditLogEntries.entries.first();
+
+    if (!auditLogEntry) {
+        console.log(`${userAffected.tag} was unbanned from ${guild.name} but no audit log entry was located...`);
+    }
+
+    const embed = new Discord.MessageEmbed()
         .setColor(Colors.PURPLE)
         .setTitle('Is Now Unbanned From This Discord Server')
         .setAuthor(userAffected.tag, userAffected.displayAvatarURL({ dynamic: true }))
-        .setDescription(`${userAffected.tag} was previously banned from this discord server.`)
-        .addField('Timestamps', [
+        .setDescription(`${userAffected.tag} was previously banned from this discord server.${auditLogEntry.executor && auditLogEntry.target.id === userAffected.id ? ` They were unbanned by ${auditLogEntry.executor.tag}.` : ''}`);
+
+    if (auditLogEntry && auditLogEntry.executor && auditLogEntry.target.id === userAffected.id) {
+        embed.setThumbnail(auditLogEntry.executor.displayAvatarURL({ dynamic: true }))
+    }
+
+    logChannel.send(embed.addField('Timestamps', [
+            `User ID: ${userAffected.id}`,
             `Unbanned: ${new Date(Date.now())}`,
         ]));
 })
@@ -643,6 +695,14 @@ function updateServerStats(guild) {
         } else {
             memberCountChannel.setName(`Members: ${guild.members.cache.filter(member => !member.user.bot).size}`);
         }
+    }
+}
+
+function usageToString(commandName, usage) {
+    if (typeof usage === 'string') {
+        return `\`${config.prefix}${commandName} ${usage}\``;
+    } else {
+        return [...usage].map((item) => `\`${config.prefix}${commandName} ${item}\``).join('\n');
     }
 }
 

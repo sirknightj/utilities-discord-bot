@@ -53,10 +53,11 @@ module.exports = {
         }
 
         let coinBalance = util.getStats(message, message.member, 'coins');
+        let ticketCost = Math.round(config.shop_ticket_cost * (1 - (util.getStats(message, message.member, 'upgrade_ticket_discount')*0.02)) * 100) / 100;
 
         try {
             if (purchase && args[2] && typeof (args[2]) === 'string' && args[2].toLowerCase() === 'all') {
-                quantity = Math.floor(coinBalance / config.shop_ticket_cost);
+                quantity = Math.floor(coinBalance / ticketCost);
             } else if (!purchase && typeof (args[2]) === 'string' && args[2].toLowerCase() === 'all') {
                 quantity = util.getStats(message, message.member, 'tickets');
                 if (!quantity) {
@@ -70,7 +71,7 @@ module.exports = {
                     util.sendMessage(message.channel, `${util.fixNameFormat(message.member.displayName)}, you have purchased 0 tickets. Congratulations.`);
                     return;
                 }
-                let cost = Math.floor(config.shop_ticket_cost * quantity * 100 * (1 - (util.getStats(message, message.member, 'upgrade_ticket_discount')*0.02))) / 100;
+                let cost = Math.round(ticketCost * quantity * 100) / 100;
                 if (purchase && coinBalance >= cost) {
                     let ticketResult = util.addStats(message, message.member, quantity, 'tickets');
                     let coinResult = util.addStats(message, message.member, -cost, 'coins');
@@ -287,13 +288,17 @@ function sendShopEmbed(message, oldPoints, newPoints, stat, purchase, oldPoints2
         additionalInfo.push(`${util.capitalizeFirstLetter(stat2)}: ${util.addCommas(oldPoints2)} » ${util.addCommas(newPoints2)}`);
     }
 
+    if (stat === 'tickets') {
+        stat = 'ticket';
+    }
+
     let logChannel = util.getLogChannel(message);
 
     let embed = new Discord.MessageEmbed()
         .setColor(Colors.LIGHT_BLUE)
         .setTitle(`Shop ${purchase ? 'Purchase' : 'Refund'}`)
         .setAuthor(target.displayName, target.user.displayAvatarURL({ dynamic: true }))
-        .setDescription(`${util.fixNameFormat(message.guild.me.displayName)} (bot) completed ${util.fixNameFormat(target.displayName)}'s ${stat} ${purchase ? 'purchase' : 'refund'}!${stat2 ? `\nEach ${stat} costs ${util.addCommas(Math.abs(Math.floor((newPoints2 - oldPoints2)/(newPoints - oldPoints)*100)/100))} ${stat2}.` : ''}`)
+        .setDescription(`${util.fixNameFormat(message.guild.me.displayName)} (bot) completed ${util.fixNameFormat(target.displayName)}'s ${stat} ${purchase ? 'purchase' : 'refund'}!${stat2 ? `\nEach ${stat} costs ${util.addCommas(Math.abs(Math.round((newPoints2 - oldPoints2)/(newPoints - oldPoints)*100)/100))} ${stat2}.` : ''}`)
         .addField('Additional Info', additionalInfo)
         .setTimestamp();
 
@@ -440,7 +445,7 @@ const DAILY_COOLDOWN_MAX_LEVEL = 12;
 
 /**
  * Returns the description of the daily cooldown upgrade.
- * Each level grants -1% daily reward cooldown.
+ * Each level grants -2% daily reward cooldown.
  * 
  * @param {number} level 
  * @param {boolean} dontShow true if you just leveled up. False if not.
@@ -453,20 +458,20 @@ function getDailyCooldownStatus(level, dontShow = false) {
         info[1] += ' (MAX)';
     }
     if (level === 0 || dontShow) {
-        info.push(`Current Cooldown: \`${util.toFormattedTime(Math.floor(config.daily_reward_cooldown * (100 - level)) / 100)}\``);
+        info.push(`Current Cooldown: \`${util.toFormattedTime(Math.floor(config.daily_reward_cooldown * (100 - level * 2)) / 100)}\``);
     } else {
-        info.push(`Current Cooldown: \`${util.toFormattedTime(Math.floor(config.daily_reward_cooldown * (100 - (level - 1))) / 100)}\` » \`${util.toFormattedTime(Math.floor(config.daily_reward_cooldown * (100 - level)) / 100)}\``)
+        info.push(`Current Cooldown: \`${util.toFormattedTime(Math.floor(config.daily_reward_cooldown * (100 - (level * 2 - 2))) / 100)}\` » \`${util.toFormattedTime(Math.floor(config.daily_reward_cooldown * (100 - level * 2)) / 100)}\``)
     }
     if (level !== DAILY_COOLDOWN_MAX_LEVEL) {
         info.push(`Next Upgrade: ${util.addCommas(getNextUpgradeCost(level, -1775, 0.1))} coins`,
-            `Next Cooldown: \`${util.toFormattedTime(Math.floor(config.daily_reward_cooldown * (100 - (level + 1))) / 100)}\``);
+            `Next Cooldown: \`${util.toFormattedTime(Math.floor(config.daily_reward_cooldown * (100 - (level * 2 + 2))) / 100)}\``);
     }
     return info;
 }
 
 /**
  * Returns the description of the daily grace upgrade.
- * Each level grants +1d before resetting your streak.
+ * Each level grants +12h before resetting your streak.
  * 
  * @param {number} level 
  * @param {boolean} dontShow true if you just leveled up. False if not.
@@ -493,27 +498,27 @@ function getDailyGraceStatus(level, dontShow = false) {
 
 /**
  * Returns the description of the daily bonus upgrade.
- * Each level grants +1% more coins from using daily.
+ * Each level grants +4% more coins from using daily.
  * 
  * @param {number} level 
  * @param {boolean} dontShow true if you just leveled up. False if not.
  * @returns {string} description of the daily cooldown upgrade.
  */
 function getDailyBonusStatus(level, dontShow = false) {
-    let info = [`Each level increases the coins you get from \`${config.prefix}daily\` by 2%.`]
+    let info = [`Each level increases the coins you get from \`${config.prefix}daily\` by 5%.`]
     info.push(`Bonus Coins Level ${level}/${UPGRADE_MAX_LEVEL}`);
     if (level === UPGRADE_MAX_LEVEL) {
         info[1] += ' (MAX)';
     }
     info.push();
     if (level === 0 || dontShow) {
-        info.push(`Current Coin Bonus: \`${level * 2}%\``);
+        info.push(`Current Coin Bonus: \`${level * 5}%\``);
     } else {
-        info.push(`Current Coin Bonus: \`${level * 2 - 2}%\` » \`${level * 2}%\``)
+        info.push(`Current Coin Bonus: \`${level * 5 - 5}%\` » \`${level * 5}%\``)
     }
     if (level !== UPGRADE_MAX_LEVEL) {
         info.push(`Next Upgrade: ${util.addCommas(getNextUpgradeCost(level, -1550, 0.05))} coins`,
-            `Next Coin Bonus: \`${level * 2 + 2}%\``);
+            `Next Coin Bonus: \`${level * 5 + 5}%\``);
     }
     return info;
 }

@@ -54,7 +54,7 @@ module.exports = {
         targetChannel.bulkDelete(numberToDelete).catch(error => util.sendMessage(message.channel, `Error: ${error.message}`));
 
         // Tells the user that the deleting went well.
-        util.sendTimedMessage(message.channel, `Successfully deleted ${numberToDelete} messages in ${targetChannel.name}.`)
+        // util.sendTimedMessage(message.channel, `Successfully deleted ${numberToDelete} messages in ${targetChannel.name}.`)
         
         // Logs the action of who used this command.
         util.sendMessage(logChannel, `${message.author.username} has deleted ${numberToDelete} messages in ${targetChannel.name}!`);

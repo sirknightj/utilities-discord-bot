@@ -12,7 +12,7 @@ const BETS = ["even", "odd", "low", "high", "red", "black", "green", "column1", 
 module.exports = {
     name: ["roulette", "r"],
     description: `Spins the roulette wheel. Or shows roulette stats. Valid bets include ${BETS.join(', ')}`,
-    usage: [`<coins/half/all> <guess>`, `<stats> (optional: user)`, `<statwipe> <user>`],
+    usage: [`<coins/half/all> <guess>`, `stats (optional: user)`, `statwipe <user>`],
     requiresArgs: true,
 
     execute(bot, message, args) {
