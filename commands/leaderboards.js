@@ -16,7 +16,6 @@ module.exports = {
         try {
             let LeaderboardEmbed = new Discord.MessageEmbed()
                 .setColor("#ffb236")
-                .setFooter(`This message will be automatically deleted in ${config.longest_delete_delay / 1000} seconds.`);
 
             var allStats = {};
             const fileLocation = `${config.resources_folder_file_path}stats.json`;
@@ -44,7 +43,7 @@ module.exports = {
                 args[0] = args[0].toLowerCase()
                 if (args[0] === 'vc') {
                     keyword = 'time_spent_in_vc';
-                } else if (args[0] === 'messages') {
+                } else if (args[0] === 'messages' || args[0] === 'msgs' || args[0] === 'msg') {
                     keyword = 'participating_messages';
                 } else if (args[0] === 'streaks') {
                     keyword = 'daily_rewards_streak';
@@ -62,7 +61,7 @@ module.exports = {
 
             sortedArray.sort((o1, o2) => (guildStats[o2][keyword] || 0) - (guildStats[o1][keyword] || 0));
 
-            let pointBoard = ""; // the leaderboard to print
+            let myPosition = -1;
             let position = 1; // the current position of the leaderboard
             let previousPoints = -1; // if there is a tie, this is the value of the tie
             let previousPosition = 0; // if there is a tie, how many people have the same ranking
@@ -71,8 +70,11 @@ module.exports = {
             let wantTotal = keyword === 'tickets';
             wantTotal = true;
             let total = 0;
+            let toDisplay = [];
+            let myDisplayedPosition = -1;
 
             for (userIDs of sortedArray) {
+                let pointBoard = ""; // the leaderboard to print
                 let guildMember = message.guild.members.cache.get(userIDs);
                 if (guildMember) {
                     if ((guildStats[userIDs][keyword] || 0) !== 0) {
@@ -89,23 +91,23 @@ module.exports = {
                     }
                     if ((guildStats[userIDs][keyword] || 0) !== 0 || userIDs == message.author.id) {
                         if (isTime) {
-                            pointBoard += `${guildMember.displayName}: ${util.toFormattedTime((guildStats[userIDs][keyword] || 0))}`;
+                            pointBoard += `${util.fixNameFormat(guildMember.displayName)}: ${util.toFormattedTime((guildStats[userIDs][keyword] || 0))}`;
                         } else if (isVC) {
                             if ((guildStats[userIDs][keyword] || 0) !== 0) {
-                                pointBoard += `${guildMember.displayName}: ${util.toFormattedTime(Date.now() - guildStats[userIDs][keyword])}`;
+                                pointBoard += `${util.fixNameFormat(guildMember.displayName)}: ${util.toFormattedTime(Date.now() - guildStats[userIDs][keyword])}`;
                             } else {
                                 // The user is not in VC.
-                                pointBoard += `${guildMember.displayName}: ${util.toFormattedTime(0)}`;
+                                pointBoard += `${util.fixNameFormat(guildMember.displayName)}: ${util.toFormattedTime(0)}`;
                             }
                         } else if (isDate) {
                             if ((guildStats[userIDs][keyword] || 0) !== 0) {
-                                pointBoard += `${guildMember.displayName}: ${(new Date(guildStats[userIDs][keyword]))}`;
+                                pointBoard += `${util.fixNameFormat(guildMember.displayName)}: ${(new Date(guildStats[userIDs][keyword]))}`;
                             } else {
                                 // The user has a 0 date.
-                                pointBoard += `${guildMember.displayName}: n/a`;
+                                pointBoard += `${util.fixNameFormat(guildMember.displayName)}: n/a`;
                             }
                         } else {
-                            pointBoard += `${guildMember.displayName}: ${util.addCommas(guildStats[userIDs][keyword] || 0)}`;
+                            pointBoard += `${util.fixNameFormat(guildMember.displayName)}: ${util.addCommas(guildStats[userIDs][keyword] || 0)}`;
                         }
                         if (wantTotal) {
                             total += guildStats[userIDs][keyword] || 0;
@@ -113,10 +115,14 @@ module.exports = {
                     }
                     if (userIDs === message.author.id) {
                         pointBoard += '**';
+                        if ((guildStats[userIDs][keyword] || 0) !== 0) {
+                            myDisplayedPosition = position - previousPosition;
+                            myPosition = toDisplay.length + 1;
+                        }
                     }
                     if ((guildStats[userIDs][keyword] || 0) !== 0 || userIDs == message.author.id) {
                         position++;
-                        pointBoard += '\n';
+                        toDisplay.push(pointBoard);
                     }
                 } else {
                     let pointsHad = guildStats[userIDs].points;
@@ -129,8 +135,6 @@ module.exports = {
                 capitalizedWords.push(word.charAt(0).toUpperCase() + word.slice(1));
             });
             LeaderboardEmbed.setTitle(`${capitalizedWords.join(' ')} Leaderboard`);
-            let formattedPrint = pointBoard.replace(/_/g, "\\_");
-            let pos = 0, i = 0;
             if (total) {
                 if (isTime) {
                     total = util.toFormattedTime(total);
@@ -140,18 +144,94 @@ module.exports = {
                     total = util.addCommas(Math.round(total * 100) / 100);
                 }
             }
-            while (pos < formattedPrint.length) {
-                pos = Math.min(formattedPrint.length, getPositionOf(formattedPrint, '\n', 50 * (i + 1)));
-                LeaderboardEmbed.setDescription(`${wantTotal && total ? `${total} total ${keyword}\n` : ''}${formattedPrint.slice(getPositionOf(formattedPrint, '\n', 50 * i), pos)}`);
-                util.sendTimedMessage(message.channel, LeaderboardEmbed, config.longest_delete_delay);
-                i++;
+
+            let currentPage = 1;
+            let lastPage = Math.ceil(toDisplay.length / PAGE_SIZE);
+
+            let descriptionStart = `${wantTotal && total ? `${total} total ${util.fixNameFormat(keyword)}\n` : ''}\n`;
+            let footerEnd = `/${util.addCommas(lastPage)} • You are ${myDisplayedPosition === -1 ? 'unranked' : `position ${util.addCommas(myDisplayedPosition)}`}.\nThis message will be automatically deleted after ${config.longest_delete_delay / 1000} seconds of inactivity.`;
+
+            let startingPage = 1
+            if (myPosition !== -1) {
+                startingPage = Math.ceil(myPosition / PAGE_SIZE);
             }
+
+            LeaderboardEmbed.setDescription(`${descriptionStart}${getPage(toDisplay, startingPage).join('\n')}`)
+            .setAuthor(message.member.displayName, message.author.displayAvatarURL({ dynamic: true }))
+            .setFooter(`Page ${util.addCommas(currentPage)}${footerEnd}`);
+
+            if (currentPage === lastPage) { // there is only 1 page
+                util.sendTimedMessage(message.channel, LeaderboardEmbed, config.longest_delete_delay);
+                return;
+            }
+
+            util.sendMessage(message.channel, LeaderboardEmbed)
+                .then((msg) => {
+                    msg.react('⏪')
+                    .then(() => {
+                        msg.react('⬅️');
+                    })
+                    .then(() => {
+                        msg.react('➡️');
+                    })
+                    .then(() => {
+                        msg.react('⏩');
+                    })
+                    .then(() => {
+                        const collector = msg.createReactionCollector((reaction, user) => {
+                            if (reaction.emoji.name === '⏪' || reaction.emoji.name === '⬅️' || reaction.emoji.name === '➡️' || reaction.emoji.name === '⏩') {
+                                return user.id === message.member.id;
+                            }
+                            return false;
+                        }, {idle: TIMEOUT, dispose: true});
+
+                        collector.on('collect', (reaction, user) => {
+                            reaction.users.remove(reaction.users.cache.filter(user => user.id !== msg.author.id).first().id)
+                            switch (reaction.emoji.name) {
+                                case '⏪':
+                                    currentPage = 1;
+                                    break;
+                                case '⬅️':
+                                    if (currentPage > 1) {
+                                        currentPage--;
+                                    }
+                                    break;
+                                case '➡️':
+                                    if (currentPage < lastPage) {
+                                        currentPage++;
+                                    }
+                                    break;
+                                case '⏩':
+                                    currentPage = lastPage;
+                                    break;
+                                default:
+                                    return;
+                            }
+                            msg.edit(LeaderboardEmbed
+                                .setDescription(`${descriptionStart}${getPage(toDisplay, currentPage).join('\n')}`)
+                                .setFooter(`Page ${util.addCommas(currentPage)}${footerEnd}`)
+                            );
+                        });
+
+                        collector.on('end', () => {
+                            msg.delete();
+                        });
+                    });
+                });
+
         } catch (err) {
             util.sendTimedMessage(message.channel, "Error fetching stats.json.")
             console.log(err);
         }
     }
 };
+
+const PAGE_SIZE = 30; // number of entries to put on one page
+const TIMEOUT = util.longest_delete_delay;
+
+function getPage(array, page) {
+    return array.slice((page - 1) * PAGE_SIZE, page * PAGE_SIZE);
+}
 
 function getAllowedInputs() {
     let output = "points/vc/messages";
