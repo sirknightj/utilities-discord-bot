@@ -45,7 +45,7 @@ module.exports = {
                     keyword = 'time_spent_in_vc';
                 } else if (args[0] === 'messages' || args[0] === 'msgs' || args[0] === 'msg') {
                     keyword = 'participating_messages';
-                } else if (args[0] === 'streaks') {
+                } else if (args[0] === 'streaks' || args[0] === 'streak') {
                     keyword = 'daily_rewards_streak';
                 } else if (args[0] === 'ticket') {
                     keyword = 'tickets';
@@ -183,10 +183,11 @@ module.exports = {
                                 return user.id === message.member.id;
                             }
                             return false;
-                        }, {idle: TIMEOUT, dispose: true});
+                        }, {idle: TIMEOUT, 
+                            dispose: true});
 
                         collector.on('collect', (reaction, user) => {
-                            reaction.users.remove(reaction.users.cache.filter(user => user.id !== msg.author.id).first().id)
+                            reaction.users.remove(reaction.users.cache.filter(user => user.id !== msg.author.id).first().id);
                             switch (reaction.emoji.name) {
                                 case '⏪':
                                     currentPage = 1;
@@ -227,7 +228,7 @@ module.exports = {
 };
 
 const PAGE_SIZE = 30; // number of entries to put on one page
-const TIMEOUT = util.longest_delete_delay;
+const TIMEOUT = config.longest_delete_delay;
 
 function getPage(array, page) {
     return array.slice((page - 1) * PAGE_SIZE, page * PAGE_SIZE);
