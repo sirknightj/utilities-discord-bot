@@ -53,7 +53,8 @@ module.exports = {
         }
 
         let coinBalance = util.getStats(message, message.member, 'coins');
-        let ticketCost = Math.round(config.shop_ticket_cost * (1 - (util.getStats(message, message.member, 'upgrade_ticket_discount')*0.02)) * 100) / 100;
+        let discountLv = util.getStats(message, message.member, 'upgrade_ticket_discount');
+        let ticketCost = Math.round(config.shop_ticket_cost * (1 - (discountLv*0.02)) * 100) / 100;
 
         try {
             if (purchase && args[2] && typeof (args[2]) === 'string' && args[2].toLowerCase() === 'all') {
@@ -75,7 +76,8 @@ module.exports = {
                 if (purchase && coinBalance >= cost) {
                     let ticketResult = util.addStats(message, message.member, quantity, 'tickets');
                     let coinResult = util.addStats(message, message.member, -cost, 'coins');
-                    sendShopEmbed(message, ticketResult.oldPoints, ticketResult.newPoints, 'tickets', purchase, coinResult.oldPoints, coinResult.newPoints, 'coins');
+
+                    sendShopEmbed(message, ticketResult.oldPoints, ticketResult.newPoints, 'tickets', purchase, coinResult.oldPoints, coinResult.newPoints, 'coins', discountLv ? `${discountLv * 2}% discount!` : null);
                 } else if (!purchase) {
                     if (quantity > util.getStats(message, message.member, 'tickets')) {
                         util.safeDelete(message);
@@ -84,7 +86,7 @@ module.exports = {
                     }
                     let ticketResult = util.addStats(message, message.member, -quantity, 'tickets');
                     let coinResult = util.addStats(message, message.member, cost, 'coins');
-                    sendShopEmbed(message, ticketResult.oldPoints, ticketResult.newPoints, 'tickets', purchase, coinResult.oldPoints, coinResult.newPoints, 'coins');
+                    sendShopEmbed(message, ticketResult.oldPoints, ticketResult.newPoints, 'tickets', purchase, coinResult.oldPoints, coinResult.newPoints, 'coins', discountLv ? `${discountLv * 2}% discount!` : null);
                 } else {
                     util.safeDelete(message);
                     util.sendTimedMessage(message.channel, `Sorry ${util.fixNameFormat(message.member.displayName)}, you don't have enough coins to purchase this item. It costs ${cost} coin${addS(cost)} to purchase ${quantity} ticket${addS(quantity)}, and you only have ${coinBalance} coin${addS(coinBalance)}.`);
@@ -280,7 +282,7 @@ function getAllowedInputs() {
  * @param {number} newPoints2 (optional) the new number of points.
  * @param {number} stat2 (optional) the name of the second stat to display.
  */
-function sendShopEmbed(message, oldPoints, newPoints, stat, purchase, oldPoints2, newPoints2, stat2) {
+function sendShopEmbed(message, oldPoints, newPoints, stat, purchase, oldPoints2, newPoints2, stat2, additionalInformation) {
 
     let additionalInfo = [`${util.capitalizeFirstLetter(stat)}: ${util.addCommas(oldPoints)} » ${util.addCommas(newPoints)}`];
 
@@ -298,7 +300,7 @@ function sendShopEmbed(message, oldPoints, newPoints, stat, purchase, oldPoints2
         .setColor(Colors.LIGHT_BLUE)
         .setTitle(`Shop ${purchase ? 'Purchase' : 'Refund'}`)
         .setAuthor(target.displayName, target.user.displayAvatarURL({ dynamic: true }))
-        .setDescription(`${util.fixNameFormat(message.guild.me.displayName)} (bot) completed ${util.fixNameFormat(target.displayName)}'s ${stat} ${purchase ? 'purchase' : 'refund'}!${stat2 ? `\nEach ${stat} costs ${util.addCommas(Math.abs(Math.round((newPoints2 - oldPoints2)/(newPoints - oldPoints)*100)/100))} ${stat2}.` : ''}`)
+        .setDescription(`${util.fixNameFormat(message.guild.me.displayName)} (bot) completed ${util.fixNameFormat(target.displayName)}'s ${stat} ${purchase ? 'purchase' : 'refund'}!${stat2 ? `\nEach ${stat} costs ${util.addCommas(Math.abs(Math.round((newPoints2 - oldPoints2)/(newPoints - oldPoints)*100)/100))} ${stat2}${additionalInformation ? ` (${additionalInformation})` : ""}.` : ''}`)
         .addField('Additional Info', additionalInfo)
         .setTimestamp();
 

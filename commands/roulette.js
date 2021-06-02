@@ -12,11 +12,10 @@ const BETS = ["even", "odd", "low", "high", "red", "black", "green", "column1", 
 module.exports = {
     name: ["roulette", "r"],
     description: `Spins the roulette wheel. Or shows roulette stats. Valid bets include ${BETS.join(', ')}`,
-    usage: [`<coins/half/all> <guess>`, `stats (optional: user)`, `statwipe <user>`],
+    usage: [`<coins/half/all> <guess>`, `<coins/half/all> <space-seperated list of numbers>`, `stats (optional: user)`, `statwipe <user>`],
     requiresArgs: true,
 
     execute(bot, message, args) {
-        let lookingFor = args[1];
         let SelectedCoins = -1;
 
         if (args[0].toLowerCase() === 'stats') {
@@ -109,8 +108,8 @@ module.exports = {
             util.sendMessage(util.getLogChannel(message), statEmbed);
 
             let rouletteStatNames = ['roulette_played', 'roulette_wins', 'roulette_losses', 'coins_bet_in_roulette',
-            'coins_earned_in_roulette', 'coins_lost_in_roulette', 'net_roulette_earnings', 'roulette_safety_net_saves',
-            'roulette_longest_win_streak', 'roulette_longest_losing_streak', 'roulette_winning_streak', 'roulette_losing_streak'];
+                'coins_earned_in_roulette', 'coins_lost_in_roulette', 'net_roulette_earnings', 'roulette_safety_net_saves',
+                'roulette_longest_win_streak', 'roulette_longest_losing_streak', 'roulette_winning_streak', 'roulette_losing_streak'];
             rouletteStatNames.forEach((statName) => util.setStats(message, target, 0, statName));
             return;
         } else if (args[0].toLowerCase() === 'all') {
@@ -130,6 +129,36 @@ module.exports = {
         } else {
             SelectedCoins = util.convertNumber(args[0]);
             SelectedCoins = Math.floor(SelectedCoins * 100) / 100;
+        }
+        args.shift();
+
+        let lookingFor;
+        if (args.length > 1 || parseInt(args[0]) >= 0) {
+            if (args.length > 6) {
+                throw 'Too many guesses! You can only guess up to 6 numbers.';
+            }
+
+            lookingFor = []
+            while (args.length > 0) {
+                let thisGuess = args.shift();
+                let parsedGuess = parseInt(thisGuess);
+                if (isNaN(parsedGuess) || parsedGuess < 0 || parsedGuess > 36 || parsedGuess != thisGuess) {
+                    throw `Invalid guess: \`${thisGuess}\``
+                }
+                if (thisGuess === '00') {
+                    if (lookingFor.includes(37)) {
+                        throw `Duplicate guess found: ${parsedGuess}`;
+                    }
+                    lookingFor.push(37);
+                } else {
+                    if (lookingFor.includes(parsedGuess)) {
+                        throw `Duplicate guess found: ${parsedGuess}`;
+                    }
+                    lookingFor.push(parsedGuess);
+                }
+            }
+        } else {
+            lookingFor = args[0];
         }
 
         if (!lookingFor) {
@@ -175,36 +204,59 @@ module.exports = {
  * randNumb: Number - the winning number
  */
 function isWin(guess, randNumb) {
-    guess = guess.toLowerCase();
-    switch (guess) {
-        case "green":
-            return (randNumb === 0 || randNumb === 37) ? GREEN_MULTIPLIER : 0; // 0 or 00
-        case "even":
-            return (randNumb % 2 === 0 && randNumb !== 0) ? 1 : 0; // 0 is neither even or odd.
-        case "odd":
-            return (randNumb % 2 === 1 && randNumb !== 0 && randNumb !== 37) ? 1 : 0; // 0 is neither even or odd
-        case "high":
-            return (randNumb >= 19 && randNumb !== 37) ? 1 : 0; // 19-36
-        case "low":
-            return (randNumb <= 18 && randNumb !== 0) ? 1 : 0; // 1-18
-        case "red":
-            return (getRouletteColor(randNumb) === ROULETTE_COLORS[1]) ? 1 : 0;
-        case "black":
-            return (getRouletteColor(randNumb) === ROULETTE_COLORS[2]) ? 1 : 0;
-        case "column1":
-            return (((randNumb - 1) % 3) === 0) ? 2 : 0; // 1, 4, 7, ..., 31, 34
-        case "column2":
-            return (((randNumb - 2) % 3) === 0) ? 2 : 0; // 2, 5, 8, ..., 32, 35
-        case "column3":
-            return ((randNumb % 3) === 0) ? 2 : 0; // 3, 6, 9, ..., 33, 36
-        case "dozen1":
-            return (1 <= randNumb && randNumb <= 12) ? 2 : 0; // 1-12
-        case "dozen2":
-            return (13 <= randNumb && randNumb <= 24) ? 2 : 0; // 13-24
-        case "dozen3":
-            return (25 <= randNumb && randNumb <= 36) ? 2 : 0; // 25-36
-        default:
-            throw `Invalid bet!\nValid bets: \`${BETS.join('`/`')}\``;
+    if (typeof guess === 'string') {
+        guess = guess.toLowerCase();
+        switch (guess) {
+            case "green":
+                return (randNumb === 0 || randNumb === 37) ? GREEN_MULTIPLIER : 0; // 0 or 00
+            case "even":
+                return (randNumb % 2 === 0 && randNumb !== 0) ? 1 : 0; // 0 is neither even or odd.
+            case "odd":
+                return (randNumb % 2 === 1 && randNumb !== 0 && randNumb !== 37) ? 1 : 0; // 0 is neither even or odd
+            case "high":
+                return (randNumb >= 19 && randNumb !== 37) ? 1 : 0; // 19-36
+            case "low":
+                return (randNumb <= 18 && randNumb !== 0) ? 1 : 0; // 1-18
+            case "red":
+                return (getRouletteColor(randNumb) === ROULETTE_COLORS[1]) ? 1 : 0;
+            case "black":
+                return (getRouletteColor(randNumb) === ROULETTE_COLORS[2]) ? 1 : 0;
+            case "column1":
+                return (((randNumb - 1) % 3) === 0) ? 2 : 0; // 1, 4, 7, ..., 31, 34
+            case "column2":
+                return (((randNumb - 2) % 3) === 0) ? 2 : 0; // 2, 5, 8, ..., 32, 35
+            case "column3":
+                return ((randNumb % 3) === 0) ? 2 : 0; // 3, 6, 9, ..., 33, 36
+            case "dozen1":
+                return (1 <= randNumb && randNumb <= 12) ? 2 : 0; // 1-12
+            case "dozen2":
+                return (13 <= randNumb && randNumb <= 24) ? 2 : 0; // 13-24
+            case "dozen3":
+                return (25 <= randNumb && randNumb <= 36) ? 2 : 0; // 25-36
+            default:
+                throw `Invalid bet!\nValid bets: \`${BETS.join('`/`')}\``;
+        }
+    } else {
+        // this is an array of numbers to guess
+        if (guess.includes(randNumb)) {
+            switch (guess.length) {
+                case 1:
+                    return 35;
+                case 2:
+                    return 17;
+                case 3:
+                    return 11;
+                case 4:
+                    return 8;
+                case 5:
+                    return 6;
+                case 6:
+                    return 5;
+                default:
+                    throw `Too many numbers! You can only guess up to 6 numbers!`;
+            }
+        }
+        return 0;
     }
 };
 
@@ -214,36 +266,41 @@ function isWin(guess, randNumb) {
  * @returns {number} the number of numbers in the guess
  */
 function getGuessSize(guess) {
-    guess = guess.toLowerCase();
-    switch (guess) {
-        case "green":
-            return 2; // 0 or 00
-        case "even":
-            return 18; // 0 is neither even or odd.
-        case "odd":
-            return 18; // 0 is neither even or odd
-        case "high":
-            return 18; // 19-36
-        case "low":
-            return 18; // 1-18
-        case "red":
-            return 18;
-        case "black":
-            return 18;
-        case "column1":
-            return 12; // 1, 4, 7, ..., 31, 34
-        case "column2":
-            return 12; // 2, 5, 8, ..., 32, 35
-        case "column3":
-            return 12; // 3, 6, 9, ..., 33, 36
-        case "dozen1":
-            return 12; // 1-12
-        case "dozen2":
-            return 12; // 13-24
-        case "dozen3":
-            return 12; // 25-36
-        default:
-            throw `Invalid bet!\nValid bets: \`${BETS.join('`/`')}\``;
+    if (typeof guess === 'string') {
+        guess = guess.toLowerCase();
+        switch (guess) {
+            case "green":
+                return 2; // 0 or 00
+            case "even":
+                return 18; // 0 is neither even or odd.
+            case "odd":
+                return 18; // 0 is neither even or odd
+            case "high":
+                return 18; // 19-36
+            case "low":
+                return 18; // 1-18
+            case "red":
+                return 18;
+            case "black":
+                return 18;
+            case "column1":
+                return 12; // 1, 4, 7, ..., 31, 34
+            case "column2":
+                return 12; // 2, 5, 8, ..., 32, 35
+            case "column3":
+                return 12; // 3, 6, 9, ..., 33, 36
+            case "dozen1":
+                return 12; // 1-12
+            case "dozen2":
+                return 12; // 13-24
+            case "dozen3":
+                return 12; // 25-36
+            default:
+                throw `Invalid bet!\nValid bets: \`${BETS.join('`/`')}\``;
+        }
+    } else {
+        // this is an array of numbers to guess
+        return guess.length;
     }
 };
 
@@ -261,7 +318,7 @@ function makeEmbed(message, randNumb, lookingFor, SelectedCoins, oldCoins, newCo
             .setTitle(`${message.member.displayName} has played roulette!`)
             .setDescription(`**Saved by safety net upgrade!**\n${util.addCommas(SelectedCoins)} coin${Math.abs(Math.round((SelectedCoins) * 100) / 100) === 1 ? '' : 's'} would've been taken away for losing, but your upgrade saved you and reduced it to 0!\nLosing Streak: ${streak}${additionalMessage}`)
             .addField('Additional Info', [`Bet: ${util.addCommas(SelectedCoins)} coins`,
-            `Guess: ${lookingFor} (${getDescription(lookingFor)})`,
+            `Guess: ${typeof lookingFor === 'string' ? `${lookingFor} (${getDescription(lookingFor)})` : lookingFor.join(', ')}`,
             `Result: ${getRouletteColor(randNumb)} ${randNumb === 37 ? '00' : randNumb}`,
             `Coins: ${util.addCommas(oldCoins)} » ${util.addCommas(newCoins)}`,
             `Times Saved By Safety Net: ${util.addCommas(safetySaves.oldPoints)} » ${util.addCommas(safetySaves.newPoints)}`
@@ -273,8 +330,8 @@ function makeEmbed(message, randNumb, lookingFor, SelectedCoins, oldCoins, newCo
     return new Discord.MessageEmbed()
         .setTitle(`${message.member.displayName} has played roulette!`)
         .setDescription(`${util.addCommas(Math.abs(Math.round((newCoins - oldCoins) * 100) / 100))} coin${Math.abs(Math.round((newCoins - oldCoins) * 100) / 100) === 1 ? '' : 's'} ha${Math.abs(Math.round((newCoins - oldCoins) * 100) / 100) === 1 ? 's' : 've'} been ${oldCoins > newCoins ? 'taken away for losing.' : 'awarded for winning!'}\n${oldCoins > newCoins ? `Losing Streak: ${streak}` : `Winning Streak: ${streak}`}${additionalMessage}`)
-        .addField('Additional Info', [`Bet: ${util.addCommas(SelectedCoins)} coins`,
-        `Guess: ${lookingFor} (${getDescription(lookingFor)})`,
+        .addField('Additional Info', [`Bet: ${util.addCommas(SelectedCoins)} coins\n${isWin(lookingFor, randNumb) > 0 ? `Payout: ${isWin(lookingFor, randNumb)}:1` : ''}`,
+        `Guess: ${typeof lookingFor === 'string' ? `${lookingFor} (${getDescription(lookingFor)})` : lookingFor.map((guess) => guess === 37 ? '00' : guess).join(', ')}`,
         `Result: ${getRouletteColor(randNumb)} ${randNumb === 37 ? '00' : randNumb}`,
         `Coins: ${util.addCommas(oldCoins)} » ${util.addCommas(newCoins)}`
         ])

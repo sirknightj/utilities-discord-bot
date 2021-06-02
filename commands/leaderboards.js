@@ -35,7 +35,7 @@ module.exports = {
             }
 
             let keyword;
-            let isVC = false;
+            let isTimeDifference = false;
             if (args[1]) {
                 args[0] = args.join('_');
             }
@@ -51,7 +51,10 @@ module.exports = {
                     keyword = 'tickets';
                 } else if (args[0] === 'in_vc' || args[0] === 'vc_session') {
                     keyword = 'vc_session_started';
-                    isVC = true;
+                    isTimeDifference = true;
+                } else if (args[0] === 'daily' || args[0] === 'daily_claimed' || args[0] === 'daily_last_claimed') {
+                    keyword = 'daily_reward_last_claimed';
+                    isTimeDifference = true;
                 } else {
                     keyword = args[0];
                 }
@@ -92,7 +95,7 @@ module.exports = {
                     if ((guildStats[userIDs][keyword] || 0) !== 0 || userIDs == message.author.id) {
                         if (isTime) {
                             pointBoard += `${util.fixNameFormat(guildMember.displayName)}: ${util.toFormattedTime((guildStats[userIDs][keyword] || 0))}`;
-                        } else if (isVC) {
+                        } else if (isTimeDifference) {
                             if ((guildStats[userIDs][keyword] || 0) !== 0) {
                                 pointBoard += `${util.fixNameFormat(guildMember.displayName)}: ${util.toFormattedTime(Date.now() - guildStats[userIDs][keyword])}`;
                             } else {
@@ -145,7 +148,6 @@ module.exports = {
                 }
             }
 
-            let currentPage = 1;
             let lastPage = Math.ceil(toDisplay.length / PAGE_SIZE);
 
             let descriptionStart = `${wantTotal && total ? `${total} total ${util.fixNameFormat(keyword)}\n` : ''}\n`;
@@ -155,16 +157,17 @@ module.exports = {
             if (myPosition !== -1) {
                 startingPage = Math.ceil(myPosition / PAGE_SIZE);
             }
-
+            
             LeaderboardEmbed.setDescription(`${descriptionStart}${getPage(toDisplay, startingPage).join('\n')}`)
             .setAuthor(message.member.displayName, message.author.displayAvatarURL({ dynamic: true }))
-            .setFooter(`Page ${util.addCommas(currentPage)}${footerEnd}`);
+            .setFooter(`Page ${util.addCommas(startingPage)}${footerEnd}`);
 
-            if (currentPage === lastPage) { // there is only 1 page
+            if (1 === lastPage) { // there is only 1 page
                 util.sendTimedMessage(message.channel, LeaderboardEmbed, config.longest_delete_delay);
                 return;
             }
-
+            
+            let currentPage = startingPage;
             util.sendMessage(message.channel, LeaderboardEmbed)
                 .then((msg) => {
                     msg.react('⏪')
@@ -227,7 +230,7 @@ module.exports = {
     }
 };
 
-const PAGE_SIZE = 30; // number of entries to put on one page
+const PAGE_SIZE = 25; // number of entries to put on one page
 const TIMEOUT = config.longest_delete_delay;
 
 function getPage(array, page) {
