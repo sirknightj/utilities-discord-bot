@@ -330,9 +330,9 @@ function makeEmbed(message, randNumb, lookingFor, SelectedCoins, oldCoins, newCo
     return new Discord.MessageEmbed()
         .setTitle(`${message.member.displayName} has played roulette!`)
         .setDescription(`${util.addCommas(Math.abs(Math.round((newCoins - oldCoins) * 100) / 100))} coin${Math.abs(Math.round((newCoins - oldCoins) * 100) / 100) === 1 ? '' : 's'} ha${Math.abs(Math.round((newCoins - oldCoins) * 100) / 100) === 1 ? 's' : 've'} been ${oldCoins > newCoins ? 'taken away for losing.' : 'awarded for winning!'}\n${oldCoins > newCoins ? `Losing Streak: ${streak}` : `Winning Streak: ${streak}`}${additionalMessage}`)
-        .addField('Additional Info', [`Bet: ${util.addCommas(SelectedCoins)} coins\n${isWin(lookingFor, randNumb) > 0 ? `Payout: ${isWin(lookingFor, randNumb)}:1` : ''}`,
+        .addField('Additional Info', [`Bet: ${util.addCommas(SelectedCoins)} coins`,
         `Guess: ${typeof lookingFor === 'string' ? `${lookingFor} (${getDescription(lookingFor)})` : lookingFor.map((guess) => guess === 37 ? '00' : guess).join(', ')}`,
-        `Result: ${getRouletteColor(randNumb)} ${randNumb === 37 ? '00' : randNumb}`,
+        `Result: ${getRouletteColor(randNumb)} ${randNumb === 37 ? '00' : randNumb}${isWin(lookingFor, randNumb) > 0 ? `\nPayout: ${isWin(lookingFor, randNumb)}:1` : ''}`,
         `Coins: ${util.addCommas(oldCoins)} » ${util.addCommas(newCoins)}`
         ])
         .setColor(`${oldCoins > newCoins ? Colors.MEDIUM_RED : Colors.MEDIUM_GREEN}`)
