@@ -26,10 +26,6 @@ module.exports = {
             }
         }
 
-        if (!statNames.includes(statName) && !pointsAndCoinsToAdd) {
-            throw 'Invalid stat name.';
-        }
-
         let pointsToAdd = util.convertNumber(args.pop());
         if (pointsToAdd <= 0) {
             throw 'Points cannot be negative.';
@@ -45,6 +41,10 @@ module.exports = {
         if (!target) {
             util.sendTimedMessage(message.channel, `Error: Cannot find user ${args.join(' ')}`);
             return;
+        }
+
+        if (!statNames.includes(statName) && !pointsAndCoinsToAdd && util.getStats(message, target, statName) === 0) {
+            throw 'Invalid stat name.';
         }
 
         try {

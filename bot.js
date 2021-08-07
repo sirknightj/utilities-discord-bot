@@ -61,10 +61,10 @@ bot.once('ready', () => {
 
 bot.on('message', message => {
     // Make sure that the message is not from another bot, and only from a text channel.
-    if (message.author.bot || message.channel.type !== 'text') {
+    if (message.channel.type !== 'text' || message.author.bot) {
         return;
     }
-
+        
     manageStats(message);
 
     // Checks if the message starts with a prefix.
@@ -124,17 +124,6 @@ bot.on('message', message => {
                 requiredPerms = [requiredPerms];
             }
 
-            // If a command has the requiredPermissions property, then check that the sender has the all of the requiredPermissions.
-            if (requiredPerms && requiredPerms.length) {
-                // Loop through all required permissions. If the user is missing any of them, then don't perform the command.
-                for (var permission of requiredPerms) {
-                    if (!message.member.hasPermission(permission)) {
-                        util.sendMessage(message.channel, `You do not have permission to use this command.\nMissing \`${permission}\`.`);
-                        return;
-                    }
-                }
-            }
-
             // If the first word after the command name is "help" or "usage", then display how to use it.
             if (args[0]) {
                 if (args[0].toLowerCase() === 'help' || args[0].toLowerCase() === 'usage') {
@@ -162,6 +151,17 @@ bot.on('message', message => {
                         .setTimestamp();
                     util.sendTimedMessage(message.channel, embed, config.longer_delete_delay);
                     return;
+                }
+            }
+
+            // If a command has the requiredPermissions property, then check that the sender has the all of the requiredPermissions.
+            if (requiredPerms && requiredPerms.length) {
+                // Loop through all required permissions. If the user is missing any of them, then don't perform the command.
+                for (var permission of requiredPerms) {
+                    if (!message.member.hasPermission(permission)) {
+                        util.sendMessage(message.channel, `You do not have permission to use this command.\nMissing \`${permission}\`.`);
+                        return;
+                    }
                 }
             }
 
@@ -208,7 +208,7 @@ bot.on('message', message => {
             return;
             // If the command doesn't exist...
         } else {
-            util.sendMessage(message.channel, `${config.unknown_command_message}`);
+            util.sendTimedMessage(message.channel, `${config.unknown_command_message}`, config.delete_delay);
         }
         return;
         // If the message doesn't start with the prefix...
@@ -316,14 +316,10 @@ bot.on('message', message => {
 });
 
 bot.on('voiceStateUpdate', async (oldState, newState) => {
-    if (newState.member.user.bot) {
-        return;
-    }
-
     const afkChannel = newState.guild.channels.cache.get(config.afk_channel_id);
     const logChannel = newState.guild.channels.cache.get(config.log_channel_id);
 
-    if (config.move_to_afk_on_self_deafen && newState.selfDeaf && afkChannel && newState.channel !== afkChannel) { // if the member is self-deafened, move them to the AFK channel
+    if (config.move_to_afk_on_self_deafen && newState.selfDeaf && afkChannel && newState.channel !== afkChannel && !newState.member.user.bot) { // if the member is self-deafened, move them to the AFK channel
         await newState.setChannel(afkChannel);
         await util.sendMessage(logChannel, `I have moved <@${newState.member.id}> to AFK for self-deafening.`);
         return;
@@ -354,7 +350,7 @@ bot.on('voiceStateUpdate', async (oldState, newState) => {
 
     const guildStats = allStats[newState.guild.id];
 
-    if (!(target.user.id in guildStats)) {
+    if (!(target.user.id in guildStats) && (!newState.member.user.bot || config.bots_have_stats)) {
         guildStats[target.user.id] = {
             points: 0,
             last_message: 0,
@@ -365,52 +361,79 @@ bot.on('voiceStateUpdate', async (oldState, newState) => {
     }
 
     const userStats = guildStats[target.user.id];
+    const botStats = guildStats[oldState.guild.me.id];
 
     // Alert for leaving VC
     if ((oldState.channel && !newState.channel) || newState.channel.id === config.afk_channel_id) {
-        util.sendMessage(logChannel, new Discord.MessageEmbed()
+        let leavingEmbed = new Discord.MessageEmbed()
             .setColor(Colors.RED)
             .setTitle("Left Voice Channel")
             .setAuthor(target.displayName, target.user.displayAvatarURL({ dynamic: true }))
-            .setDescription(`${target.displayName} left a Voice Channel.`)
+            .setDescription(`${util.fixNameFormat(target.displayName)} left a Voice Channel.`)
             .addField('Timestamps', [
                 `Left: ${new Date(Date.now())}`
-            ]));
+            ]);
 
-        // Awards points for every 5 minutes spent in VC.
-        if (userStats.vc_session_started > 0) {
-            let now = Date.now();
-            let millisecondsSpent = now - userStats.vc_session_started;
-            let secondsSpent = Math.floor(millisecondsSpent / 1000);
-            let minutesSpent = Math.floor(secondsSpent / 60);
-            let pointsToAdd = Math.floor(secondsSpent / 3) / 100 * 2; // 2 points per 5 minutes. Equivalent is 0.02 pts per 3 seconds.
-            let beforePoints = userStats.points;
-            userStats.points += pointsToAdd;
-            userStats.points = Math.round(userStats.points * 100) / 100; // Rounds to the nearest 0.01 because of floating-point errors.
-            if (!userStats['time_spent_in_vc']) {
-                userStats['time_spent_in_vc'] = 0;
+        if (oldState.guild.me.hasPermission('VIEW_AUDIT_LOG')) {
+            const auditLogEntries = await oldState.guild.fetchAuditLogs({
+                limit: 1,
+                type: 'MEMBER_DISCONNECT'
+            });
+
+            const auditLogEntry = auditLogEntries.entries.first();
+
+            let prev_id = botStats['vc_disconnect_id'];
+            let prev_num = botStats['vc_disconnect_number'];
+            let newId = auditLogEntry ? auditLogEntry.id : null;
+            let newNum = auditLogEntry ? auditLogEntry.extra.count : -1;
+            if (auditLogEntry && prev_id !== newId || (prev_id == newId && newNum !== prev_num)) {
+                leavingEmbed.setDescription(`${util.fixNameFormat(target.displayName)} was disconnected from a Voice Channel by ${util.fixNameFormat(auditLogEntry.executor.tag)}.`)
+                    .setThumbnail(auditLogEntry.executor.displayAvatarURL({ dynamic: true }))
+                    .setColor(Colors.PURPLE);
+                botStats['vc_disconnect_id'] = newId;
+                botStats['vc_disconnect_number'] = newNum;
             }
-            let beforeTimeSpentInVC = userStats['time_spent_in_vc'];
-            userStats['time_spent_in_vc'] += millisecondsSpent;
-            let nowTimeSpentInVC = userStats['time_spent_in_vc'];
+        }
 
-            let previousCoins = userStats.coins ? userStats.coins : 0;
-            let bonus = userStats.upgrade_vc_earnings ? userStats.upgrade_vc_earnings * 20 : 0;
-            let coinsToAdd = Math.round(((pointsToAdd) * 100) * (1 + bonus / 100)) / 100;
-            userStats.coins = Math.round((userStats.coins + coinsToAdd) * 100) / 100;
+        util.sendMessage(logChannel, leavingEmbed);
 
-            util.sendMessage(logChannel, new Discord.MessageEmbed()
-                .setColor(Colors.YELLOW)
-                .setTitle("Earned Points")
-                .setAuthor(target.displayName, target.user.displayAvatarURL({ dynamic: true }))
-                .setDescription(`Awarded ${target.displayName} ${util.addCommas(pointsToAdd)} points and ${util.addCommas(coinsToAdd)} coins${bonus ? ` (+${bonus}% bonus!)` : ''} for being in a VC for ${util.addCommas(Math.floor(minutesSpent / 60))}h ${minutesSpent % 60}m ${secondsSpent % 60}s.`)
-                .addField('Additional Info', [
-                    `Joined: ${new Date(userStats.vc_session_started)}`,
-                    `Left: ${new Date(now)}`,
-                    `Points: ${util.addCommas(beforePoints)} » ${util.addCommas(userStats.points)}`,
-                    `Coins: ${util.addCommas(previousCoins)} » ${util.addCommas(userStats.coins)}`,
-                    `Time Spent In VC: ${util.toFormattedTime(beforeTimeSpentInVC)} » ${util.toFormattedTime(nowTimeSpentInVC)}`
-                ]));
+        if (!newState.member.user.bot) {
+            // Awards points for every 5 minutes spent in VC.
+            if (userStats.vc_session_started > 0) {
+                let now = Date.now();
+                let millisecondsSpent = now - userStats.vc_session_started;
+                let secondsSpent = Math.floor(millisecondsSpent / 1000);
+                let minutesSpent = Math.floor(secondsSpent / 60);
+                let pointsToAdd = Math.floor(secondsSpent / 3) / 100 * 2; // 2 points per 5 minutes. Equivalent is 0.02 pts per 3 seconds.
+                let beforePoints = userStats.points;
+                userStats.points += pointsToAdd;
+                userStats.points = Math.round(userStats.points * 100) / 100; // Rounds to the nearest 0.01 because of floating-point errors.
+                if (!userStats['time_spent_in_vc']) {
+                    userStats['time_spent_in_vc'] = 0;
+                }
+                let beforeTimeSpentInVC = userStats['time_spent_in_vc'];
+                userStats['time_spent_in_vc'] += millisecondsSpent;
+                let nowTimeSpentInVC = userStats['time_spent_in_vc'];
+
+                let previousCoins = userStats.coins ? userStats.coins : 0;
+                let bonus = userStats.upgrade_vc_earnings ? userStats.upgrade_vc_earnings * 20 : 0;
+                let coinsToAdd = Math.round(((pointsToAdd) * 100) * (1 + bonus / 100)) / 100;
+                userStats.coins = Math.round((userStats.coins + coinsToAdd) * 100) / 100;
+
+                util.sendMessage(logChannel, new Discord.MessageEmbed()
+                    .setColor(Colors.YELLOW)
+                    .setTitle("Earned Points")
+                    .setAuthor(target.displayName, target.user.displayAvatarURL({ dynamic: true }))
+                    .setDescription(`Awarded ${target.displayName} ${util.addCommas(pointsToAdd)} points and ${util.addCommas(coinsToAdd)} coins${bonus ? ` (+${bonus}% bonus!)` : ''} for being in a VC for ${util.addCommas(Math.floor(minutesSpent / 60))}h ${minutesSpent % 60}m ${secondsSpent % 60}s.`)
+                    .addField('Additional Info', [
+                        `Joined: ${new Date(userStats.vc_session_started)}`,
+                        `Left: ${new Date(now)}`,
+                        `Points: ${util.addCommas(beforePoints)} » ${util.addCommas(userStats.points)}`,
+                        `Coins: ${util.addCommas(previousCoins)} » ${util.addCommas(userStats.coins)}`,
+                        `Time Spent In VC: ${util.toFormattedTime(beforeTimeSpentInVC)} » ${util.toFormattedTime(nowTimeSpentInVC)}`
+                    ]));
+
+            }
             userStats.vc_session_started = 0;
         }
         // Alert for joining VC
@@ -499,7 +522,7 @@ bot.on('guildMemberRemove', async (memberAffected) => {
                 .setTitle('Is No Longer In The Discord Server')
                 .setAuthor(memberAffected.displayName, memberAffected.user.displayAvatarURL({ dynamic: true }))
                 .setDescription(`${memberAffected.displayName} ${auditLogEntry && auditLogEntry.target.id === memberAffected.id ? `was kicked from ${memberAffected.guild.name} by ${auditLogEntry.executor.tag}` : `has left ${memberAffected.guild.name}`}.`)
-            
+
             if (auditLogEntry && auditLogEntry.target.id === memberAffected.id && auditLogEntry.reason) {
                 embed.addField('Kick Reason', auditLogEntry.reason)
             }
@@ -508,7 +531,7 @@ bot.on('guildMemberRemove', async (memberAffected) => {
             if (roles.length > 1) {
                 roles.sort((o1, o2) => Discord.Role.comparePositions(o1, o2));
             }
-            
+
             embed.addField('Timestamps', [
                 `Discord Tag: ${memberAffected.user.tag}`,
                 `User ID: ${memberAffected.id}`,
@@ -516,7 +539,7 @@ bot.on('guildMemberRemove', async (memberAffected) => {
                 `Joined: ${memberAffected.joinedAt}`,
                 `Left: ${new Date(Date.now())}`,
             ]).addField('Point Insights', info);
-                
+
             logChannel.send(embed).then(msg => {
                 if (userStats) {
                     util.deleteEntry(msg, memberAffected);
@@ -598,10 +621,14 @@ bot.on('guildBanRemove', async (guild, userAffected) => {
     }
 
     logChannel.send(embed.addField('Timestamps', [
-            `User ID: ${userAffected.id}`,
-            `Unbanned: ${new Date(Date.now())}`,
-        ]));
-})
+        `User ID: ${userAffected.id}`,
+        `Unbanned: ${new Date(Date.now())}`,
+    ]));
+});
+
+bot.on('messageReactionRemove', (reaction, user) => { 
+    console.log(`${user.username} unreacted ${reaction.emoji.name} on this message: ${reaction.message.content}`) 
+});
 
 function manageStats(message) {
     const logChannel = message.guild.channels.cache.get(config.log_channel_id);
@@ -702,7 +729,7 @@ function usageToString(commandName, usage) {
     if (typeof usage === 'string') {
         return `\`${config.prefix}${commandName} ${usage}\``;
     } else {
-        return [...usage].map((item) => `\`${config.prefix}${commandName} ${item}\``).join('\n');
+        return [...usage].map((item) => item.length > 0 ? `\`${config.prefix}${commandName} ${item}\`` : `\`${config.prefix}${commandName}\``).join('\n');
     }
 }
 

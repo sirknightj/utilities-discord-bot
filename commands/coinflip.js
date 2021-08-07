@@ -10,7 +10,7 @@ module.exports = {
 
     execute(bot, message, args) {
         if (args.length === 0) {
-            util.sendMessage(message.channel, `I flipped ${this.flip()}!`);
+            util.sendMessage(message.channel, `I flipped ${Math.random() < 0.5 ? 'heads' : 'tails'}!`);
             return;
         }
 

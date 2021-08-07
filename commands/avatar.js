@@ -2,7 +2,7 @@ const util = require('../utilities');
 const config = require('../config.json');
 
 module.exports = {
-    name: 'avatar',
+    name: ['avatar', 'pfp', 'profilepic', 'pfpic'],
     description: 'Gets the avatar of the user',
     usage: `<user>`,
     requiresTarget: true,

@@ -273,7 +273,6 @@ module.exports = {
 
         if (!(target.user.id in guildStats)) {
             guildStats[target.user.id] = { // Sets all of the normal stats to 0.
-                id: target.user.id,
                 points: 0,
                 coins: 0,
                 last_message: 0,
@@ -319,12 +318,13 @@ module.exports = {
 
     /**
      * Retrieves the value of one of the stats. Returns 0 if the stat name is invalid, or if the stat does not exist.
-     * @param {Discord.Message} message any message sent in the guild.
+     * @param {?Discord.Message} message any message sent in the guild.
      * @param {Discord.GuildMember} target the target who you want to retrieve the stats of.
      * @param {string} stat the property name you want to retrieve.
+     * @param {?Discord.Guild} guild the guild whose stats these belong to, if it isn't provided in message.
      * @returns {number} the stat number.
      */
-    getStats: function (message, target, stat) {
+    getStats: function (message, target, stat, guild) {
         if (!target) {
             throw 'Missing target.';
         }
@@ -338,13 +338,20 @@ module.exports = {
         if (fs.existsSync(fileLocation)) {
             allStats = jsonFile.readFileSync(fileLocation);
         } else {
-            message.channel.send("stats.json has not been properly configured.")
+            if (message) {
+                message.channel.send("stats.json has not been properly configured.")
                 .then(msg => msg.delete({ timeout: (config.delete_delay) })
                     .catch(error => channel.send(`Error: ${error}`)));
+            } else {
+                console.log('stats.json has not been properly configured.');
+            }
             return;
         }
+        if (message) {
+            guild = message.guild;
+        }
 
-        return allStats[message.guild.id][target.user.id][stat] ? allStats[message.guild.id][target.user.id][stat] : 0;
+        return allStats[guild.id][target.user.id][stat] ? allStats[guild.id][target.user.id][stat] : 0;
     },
 
     /**
@@ -354,6 +361,9 @@ module.exports = {
      * @returns {Object} the stat object
      */
     getMemberStats: function(message, target) {
+        if (!message) {
+            throw 'Missing message!';
+        }
         if (!target) {
             throw 'Missing target.';
         }
@@ -407,7 +417,6 @@ module.exports = {
 
         if (!(target.user.id in guildStats)) {
             guildStats[target.user.id] = { // Sets all of the normal stats to 0.
-                id: target.user.id,
                 points: 0,
                 coins: 0,
                 last_message: 0,
@@ -461,7 +470,6 @@ module.exports = {
 
         if (!(target.user.id in guildStats)) {
             guildStats[target.user.id] = { // Sets all of the normal stats to 0.
-                id: target.user.id,
                 points: 0,
                 coins: 0,
                 last_message: 0,
@@ -481,11 +489,67 @@ module.exports = {
     },
 
     /**
-     * Returns the number (like 1k) in number form (1000).
+     * Writes a stat down.
+     * @param {Discord.Guild} guild the guild that this member belongs to.
+     * @param {Discord.GuildMember} target the target whose points need updating.
+     * @param {string} input the stat to write.
+     * @param {string} stat the property the number is awarded to.
+     * @returns {StatTransaction} this transaction.
+     */
+     writeStats: function (guild, target, input, stat) {
+        if (!guild) {
+            throw 'Missing guild.';
+        }
+        if (!target) {
+            throw 'Missing target.';
+        }
+        if (typeof input !== 'string') {
+            throw 'Invalid input.';
+        }
+        if (!stat) {
+            throw 'Missing stat.';
+        }
+
+        var allStats = {};
+        const fileLocation = `${config.resources_folder_file_path}stats.json`;
+
+        if (fs.existsSync(fileLocation)) {
+            allStats = jsonFile.readFileSync(fileLocation);
+        } else {
+            console.log("stats.json has not been properly configured.");
+            return;
+        }
+
+        const guildStats = allStats[guild.id];
+
+        if (!(target.user.id in guildStats)) {
+            guildStats[target.user.id] = { // Sets all of the normal stats to 0.
+                points: 0,
+                coins: 0,
+                last_message: 0,
+                vc_session_started: 0,
+                time_spent_in_vc: 0,
+                participating_messages: 0
+            };
+        }
+        let previousStat = guildStats[target.user.id][stat];
+        guildStats[target.user.id][stat] = input;
+        jsonFile.writeFileSync(fileLocation, allStats);
+        return {
+            oldPoints: previousStat,
+            newPoints: guildStats[target.user.id][stat]
+        };
+    },
+
+    /**
+     * Returns a string that should be a number (like 1k) in number form (1000), or 15,284.11 to 15284.11.
      * @param {string} number the number to parse.
      * @returns {number} the number. 0 if not parsable.
      */
     convertNumber: function (inputNumber) {
+        if (inputNumber) {
+            inputNumber = inputNumber.replace(/,/g, '');
+        }
         if (/^\d+\.\d+$/.test(inputNumber) || /^-?\d+$/.test(inputNumber) || /\.\d+$/.test(inputNumber)) {
             return parseFloat(inputNumber);
         } else if (inputNumber.slice(-1).toLowerCase() === 'k') {
@@ -503,6 +567,8 @@ module.exports = {
             if (/^\d+\.\d+$/.test(inputNumber) || /^-?\d+$/.test(inputNumber) || /\.\d+$/.test(inputNumber)) {
                 return parseFloat(inputNumber * 1000000000);
             }
+        } else if (!isNaN(Number(inputNumber))) {
+            return Number(inputNumber);
         }
         return 0;
     },

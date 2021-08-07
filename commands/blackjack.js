@@ -5,6 +5,8 @@ const Colors = require('../resources/colors.json')
 
 const DEALER_MOVE_DELAY = 3000; // the time it takes the dealer to "think"
 
+var inGame = false;
+
 module.exports = {
     name: ['blackjack', 'bj'],
     description: 'Play backjack against the bot!',
@@ -12,6 +14,11 @@ module.exports = {
     requiresArgs: true,
 
     execute(bot, message, args) {
+        if (inGame) {
+            util.sendMessage(message.channel, 'Sorry, I can only handle one blackjack game at a time. Please wait until that finishes.');
+            return;
+        }
+
         let cards = [...Array(52).keys()];
         let playerHand = new Array();
         let computerHand = new Array();
@@ -48,7 +55,8 @@ module.exports = {
                     `Blackjacks: ${util.addCommas(stats.blackjack_blackjacks)}`,
                     `Blackjack Rate: ${stats.blackjack_blackjacks ? Math.round(stats.blackjack_blackjacks / stats.blackjack_played * 100 * 100) / 100 : 0}%`,
                     `Ties: ${util.addCommas(stats.blackjack_tied)}`,
-                    `Tie Rate: ${stats.blackjack_tied ? Math.round(stats.blackjack_tied / stats.blackjack_played * 100 * 100) / 100 : 0}%`
+                    `Tie Rate: ${stats.blackjack_tied ? Math.round(stats.blackjack_tied / stats.blackjack_played * 100 * 100) / 100 : 0}%`,
+                    `Times saved by Safety Net upgrade: ${util.addCommas(stats.blackjack_safety_net_saves)}`
                     ])
                 .addField('Streaks',
                     [`Current ${stats.blackjack_winning_streak > stats.blackjack_losing_streak ? "Winning" : "Losing"} Streak: ${util.addCommas(Math.max(stats.blackjack_winning_streak, stats.blackjack_losing_streak))}`,
@@ -99,7 +107,8 @@ module.exports = {
                     `Blackjacks: ${util.addCommas(stats.blackjack_blackjacks)}`,
                     `Blackjack Rate: ${stats.blackjack_blackjacks ? Math.round(stats.blackjack_blackjacks / stats.blackjack_played * 100 * 100) / 100 : 0}%`,
                     `Ties: ${util.addCommas(stats.blackjack_tied)}`,
-                    `Tie Rate: ${stats.blackjack_tied ? Math.round(stats.blackjack_tied / stats.blackjack_played * 100 * 100) / 100 : 0}%`
+                    `Tie Rate: ${stats.blackjack_tied ? Math.round(stats.blackjack_tied / stats.blackjack_played * 100 * 100) / 100 : 0}%`,
+                    `Times saved by Safety Net upgrade: ${util.addCommas(stats.blackjack_safety_net_saves)}`
                     ])
                 .addField('Streaks',
                     [`Current ${stats.blackjack_winning_streak > stats.blackjack_losing_streak ? "Winning" : "Losing"} Streak: ${util.addCommas(Math.max(stats.blackjack_winning_streak, stats.blackjack_losing_streak))}`,
@@ -115,7 +124,7 @@ module.exports = {
 
             let blackjackStatNames = ['blackjack_played', 'blackjack_wins', 'blackjack_blackjacks', 'blackjack_tied', 'blackjack_losses',
             'coins_bet_in_blackjack', 'coins_earned_in_blackjack', 'coins_lost_in_blackjack', 'blackjack_net_earnings',
-            'blackjack_longest_win_streak', 'blackjack_longest_losing_streak', 'blackjack_winning_streak', 'blackjack_losing_streak'];
+            'blackjack_longest_win_streak', 'blackjack_longest_losing_streak', 'blackjack_winning_streak', 'blackjack_losing_streak', 'blackjack_safety_net_saves'];
             blackjackStatNames.forEach((statName) => util.setStats(message, target, 0, statName));
             return;
         }
@@ -248,7 +257,7 @@ module.exports = {
          * @returns a random card value from the array
          */
         this.drawRandomCard = (cards) => {
-            return cards.splice(Math.floor(Math.random() * cards.length), 1).pop();
+            return cards.pop();
         }
 
         this.getBlackJackEmbed = (msg, playerHand, computerHand, isComputerHidden, description, bet, gameDone, isComputerThinking, player) => {
@@ -260,7 +269,15 @@ module.exports = {
                 .setColor(Colors.BLUE)
                 .addField('Your Hand', `${this.handToString(playerHand)}\nis worth: ${this.computeValue(playerHand).value}`, true)
                 .addField("Dealer's Hand", `${this.handToString(computerHand, isComputerHidden)}\nis worth: ${this.computeValue(computerHand, isComputerHidden).value}${isComputerHidden ? ' + ?' : ''}`, true)
+                if (upgrade_proc && !gameDone) {
+                    let cardsShown = [];
+                    for (let i = 1; i <= cardsToShow; i++) {
+                        cardsShown.push(this.cardToString(cards[cards.length - i]));
+                    }
+                    embed.addField(`Upgrade Activated [lv ${upgrade_level}]`, `The next card${cardsToShow === 1 ? ' is' : 's are'}: ${cardsShown.join(', ')}`);
+                }
             if (gameDone) {
+                inGame = false;
                 let isPlayerBlackJack = this.isBlackJack(playerHand);
                 let isComputerBlackJack = this.isBlackJack(computerHand);
                 let playerValue = this.computeValue(playerHand).value;
@@ -282,10 +299,23 @@ module.exports = {
                     embed.addField('Additional Info', [`Congrats! You got a blackjack. Your payout is 3:2.`, `Win Streak: ${util.addCommas(result.winStreak)}${result.newRecord ? ' (new personal best!)' : ''}`, `Your bet: ${util.addCommas(bet)}`, `Payout: ${util.addCommas(winnings)}`, `Coins: ${util.addCommas(transaction.oldPoints)} » ${util.addCommas(transaction.newPoints)}`]);
                 } else if (isComputerBlackJack) {
                     let losings = bet;
-                    let transaction = util.addStats(msg, player, -losings, 'coins');
-                    let result = this.awardLosingStats(msg, player, losings, bet);
-                    embed.setColor(Colors.MEDIUM_RED);
-                    embed.addField('Additional Info', [`Sorry, you lose your bet. The dealer got a blackjack and won.`, `Losing Streak: ${util.addCommas(result.losingStreak)}${result.newRecord ? ' (new personal best!)' : ''}`, `Your bet: ${util.addCommas(bet)}`, `Coins: ${util.addCommas(transaction.oldPoints)} » ${util.addCommas(transaction.newPoints)}`]);
+                    let safetyNetLevel = util.getStats(message, message.member, "upgrade_blackjack_safety_net");
+                    let saved = Math.random() <= safetyNetLevel * 0.01; // 1% per level
+                    let transaction;
+                    if (saved) {
+                        let c = util.getStats(message, message.member, "coins");
+                        transaction = {oldPoints: c, newPoints: c}
+                    } else {
+                        transaction = util.addStats(msg, player, -losings, 'coins');
+                    }
+                    let result = this.awardLosingStats(msg, player, losings, bet, saved);
+                    if (saved) {
+                        embed.setColor(Colors.YELLOW);
+                        embed.addField('Additional Info', [`Saved by the safety net [lv ${safetyNetLevel}] upgrade!\nThe coins you lost were refunded.`, `Coins: ${util.addCommas(transaction.oldPoints)} » ${util.addCommas(transaction.newPoints)}`, `Times Saved By Safety Net: ${util.addCommas(result.saved.oldPoints)} » ${util.addCommas(result.saved.newPoints)}`]);
+                    } else {
+                        embed.setColor(Colors.MEDIUM_RED);
+                        embed.addField('Additional Info', [`Sorry, you lose your bet. The dealer got a blackjack and won.`, `Losing Streak: ${util.addCommas(result.losingStreak)}${result.newRecord ? ' (new personal best!)' : ''}`, `Your bet: ${util.addCommas(bet)}`, `Coins: ${util.addCommas(transaction.oldPoints)} » ${util.addCommas(transaction.newPoints)}`]);
+                    }
                 } else if (playerValue > computerValue && playerValue <= 21) {
                     let winnings = bet;
                     let transaction = util.addStats(msg, player, winnings, 'coins');
@@ -300,10 +330,23 @@ module.exports = {
                     embed.addField('Additional Info', [`Dealer busts! You win! Your payout is 1:1.`, `Win Streak: ${util.addCommas(result.winStreak)}${result.newRecord ? ' (new personal best!)' : ''}`, `Your bet: ${util.addCommas(bet)}`, `Coins: ${util.addCommas(transaction.oldPoints)} » ${util.addCommas(transaction.newPoints)}`]);
                 } else {
                     let losings = bet;
-                    let transaction = util.addStats(msg, player, -losings, 'coins');
-                    let result = this.awardLosingStats(msg, player, losings, bet);
-                    embed.setColor(Colors.MEDIUM_RED);
-                    embed.addField('Additional Info', [`Sorry, you lose your bet. The dealer wins.`, `Losing Streak: ${util.addCommas(result.losingStreak)}${result.newRecord ? ' (new personal best!)' : ''}`, `Your bet: ${util.addCommas(bet)}`, `Coins: ${util.addCommas(transaction.oldPoints)} » ${util.addCommas(transaction.newPoints)}`]);
+                    let safetyNetLevel = util.getStats(message, message.member, "upgrade_blackjack_safety_net");
+                    let saved = Math.random() <= safetyNetLevel * 0.01; // 1% per level
+                    let transaction;
+                    if (saved) {
+                        let c = util.getStats(message, message.member, "coins");
+                        transaction = {oldPoints: c, newPoints: c}
+                    } else {
+                        transaction = util.addStats(msg, player, -losings, 'coins');
+                    }
+                    let result = this.awardLosingStats(msg, player, losings, bet, saved);
+                    if (saved) {
+                        embed.setColor(Colors.YELLOW);
+                        embed.addField('Additional Info', [`Saved by the safety net [lv ${safetyNetLevel}] upgrade!\nThe coins you lost were refunded.`, `Coins: ${util.addCommas(transaction.oldPoints)} » ${util.addCommas(transaction.newPoints)}`, `Times Saved By Safety Net: ${util.addCommas(result.saved.oldPoints)} » ${util.addCommas(result.saved.newPoints)}`]);
+                    } else {
+                        embed.setColor(Colors.MEDIUM_RED);
+                        embed.addField('Additional Info', [`Sorry, you lose your bet. The dealer wins.`, `Losing Streak: ${util.addCommas(result.losingStreak)}${result.newRecord ? ' (new personal best!)' : ''}`, `Your bet: ${util.addCommas(bet)}`, `Coins: ${util.addCommas(transaction.oldPoints)} » ${util.addCommas(transaction.newPoints)}`]);
+                    }
                 }
                 util.sendMessage(util.getLogChannel(msg), embed);
             } else if (!isComputerThinking) {
@@ -330,9 +373,13 @@ module.exports = {
             return {winStreak: winStreak, newRecord: newRecord};
         }
 
-        this.awardLosingStats = (message, player, losings, bet) => {
+        this.awardLosingStats = (message, player, losings, bet, saved) => {
             util.addStats(message, player, 1, 'blackjack_played');
             util.addStats(message, player, 1, 'blackjack_losses');
+            let savedInfo;
+            if (saved) {
+                savedInfo = util.addStats(message, player, 1, 'blackjack_safety_net_saves');
+            }
             let result = util.addStats(message, player, losings, 'coins_lost_in_blackjack');
             util.addStats(message, player, bet, 'coins_bet_in_blackjack');
             util.setStats(message, player, util.getStats(message, player, 'coins_earned_in_blackjack') - result.newPoints, 'blackjack_net_earnings');
@@ -343,7 +390,7 @@ module.exports = {
                 newRecord = true;
                 util.setStats(message, player, losingStreak, 'blackjack_longest_losing_streak');
             }
-            return {losingStreak: losingStreak, newRecord: newRecord};
+            return {losingStreak: losingStreak, newRecord: newRecord, saved: savedInfo};
         }
 
         /**
@@ -372,7 +419,8 @@ module.exports = {
 
         this.dealerMove = (msg, message_, cards, playerHand, dealerHand, bet) => {
             let dealerValue = this.computeValue(dealerHand);
-            if (this.computeValue(playerHand).value >= dealerValue.value && ((dealerValue.isSoft && dealerValue.value < 21) || (!dealerValue.isSoft && dealerValue.value < 17))) {
+            // if (this.computeValue(playerHand).value >= dealerValue.value && ((dealerValue.isSoft && dealerValue.value < 21) || (!dealerValue.isSoft && dealerValue.value < 17))) {
+            if ((dealerValue.isSoft && dealerValue.value < 21) || (!dealerValue.isSoft && dealerValue.value < 17)) {
                 // Dealer hits
                 let randCard = this.drawRandomCard(cards);
                 dealerHand.push(randCard);
@@ -431,6 +479,20 @@ module.exports = {
             return;
         }
 
+        inGame = true;
+
+        let upgrade_level = util.getStats(message, message.member, "upgrade_blackjack_sneak_peek_chance");
+        let upgrade_proc = Math.random() <= 0.05 * upgrade_level; // 5% per level
+        let cardsToShow = util.getStats(message, message.member, "upgrade_blackjack_sneak_peek_power") + 1;
+
+        /* Randomize array in-place using Durstenfeld shuffle algorithm */
+        for (let i = cards.length - 1; i > 0; i--) {
+            let j = Math.floor(Math.random() * (i + 1));
+            let temp = cards[i];
+            cards[i] = cards[j];
+            cards[j] = temp;
+        }
+
         // Draw 2 cards. Player, dealer, player, dealer
         playerHand.push(this.drawRandomCard(cards));
         computerHand.push(this.drawRandomCard(cards));
@@ -447,6 +509,7 @@ module.exports = {
                 // award points
             }
             util.sendMessage(message.channel, this.getBlackJackEmbed(message, playerHand, computerHand, false, note, bet, true, false, message.member));
+            inGame = false;
             return;
         }
         util.sendMessage(message.channel, this.getBlackJackEmbed(message, playerHand, computerHand, true, "It's your turn.", bet, false, false, message.member))
@@ -462,7 +525,7 @@ module.exports = {
                         collector.on('collect', reaction => {
                             if (reaction.emoji.name === STAND_EMOJI) {
                                 let doesDealerHaveTurn = this.computeValue(playerHand).value <= 21;
-                                msg.edit(this.getBlackJackEmbed(message, playerHand, computerHand, false, `You choose to stand.${doesDealerHaveTurn ? " It is the dealer's turn." : ''} ${this.computeValue(playerHand).value > 21 ? ` Bust!\nYou lost your bet of ${util.addCommas(bet)} coins.` : ''}`, bet, !doesDealerHaveTurn, doesDealerHaveTurn, message.member))
+                                msg.edit(this.getBlackJackEmbed(message, playerHand, computerHand, false, `You choose to stand.${doesDealerHaveTurn ? " It is the dealer's turn." : ''} ${this.computeValue(playerHand).value > 21 ? ` Bust!\nYou lost your bet of ${util.addCommas(bet)} coin${bet === 1 ? '' : 's'}.` : ''}`, bet, !doesDealerHaveTurn, doesDealerHaveTurn, message.member))
                                 collector.stop();
                                 if (doesDealerHaveTurn) {
                                     setTimeout(() => {
@@ -475,15 +538,17 @@ module.exports = {
                                 if (this.computeValue(playerHand).value >= 21) {
                                     let playerValue = this.computeValue(playerHand);
                                     let dealerValue = this.computeValue(computerHand);
-                                    msg.edit(this.getBlackJackEmbed(msg, playerHand, computerHand, false, `You drew a ${this.cardToString(draw)}!${playerValue.value > 21 ? ` Bust!\nYou lost your bet of ${util.addCommas(bet)} coins.` : (playerValue.value >= 21 ? ` Your turn has automatically ended becuase your hand is worth 21.` : '')}`, bet, playerValue.value > 21 || !(playerValue.value > dealerValue.value && ((dealerValue.isSoft && dealerValue.value < 21) || (!dealerValue.isSoft && dealerValue.value <= 17)) && playerValue.value <= 21), playerValue.value <= 21, message.member))
+                                    // msg.edit(this.getBlackJackEmbed(msg, playerHand, computerHand, false, `You drew a ${this.cardToString(draw)}!${playerValue.value > 21 ? ` Bust!\nYou lost your bet of ${util.addCommas(bet)} coins.` : (playerValue.value >= 21 ? ` Your turn has automatically ended becuase your hand is worth 21.` : '')}`, bet, playerValue.value > 21 || !(playerValue.value > dealerValue.value && ((dealerValue.isSoft && dealerValue.value < 21) || (!dealerValue.isSoft && dealerValue.value <= 17)) && playerValue.value <= 21), playerValue.value <= 21, message.member))
+                                    msg.edit(this.getBlackJackEmbed(msg, playerHand, computerHand, false, `You drew a ${this.cardToString(draw)}!${playerValue.value > 21 ? ` Bust!\nYou lost your bet of ${util.addCommas(bet)} coin${bet === 1 ? '' : 's'}.` : (playerValue.value >= 21 ? ` Your turn has automatically ended becuase your hand is worth 21.` : '')}`, bet, playerValue.value > 21 || !(((dealerValue.isSoft && dealerValue.value < 21) || (!dealerValue.isSoft && dealerValue.value <= 17)) && playerValue.value <= 21), playerValue.value <= 21, message.member))
                                     collector.stop();
-                                    if (playerValue.value > dealerValue.value && ((dealerValue.isSoft && dealerValue.value < 21) || (!dealerValue.isSoft && dealerValue.value <= 17)) && playerValue.value <= 21) {
+                                    // if (playerValue.value > dealerValue.value && ((dealerValue.isSoft && dealerValue.value < 21) || (!dealerValue.isSoft && dealerValue.value <= 17)) && playerValue.value <= 21) {
+                                    if (((dealerValue.isSoft && dealerValue.value < 21) || (!dealerValue.isSoft && dealerValue.value <= 17)) && playerValue.value <= 21) {
                                         setTimeout(() => {
                                             this.dealerMove(message, msg, cards, playerHand, computerHand, bet)
                                         }, this.skipDealer ? 0 : DEALER_MOVE_DELAY)
                                     } 
                                 } else {
-                                    msg.edit(this.getBlackJackEmbed(msg, playerHand, computerHand, true, `You drew a ${this.cardToString(draw)}!${this.computeValue(playerHand).value > 21 ? ` Bust!\nYou lost your bet of ${util.addCommas(bet)} coins.` : ''}`, bet, false, false, message.member))
+                                    msg.edit(this.getBlackJackEmbed(msg, playerHand, computerHand, true, `You drew a ${this.cardToString(draw)}!${this.computeValue(playerHand).value > 21 ? ` Bust!\nYou lost your bet of ${util.addCommas(bet)} coin${bet === 1 ? '' : 's'}.` : ''}`, bet, false, false, message.member))
                                     reaction.users.remove(reaction.users.cache.filter(user => user.id === message.member.id).first().id);
                                 }
                             }
@@ -494,7 +559,7 @@ module.exports = {
                             if (collected.size === 0) {
                                 util.sendMessage(message.channel, `Why didn't you click anything within ${TIMEOUT / 1000} seconds? You automatically stand.`);
                                 let doesDealerHaveTurn = this.computeValue(playerHand).value <= 21;
-                                msg.edit(this.getBlackJackEmbed(message, playerHand, computerHand, false, `You choose to stand.${doesDealerHaveTurn ? " It is the dealer's turn." : ''} ${this.computeValue(playerHand).value > 21 ? ` Bust!\nYou lost your bet of ${util.addCommas(bet)} coins.` : ''}`, bet, !doesDealerHaveTurn, doesDealerHaveTurn, message.member))
+                                msg.edit(this.getBlackJackEmbed(message, playerHand, computerHand, false, `You choose to stand.${doesDealerHaveTurn ? " It is the dealer's turn." : ''} ${this.computeValue(playerHand).value > 21 ? ` Bust!\nYou lost your bet of ${util.addCommas(bet)} coin${bet === 1 ? '' : 's'}.` : ''}`, bet, !doesDealerHaveTurn, doesDealerHaveTurn, message.member))
                                 collector.stop();
                                 if (doesDealerHaveTurn) {
                                     setTimeout(() => {

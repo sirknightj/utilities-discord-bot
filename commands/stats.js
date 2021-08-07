@@ -58,11 +58,19 @@ module.exports = {
             let discordParticipationInfo = [`:scroll: participating_messages: ${util.addCommas(userStats['participating_messages'])}`,
             `:headphones: time_spent_in_vc: ${util.toFormattedTime(userStats['time_spent_in_vc'])}`];
 
+            let dailyRewardsNames = ['daily_rewards_claimed', 'daily_rewards_streak', 'daily_rewards_claimed', 'daily_reward_last_claimed']
             let dailyRewardsInfo = userStats['daily_rewards_claimed'] ? [
                 `daily_rewards_streak: ${util.addCommas(userStats['daily_rewards_streak'])}`,
                 `daily_rewards_claimed: ${util.addCommas(userStats['daily_rewards_claimed'])}`,
-                `daily_reward_last_claimed: ${new Date(userStats['daily_reward_last_claimed'])}`
+                `daily_reward_last_claimed: ${`<t:${Math.floor(userStats['daily_reward_last_claimed'] / 1000)}:F>`}`
             ] : `\`${config.prefix}daily\` has not been used yet!`;
+
+            let weeklyRewardsNames = ['weekly_rewards_claimed', 'weekly_rewards_streak', 'weekly_rewards_claimed', 'weekly_reward_last_claimed']
+            let weeklyRewardsInfo = userStats['weekly_rewards_claimed'] ? [
+                `weekly_rewards_streak: ${util.addCommas(userStats['weekly_rewards_streak'])}`,
+                `weekly_rewards_claimed: ${util.addCommas(userStats['weekly_rewards_claimed'])}`,
+                `weekly_reward_last_claimed: ${`<t:${Math.floor(userStats['weekly_reward_last_claimed'] / 1000)}:F>`}`
+            ] : `\`${config.prefix}weekly\` has not been used yet!`;
 
             let rouletteStatNames = ['roulette_played', 'roulette_wins', 'roulette_losses', 'coins_bet_in_roulette',
                 'coins_earned_in_roulette', 'coins_lost_in_roulette', 'net_roulette_earnings', 'roulette_safety_net_saves',
@@ -73,7 +81,7 @@ module.exports = {
 
             let blackjackStatNames = ['blackjack_played', 'blackjack_wins', 'blackjack_blackjacks', 'blackjack_tied', 'blackjack_losses',
                 'coins_bet_in_blackjack', 'coins_earned_in_blackjack', 'coins_lost_in_blackjack', 'blackjack_net_earnings',
-                'blackjack_longest_win_streak', 'blackjack_longest_losing_streak', 'blackjack_winning_streak', 'blackjack_losing_streak'];
+                'blackjack_longest_win_streak', 'blackjack_longest_losing_streak', 'blackjack_winning_streak', 'blackjack_losing_streak', 'blackjack_safety_net_saves'];
             let blackjackStats = userStats[blackjackStatNames[0]] ?
                 blackjackStatNames.map(statName => `${statName}: ${util.addCommas(userStats[statName])}`) :
                 `\`${config.prefix}blackjack\` has not been used yet!`;
@@ -85,7 +93,7 @@ module.exports = {
                 coinflipStatNames.map(statName => `${statName}: ${util.addCommas(userStats[statName])}`) :
                 `\`${config.prefix}coinflip\` has not been used yet!`;
 
-            let excluded = ['points', 'coins', 'tickets', 'participating_messages', 'time_spent_in_vc', 'daily_rewards_claimed', 'daily_reward_last_claimed', 'daily_rewards_streak',
+            let excluded = ['points', 'coins', 'tickets', 'participating_messages', 'time_spent_in_vc', ...dailyRewardsNames, ...weeklyRewardsNames,
                 ...rouletteStatNames, ...blackjackStatNames, ...coinflipStatNames
             ];
             let properties = Object.keys(userStats).filter(name => !excluded.includes(name));
@@ -118,6 +126,7 @@ module.exports = {
                 .addField('Profile', coinsAndPointsInfo, true)
                 .addField('Discord Participation', discordParticipationInfo, true)
                 .addField('Daily Rewards', dailyRewardsInfo)
+                .addField('Weekly Rewards', weeklyRewardsInfo)
                 .addField('Roulette Stats', rouletteStats, true)
                 .addField('BlackJack Stats', blackjackStats, true)
                 .addField('Coinflip Stats', coinflipStats)

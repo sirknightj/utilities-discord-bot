@@ -104,7 +104,7 @@ module.exports = {
                             }
                         } else if (isDate) {
                             if ((guildStats[userIDs][keyword] || 0) !== 0) {
-                                pointBoard += `${util.fixNameFormat(guildMember.displayName)}: ${(new Date(guildStats[userIDs][keyword]))}`;
+                                pointBoard += `${util.fixNameFormat(guildMember.displayName)}: <t:${Math.floor((guildStats[userIDs][keyword]) / 1000)}:F>`;
                             } else {
                                 // The user has a 0 date.
                                 pointBoard += `${util.fixNameFormat(guildMember.displayName)}: n/a`;
@@ -151,7 +151,7 @@ module.exports = {
             let lastPage = Math.ceil(toDisplay.length / PAGE_SIZE);
 
             let descriptionStart = `${wantTotal && total ? `${total} total ${util.fixNameFormat(keyword)}\n` : ''}\n`;
-            let footerEnd = `/${util.addCommas(lastPage)} • You are ${myDisplayedPosition === -1 ? 'unranked' : `position ${util.addCommas(myDisplayedPosition)}`}.\nThis message will be automatically deleted after ${config.longest_delete_delay / 1000} seconds of inactivity.`;
+            let footerEnd = `/${util.addCommas(lastPage)} • You are ${myDisplayedPosition === -1 ? 'unranked' : `position ${util.addCommas(myDisplayedPosition)}/${util.addCommas(toDisplay.length)}`}.\nThis message will be automatically deleted after ${config.longest_delete_delay / 1000} seconds of inactivity.`;
 
             let startingPage = 1
             if (myPosition !== -1) {

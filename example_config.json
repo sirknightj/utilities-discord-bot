@@ -23,16 +23,34 @@
     "member_count_channel_id": "000000000000000000",
 
     "enable_shop": false,
-    "shop_ticket_cost": 1000,
+    "shop_ticket_cost": 250,
     "role_id_required_to_use_shop": "000000000000000000",
 
     "allow_coin_transfers": false,
 
     "enable_daily_rewards": true,
-    "daily_reward_coin_amount": 50,
+    "daily_reward_coin_amount": 80,
     "daily_reward_coin_increment_per_streak_day": 5,
     "daily_reward_cooldown": 82800000,
     "daily_reward_streak_grace_period": 172800000, 
+
+    "enable_weekly_rewards": true,
+    "weekly_reward_coin_amount": 410,
+    "weekly_reward_coin_increment_per_streak_day": 15,
+    "weekly_reward_cooldown": 601200000,
+    "weekly_reward_streak_grace_period": 1209600000, 
+
+    "enable_monthly_rewards": true,
+    "monthly_reward_coin_amount": 2000,
+    "monthly_reward_coin_increment_per_streak_day": 200,
+    "monthly_reward_cooldown": 2588400000,
+    "monthly_reward_streak_grace_period": 5184000000, 
+
+    "enable_yearly_rewards": true,
+    "yearly_reward_coin_amount": 12300,
+    "yearly_reward_coin_increment_per_streak_day": 2800,
+    "yearly_reward_cooldown": 31553352000,
+    "yearly_reward_streak_grace_period": 63113904000, 
 
     "enable_hypixel_api_required_commands": false,
     "API_KEY": "YOUR_HYPIXEL_API_KEY_HERE",

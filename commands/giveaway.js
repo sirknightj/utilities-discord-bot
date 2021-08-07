@@ -9,15 +9,14 @@ module.exports = {
     name: ['giveaway'],
     description: "Randomly selects some unique winners from everyone who has tickets. Default: 3 winners.",
     usage: `(optional: number of winners)`,
-    requiredPermissions: 'MANAGE_GUILD',
+    // requiredPermissions: 'MANAGE_GUILD',
 
     execute(bot, message, args) {
         let numberOfWinners = 3;
         if (args[0]) {
-            if (/^-?\d+$/.test(args[0])) {
-                numberOfWinners = parseInt(args[0]);
-            } else {
-                throw 'Invalid quantity';
+            numberOfWinners = util.convertNumber(args[0]);
+            if (!numberOfWinners || numberOfWinners < 0 || Math.floor(numberOfWinners) !== numberOfWinners) {
+                throw `Invalid quantity: \`${args[0]}\``;
             }
         }
         var allStats = {};
@@ -58,9 +57,9 @@ module.exports = {
 
                 if (participantCounter < numberOfWinners) {
                     util.sendMessage(message.channel, new Discord.MessageEmbed()
-                    .setTitle('Unfortunately...')
-                    .setDescription(`There are not enough participants to run the giveaway. There are only ${participantCounter} participants, but ${numberOfWinners} are required.\nHere is the participant list:\n${participants ? util.fixNameFormat(participants) : '_There are no participants._'}`)
-                    .setTimestamp());
+                        .setTitle('Unfortunately...')
+                        .setDescription(`There are not enough participants to run the giveaway. There are only ${participantCounter} participants, but ${numberOfWinners} are required.\nHere is the participant list:\n${participants ? util.fixNameFormat(participants) : '_There are no participants._'}`)
+                        .setTimestamp());
                     return;
                 }
                 if (toDo) {
@@ -92,12 +91,12 @@ module.exports = {
         for (let i = 1; i <= winners.length; i++) {
             winnerDescription.push(`${ordinalSuffix(i)} Place: ${util.fixNameFormat(util.getUserFromMention(message, winners[i - 1]).displayName)}`);
         }
-        
+
         util.sendMessage(message.channel, new Discord.MessageEmbed()
             .setColor(Colors.DARK_GREEN)
             .setTitle('And the winner is...')
             .setDescription(winnerDescription)
-            .addField(`Participants (${total} total tickets):`, participants)
+            .addField(`Participants (${total - 1} total tickets):`, participants)
             .setFooter(`Held on ${new Date(Date.now())}`)
         );
     }

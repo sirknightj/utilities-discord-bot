@@ -4,7 +4,7 @@ const Discord = require('discord.js');
 const Colors = require('../resources/colors.json');
 
 module.exports = {
-    name: ['transfer', 'transfercoins', 'givecoins', 'gift'],
+    name: ['transfer', 'transfercoins', 'givecoins', 'gift', 'give'],
     description: 'Gives coins from you to another user. Note: IRL ',
     usage: `<user> <amount>`,
     requiresTarget: true,
@@ -13,6 +13,15 @@ module.exports = {
         if (!config.allow_coin_transfers) {
             util.sendMessage(message.channel, 'This command is disabled in this server.');
             return;
+        }
+
+        if (config.role_id_required_to_use_shop) {
+            if (!message.member.roles.cache.some(role => role.id === config.role_id_required_to_use_shop)) {
+                util.safeDelete(message);
+                let requiredRoles = getRolesRequired(message);
+                util.sendTimedMessage(message.channel, `Sorry, you don't have the role required to gift coins.\nRequired role${requiredRoles.length > 1 ? "s" : ""}: \`${requiredRoles}\``);
+                return;
+            }
         }
 
         if (!args[0]) {

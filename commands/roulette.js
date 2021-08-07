@@ -316,7 +316,7 @@ function makeEmbed(message, randNumb, lookingFor, SelectedCoins, oldCoins, newCo
     if (safetySaves) {
         return new Discord.MessageEmbed()
             .setTitle(`${message.member.displayName} has played roulette!`)
-            .setDescription(`**Saved by safety net upgrade!**\n${util.addCommas(SelectedCoins)} coin${Math.abs(Math.round((SelectedCoins) * 100) / 100) === 1 ? '' : 's'} would've been taken away for losing, but your upgrade saved you and reduced it to 0!\nLosing Streak: ${streak}${additionalMessage}`)
+            .setDescription(`**Saved by safety net [lv ${util.getStats(message, message.member, "upgrade_roulette_safety_net")}] upgrade!**\n${util.addCommas(SelectedCoins)} coin${Math.abs(Math.round((SelectedCoins) * 100) / 100) === 1 ? '' : 's'} would've been taken away for losing, but your upgrade saved you and reduced it to 0!\nLosing Streak: ${streak}${additionalMessage}`)
             .addField('Additional Info', [`Bet: ${util.addCommas(SelectedCoins)} coins`,
             `Guess: ${typeof lookingFor === 'string' ? `${lookingFor} (${getDescription(lookingFor)})` : lookingFor.join(', ')}`,
             `Result: ${getRouletteColor(randNumb)} ${randNumb === 37 ? '00' : randNumb}`,
@@ -377,7 +377,7 @@ function removePoints(message, randNumb, lookingFor, coinsToRemove, savingChance
     let result;
     let safetySaves;
     if (savingChance > 0) {
-        if (Math.random() < safetySaves) { // saved by upgrade
+        if (Math.random() < savingChance) { // saved by upgrade
             result = { oldPoints: util.getStats(message, message.member, 'coins'), newPoints: util.getStats(message, message.member, 'coins') };
             safetySaves = util.addStats(message, message.member, 1, 'roulette_safety_net_saves')
         }
