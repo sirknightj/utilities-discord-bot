@@ -512,22 +512,26 @@ const DAILY_COOLDOWN_MAX_LEVEL = 12;
  * @returns {string} description of the daily cooldown upgrade.
  */
 function getDailyCooldownStatus(level, dontShow = false) {
-    let info = [`Each level decreases the cooldown between claiming \`${config.prefix}daily\` and \`${config.prefix}weekly\`.`];
+    let info = [`Each level decreases the cooldown between claiming \`${config.prefix}daily\`, \`${config.prefix}weekly\`, \`${config.prefix}monthly\`, and \`${config.prefix}yearly\`.`];
+    let dailies = ['daily', 'weekly', 'monthly', 'yearly'];
     info.push(`Cooldown Level ${level}/${DAILY_COOLDOWN_MAX_LEVEL}`);
     if (level >= DAILY_COOLDOWN_MAX_LEVEL) {
         info[1] += ' (MAX)';
     }
     if (level === 0 || dontShow) {
-        info.push(`Current Daily Cooldown: \`${util.toFormattedTime(Math.floor(config.daily_reward_cooldown * (100 - level * 2)) / 100)}\``);
-        info.push(`Current Weekly Cooldown: \`${util.toFormattedTime(Math.floor(config.weekly_reward_cooldown * (100 - level * 2)) / 100)}\``);
+        for (let dailyType of dailies) {
+            info.push(`Current ${util.capitalizeFirstLetter(dailyType)} Cooldown: \`${util.toFormattedTime(Math.floor(config[`${dailyType}_reward_cooldown`] * (100 - level * 2)) / 100)}\``);
+        }
     } else {
-        info.push(`Current Daily Cooldown: \`${util.toFormattedTime(Math.floor(config.daily_reward_cooldown * (100 - (level * 2 - 2))) / 100)}\` » \`${util.toFormattedTime(Math.floor(config.daily_reward_cooldown * (100 - level * 2)) / 100)}\``)
-        info.push(`Current Weekly Cooldown: \`${util.toFormattedTime(Math.floor(config.weekly_reward_cooldown * (100 - (level * 2 - 2))) / 100)}\` » \`${util.toFormattedTime(Math.floor(config.weekly_reward_cooldown * (100 - level * 2)) / 100)}\``)
+        for (let dailyType of dailies) {
+            info.push(`Current ${util.capitalizeFirstLetter(dailyType)} Cooldown: \`${util.toFormattedTime(Math.floor(config[`${dailyType}_reward_cooldown`] * (100 - (level * 2 - 2))) / 100)}\` » \`${util.toFormattedTime(Math.floor(config[`${dailyType}_reward_cooldown`] * (100 - level * 2)) / 100)}\``);
+        }
     }
     if (level < DAILY_COOLDOWN_MAX_LEVEL) {
-        info.push(`Next Upgrade: ${util.addCommas(getNextUpgradeCost(level, -1775, 0.1))} coins`,
-            `Next Daily Cooldown: \`${util.toFormattedTime(Math.floor(config.daily_reward_cooldown * (100 - (level * 2 + 2))) / 100)}\``,
-            `Next Weekly Cooldown: \`${util.toFormattedTime(Math.floor(config.weekly_reward_cooldown * (100 - (level * 2 + 2))) / 100)}\``);
+        info.push(`Next Upgrade: ${util.addCommas(getNextUpgradeCost(level, -1775, 0.1))} coins`);
+        for (let dailyType of dailies) {
+            info.push(`Next ${util.capitalizeFirstLetter(dailyType)} Cooldown: \`${util.toFormattedTime(Math.floor(config[`${dailyType}_reward_cooldown`] * (100 - (level * 2 + 2))) / 100)}\``);
+        }
     }
     return info;
 }
@@ -541,23 +545,28 @@ function getDailyCooldownStatus(level, dontShow = false) {
  * @returns {string} description of the daily cooldown upgrade.
  */
 function getDailyGraceStatus(level, dontShow = false) {
-    let info = [`Each level increases the grace period before resetting your \`${config.prefix}daily\` and \`${config.prefix}weekly\` streaks.`]
+    let info = [`Each level increases the grace period before resetting your \`${config.prefix}daily\`, \`${config.prefix}weekly\`, \`${config.prefix}monthly\`, and \`${config.prefix}yearly\` streaks.`];
+    let dailies = ['daily', 'weekly', 'monthly', 'yearly'];
     info.push(`Extended Grace Level ${level}/${UPGRADE_MAX_LEVEL}`);
     if (level >= UPGRADE_MAX_LEVEL) {
         info[1] += ' (MAX)';
     }
     info.push();
     if (level === 0 || dontShow) {
-        info.push(`Current Daily Grace Period: \`${util.toFormattedTime(Math.round(config.daily_reward_streak_grace_period * (1 + level * 0.25)))}\``);
-        info.push(`Current Weekly Grace Period: \`${util.toFormattedTime(Math.round(config.weekly_reward_streak_grace_period * (1 + level * 0.25)))}\``);
+        for (let dailyType of dailies) {
+            info.push(`Current ${util.capitalizeFirstLetter(dailyType)} Grace Period: \`${util.toFormattedTime(Math.round(config[`${dailyType}_reward_streak_grace_period`] * (1 + level * 0.25)))}\``);
+        }
     } else {
-        info.push(`Current Daily Grace Period: \`${util.toFormattedTime(Math.floor(config.daily_reward_streak_grace_period * (1 + (level - 1) * 0.25)))}\` » \`${util.toFormattedTime(Math.floor(config.daily_reward_streak_grace_period * (1 + level * 0.25)))}\``)
+        for (let dailyType of dailies) {
+            info.push(`Current ${util.capitalizeFirstLetter(dailyType)} Grace Period: \`${util.toFormattedTime(Math.floor(config[`${dailyType}_reward_streak_grace_period`] * (1 + (level - 1) * 0.25)))}\` » \`${util.toFormattedTime(Math.floor(config[`${dailyType}_reward_streak_grace_period`] * (1 + level * 0.25)))}\``);
+        }
         info.push(`Current Weekly Grace Period: \`${util.toFormattedTime(Math.floor(config.weekly_reward_streak_grace_period * (1 + (level - 1) * 0.25)))}\` » \`${util.toFormattedTime(Math.floor(config.weekly_reward_streak_grace_period * (1 + level * 0.25)))}\``)
     }
     if (level < UPGRADE_MAX_LEVEL) {
-        info.push(`Next Upgrade: ${util.addCommas(getNextUpgradeCost(level, -1500, 0.2))} coins`,
-            `Next Daily Grace Period: \`${util.toFormattedTime(Math.floor(config.daily_reward_streak_grace_period * (1 + (level + 1) * 0.25)))}\``,
-            `Next Weekly Grace Period: \`${util.toFormattedTime(Math.floor(config.weekly_reward_streak_grace_period * (1 + (level + 1) * 0.25)))}\``);
+        info.push(`Next Upgrade: ${util.addCommas(getNextUpgradeCost(level, -1500, 0.2))} coins`);
+        for (let dailyType of dailies) {
+            info.push(`Next ${util.capitalizeFirstLetter(dailyType)} Grace Period: \`${util.toFormattedTime(Math.floor(config[`${dailyType}_reward_streak_grace_period`] * (1 + (level + 1) * 0.25)))}\``);
+        }
     }
     return info;
 }
@@ -571,7 +580,7 @@ function getDailyGraceStatus(level, dontShow = false) {
  * @returns {string} description of the daily cooldown upgrade.
  */
 function getDailyBonusStatus(level, dontShow = false) {
-    let info = [`Each level increases the coins you get from \`${config.prefix}daily\` and \`${config.prefix}weekly\` by 5%.`]
+    let info = [`Each level increases the coins you get from \`${config.prefix}daily\`, \`${config.prefix}weekly\`, \`${config.prefix}monthly\`, and \`${config.prefix}yearly\` by 5%.`]
     info.push(`Bonus Coins Level ${level}/${UPGRADE_MAX_LEVEL}`);
     if (level >= UPGRADE_MAX_LEVEL) {
         info[1] += ' (MAX)';
