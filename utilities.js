@@ -548,25 +548,36 @@ module.exports = {
      */
     convertNumber: function (inputNumber) {
         if (inputNumber) {
-            inputNumber = inputNumber.replace(/,/g, '');
+            inputNumber = inputNumber.replace(/,/g, ''); // get rid of commas
         }
         if (/^\d+\.\d+$/.test(inputNumber) || /^-?\d+$/.test(inputNumber) || /\.\d+$/.test(inputNumber)) {
             return parseFloat(inputNumber);
-        } else if (inputNumber.slice(-1).toLowerCase() === 'k') {
-            inputNumber = inputNumber.slice(0, -1);
-            if (/^\d+\.\d+$/.test(inputNumber) || /^-?\d+$/.test(inputNumber) || /\.\d+$/.test(inputNumber)) {
-                return parseFloat(inputNumber) * 1000;
-            }
-        } else if (inputNumber.slice(-1).toLowerCase() === 'm') {
-            inputNumber = inputNumber.slice(0, -1);
-            if (/^\d+\.\d+$/.test(inputNumber) || /^-?\d+$/.test(inputNumber) || /\.\d+$/.test(inputNumber)) {
-                return parseFloat(inputNumber * 1000000);
-            }
-        } else if (inputNumber.slice(-1).toLowerCase() === 'b') {
-            inputNumber = inputNumber.slice(0, -1);
-            if (/^\d+\.\d+$/.test(inputNumber) || /^-?\d+$/.test(inputNumber) || /\.\d+$/.test(inputNumber)) {
-                return parseFloat(inputNumber * 1000000000);
-            }
+        } 
+        
+        switch (inputNumber.slice(-1).toLowerCase()) {
+            case 'k':
+                return this.checkNumber(inputNumber.slice(0, -1)) * 1000;
+            case 'm':
+                return this.checkNumber(inputNumber.slice(0, -1)) * 1000000;
+            case 'b':
+                return this.checkNumber(inputNumber.slice(0, -1)) * 1000000000;
+            case 't':
+                return this.checkNumber(inputNumber.slice(0, -1)) * 1000000000000;
+            case 'q':
+                return this.checkNumber(inputNumber.slice(0, -1)) * 1000000000000000;
+            default:
+                return 0;
+        }
+    },
+
+    /**
+     * Parses the string and returns its number.
+     * @param {string} number the number to parse.
+     * @returns {number} the number. 0 if not parsable.
+     */
+    checkNumber: function (inputNumber) {
+        if (/^\d+\.\d+$/.test(inputNumber) || /^-?\d+$/.test(inputNumber) || /\.\d+$/.test(inputNumber)) {
+            return parseFloat(inputNumber);
         } else if (!isNaN(Number(inputNumber))) {
             return Number(inputNumber);
         }
@@ -722,6 +733,18 @@ module.exports = {
         }
         return name;
     },
+
+    /**
+     * In-line embed fields line break.
+     * @returns {Discord.EmbedField} an empty line break field.
+     */
+    embedLineBreak: function () {
+        return {
+            name: '\u200B',
+            value: '\u200B',
+            inline: true
+         }
+    }
 }
 
 /**
