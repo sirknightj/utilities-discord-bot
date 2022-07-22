@@ -17,7 +17,7 @@
   },
   "homepage": "https://github.com/sirknightj/utilities-discord-bot#readme",
   "dependencies": {
-    "@discordjs/opus": "^0.3.3",
+    "@discordjs/opus": "^0.8.0",
     "bufferutil": "^4.0.3",
     "discord.js": "^12.5.3",
     "ffmpeg-static": "^4.4.0",
