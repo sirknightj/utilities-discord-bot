@@ -8,10 +8,18 @@ const Discord = require('discord.js');
 module.exports = {
     name: ['giveaway'],
     description: "Randomly selects some unique winners from everyone who has tickets. Default: 3 winners.",
-    usage: `(optional: number of winners)`,
+    usage: [`(optional: number of winners)`, `<number of winners> <number of times> <user>`],
     // requiredPermissions: 'MANAGE_GUILD',
 
     execute(bot, message, args) {
+        if (args.length === 0 || args.length === 1) {
+            this.giveaway(bot, message, args);
+        } else {
+            this.giveawayStats(bot, message, args);
+        }
+    },
+
+    giveaway(bot, message, args, stats, getWinners = false) {
         let numberOfWinners = 3;
         if (args[0]) {
             numberOfWinners = util.convertNumber(args[0]);
@@ -22,11 +30,15 @@ module.exports = {
         var allStats = {};
         const fileLocation = `${config.resources_folder_file_path}stats.json`;
 
-        if (fs.existsSync(fileLocation)) {
-            allStats = jsonFile.readFileSync(fileLocation);
+        if (stats) {
+            allStats = stats;
         } else {
-            util.sendTimedMessage(message.channel, "stats.json has not been properly configured.");
-            return;
+            if (fs.existsSync(fileLocation)) {
+                allStats = jsonFile.readFileSync(fileLocation);
+            } else {
+                util.sendTimedMessage(message.channel, "stats.json has not been properly configured.");
+                return;
+            }
         }
 
         const guildStats = allStats[message.guild.id];
@@ -86,6 +98,10 @@ module.exports = {
             console.log(e);
         }
 
+        if (getWinners) {
+            return winners;
+        }
+
         let winnerDescription = [];
 
         for (let i = 1; i <= winners.length; i++) {
@@ -98,6 +114,69 @@ module.exports = {
             .setDescription(winnerDescription)
             .addField(`Participants (${total - 1} total tickets):`, participants)
             .setFooter(`Held on ${new Date(Date.now())}`)
+        );
+    },
+
+    giveawayStats(bot, message, args) {
+        if (args.length !== 3) {
+            throw 'Incorrect number of arguments!';
+        }
+
+        let numberOfWinners = util.convertNumber(args[0]);
+        if (!numberOfWinners || numberOfWinners < 0 || Math.floor(numberOfWinners) !== numberOfWinners) {
+            throw `Invalid number of winners: \`${args[0]}\``;
+        }
+
+        let numberOfTimes = util.convertNumber(args[1]);
+        if (!numberOfTimes || numberOfTimes < 0 || Math.floor(numberOfTimes) !== numberOfTimes) {
+            throw `Invalid number of times: \`${args[1]}\``;
+        }
+
+        if (numberOfTimes > 100001) {
+            throw 'That is too many times.';
+        }
+
+        let target = util.getUserFromMention(message, args[2]);
+        if (!target) {
+            throw `Invalid user: \`${args[2]}\``;
+        }
+
+        let allStats;
+        const fileLocation = `${config.resources_folder_file_path}stats.json`;
+
+        if (fs.existsSync(fileLocation)) {
+            allStats = jsonFile.readFileSync(fileLocation);
+        } else {
+            util.sendTimedMessage(message.channel, "stats.json has not been properly configured.");
+            return;
+        }
+
+        util.sendMessage(message.channel, 'Performing simulations...');
+
+        let winnerMap = new Map();
+        for (let i = 0; i < numberOfTimes; i++) {
+            let winners = this.giveaway(bot, message, [args[0]], allStats, true);
+            let position = winners.indexOf(target.id);
+
+            if (winnerMap[position]) {
+                winnerMap[position]++;
+            } else {
+                winnerMap[position] = 1;
+            }
+        }
+
+        let outputArr = [];
+
+        for (let i = -1; i < numberOfWinners; i++) {
+            outputArr.push(`${i === -1 ? 'Did not win' : `${ordinalSuffix(i + 1)} place`}: ${util.addCommas(winnerMap[i])}`);
+        }
+
+        util.sendMessage(message.channel, new Discord.MessageEmbed()
+            .setTitle('Giveaway Statistics!')
+            .setAuthor(target.displayName, target.user.displayAvatarURL({ dynamic: true }))
+            .setDescription(`Simulated \`${config.prefix}giveaway ${args[0]}\` ${args[1]} time${args[1] === 1 ? '' : 's'} for user ${util.fixNameFormat(target.displayName)}.`)
+            .addField('Results', outputArr)
+            .setColor(Colors.MEDIUM_GREEN)
         );
     }
 }

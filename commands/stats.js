@@ -72,6 +72,20 @@ module.exports = {
                 `weekly_reward_last_claimed: ${`<t:${Math.floor(userStats['weekly_reward_last_claimed'] / 1000)}:F>`}`
             ] : `\`${config.prefix}weekly\` has not been used yet!`;
 
+            let monthlyRewardsNames = ['monthly_rewards_claimed', 'monthly_rewards_streak', 'monthly_rewards_claimed', 'monthly_reward_last_claimed']
+            let monthlyRewardsInfo = userStats['monthly_rewards_claimed'] ? [
+                `monthly_rewards_streak: ${util.addCommas(userStats['monthly_rewards_streak'])}`,
+                `monthly_rewards_claimed: ${util.addCommas(userStats['monthly_rewards_claimed'])}`,
+                `monthly_reward_last_claimed: ${`<t:${Math.floor(userStats['monthly_reward_last_claimed'] / 1000)}:F>`}`
+            ] : `\`${config.prefix}monthly\` has not been used yet!`;
+
+            let yearlyRewardsNames = ['yearly_rewards_claimed', 'yearly_rewards_streak', 'yearly_rewards_claimed', 'yearly_reward_last_claimed']
+            let yearlyRewardsInfo = userStats['yearly_rewards_claimed'] ? [
+                `yearly_rewards_streak: ${util.addCommas(userStats['yearly_rewards_streak'])}`,
+                `yearly_rewards_claimed: ${util.addCommas(userStats['yearly_rewards_claimed'])}`,
+                `yearly_reward_last_claimed: ${`<t:${Math.floor(userStats['yearly_reward_last_claimed'] / 1000)}:F>`}`
+            ] : `\`${config.prefix}yearly\` has not been used yet!`;
+
             let rouletteStatNames = ['roulette_played', 'roulette_wins', 'roulette_losses', 'coins_bet_in_roulette',
                 'coins_earned_in_roulette', 'coins_lost_in_roulette', 'net_roulette_earnings', 'roulette_safety_net_saves',
                 'roulette_longest_win_streak', 'roulette_longest_losing_streak', 'roulette_winning_streak', 'roulette_losing_streak'];
@@ -93,8 +107,15 @@ module.exports = {
                 coinflipStatNames.map(statName => `${statName}: ${util.addCommas(userStats[statName])}`) :
                 `\`${config.prefix}coinflip\` has not been used yet!`;
 
-            let excluded = ['points', 'coins', 'tickets', 'participating_messages', 'time_spent_in_vc', ...dailyRewardsNames, ...weeklyRewardsNames,
-                ...rouletteStatNames, ...blackjackStatNames, ...coinflipStatNames
+            let slotsStatNames = ['slots_played', 'slots_wins', 'coins_bet_in_slots', 'coins_earned_in_slots', 'slots_net_earnings', 
+                'slots_losses', 'slots_win_streak', 'slots_losing_streak', 'slots_longest_win_streak', 'slots_longest_losing_streak']
+            let slotsStats = userStats['coinflip_played'] ?
+                slotsStatNames.map(statName => `${statName}: ${util.addCommas(userStats[statName])}`) :
+                `\`${config.prefix}slots\` has not been used yet!`;
+
+            let excluded = ['points', 'coins', 'tickets', 'participating_messages', 'time_spent_in_vc', ...dailyRewardsNames, ...weeklyRewardsNames, ...monthlyRewardsNames,
+                ...yearlyRewardsNames, 
+                ...rouletteStatNames, ...blackjackStatNames, ...coinflipStatNames, ...slotsStatNames
             ];
             let properties = Object.keys(userStats).filter(name => !excluded.includes(name));
 
@@ -104,12 +125,15 @@ module.exports = {
                 `\`${config.prefix}shop upgrade\` has not been used yet!`;
 
             properties = properties.filter(name => !name.startsWith('upgrade_'));
+            properties.sort((o1, o2) => o1.localeCompare(o2));
 
             let info = [];
             for (var i = 0; i < properties.length; i++) {
                 if (properties[i] !== 'last_message' && properties[i] !== 'vc_session_started') {
                     if (properties[i] === 'daily_reward_last_claimed') {
                         info.push(`${properties[i]}: ${new Date(userStats[properties[i]])}`);
+                    } else if (properties[i] === 'guild_members') {
+                        info.push(`${properties[i]}: ${userStats[properties[i]].slice(0, 3)},...`);
                     } else {
                         info.push(`${properties[i]}: ${util.addCommas(userStats[properties[i]])}`);
                     }
@@ -123,17 +147,19 @@ module.exports = {
             let embed = new Discord.MessageEmbed()
                 .setColor(Colors.YELLOW)
                 .setAuthor(target.displayName, target.user.displayAvatarURL({ dynamic: true }))
-                .addField('Profile', coinsAndPointsInfo, true)
+                .addField('Balance', coinsAndPointsInfo, true)
                 .addField('Discord Participation', discordParticipationInfo, true)
-                .addField('Daily Rewards', dailyRewardsInfo)
-                .addField('Weekly Rewards', weeklyRewardsInfo)
-                .addField('Roulette Stats', rouletteStats, true)
-                .addField('BlackJack Stats', blackjackStats, true)
-                .addField('Coinflip Stats', coinflipStats)
-                .addField('Upgrades', upgrades)
-                .addField('Point Insights', info)
+                .addField(':gift: Daily Rewards', dailyRewardsInfo)
+                .addField(':calendar: Weekly Rewards', weeklyRewardsInfo)
+                .addField(':calendar_spiral: Monthly Rewards', monthlyRewardsInfo)
+                .addField(':date: Yearly Rewards', yearlyRewardsInfo)
+                .addField('🎲 Roulette Stats', rouletteStats, true)
+                .addField(':diamonds: BlackJack Stats', blackjackStats, true)
+                .addField(':coin: Coinflip Stats', coinflipStats)
+                .addField('🎰 Slots Stats', slotsStats, true)
+                .addField(':tools: Upgrades', upgrades, true)
+                .addField(':medal: Point Insights', info.join('\n').slice(0, 1024))
                 .setTimestamp()
-
             if (dontDelete) {
                 util.sendMessage(message.channel, embed);
             } else {

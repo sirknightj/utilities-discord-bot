@@ -5,7 +5,10 @@ const util = require('./utilities');
 const jsonFile = require('jsonfile');
 const fs = require('fs');
 const Colors = require('./resources/colors.json');
-const { PassThrough } = require('stream');
+const stringSimilarity = require("string-similarity");
+const { getUUID } = require('./commands/uuid');
+const updateName = require('./commands/updatename');
+
 bot.commands = new Discord.Collection();
 
 const commandList = [];
@@ -59,7 +62,7 @@ bot.once('ready', () => {
     }, 1000 * 60 * 60 * 24); // 24 hours
 });
 
-bot.on('message', message => {
+bot.on('message', async message => {
     // Make sure that the message is not from another bot, and only from a text channel.
     if (message.channel.type !== 'text' || message.author.bot) {
         return;
@@ -208,7 +211,30 @@ bot.on('message', message => {
             return;
             // If the command doesn't exist...
         } else {
-            util.sendTimedMessage(message.channel, `${config.unknown_command_message}`, config.delete_delay);
+            const bestMatch = stringSimilarity.findBestMatch(command, commandList).bestMatch.target;
+            const botCommand = bot.commands.get(bestMatch);
+            const unknownCommandEmbed = new Discord.MessageEmbed()
+                .setTitle('Unknown Command')
+                .setDescription(`${config.unknown_command_message}\nThe closest command to \`${config.prefix}${command}\` is: \`${config.prefix}${bestMatch}\``)
+                .addField('Description', botCommand.description)
+                .setColor(Colors.RED);
+
+            if (botCommand.usage && botCommand.usage.length > 0) {
+                unknownCommandEmbed.addField('Usage', usageToString(bestMatch, botCommand.usage));
+            } else {
+                unknownCommandEmbed.addField(`Usage`, `\`${config.prefix}${bestMatch}\``);
+            }
+            if (botCommand.requiredPermissions) {
+                if (typeof botCommand.requiredPermissions === 'string') {
+                    unknownCommandEmbed.addField('Permissions Required To Use:', botCommand.requiredPermissions);
+                } else {
+                    unknownCommandEmbed.addField('Permissions Required To Use:', botCommand.requiredPermissions.join(', '));
+                }
+            }
+            unknownCommandEmbed.addField('Aliases', botCommand.name.join(', '))
+                .setFooter([`< > = required argument, ( ) = optional argument`, `This message will automatically be deleted in ${config.longer_delete_delay / 1000} seconds.`])
+
+            util.sendTimedMessage(message.channel, unknownCommandEmbed, config.longer_delete_delay);
         }
         return;
         // If the message doesn't start with the prefix...
@@ -329,10 +355,10 @@ bot.on('voiceStateUpdate', async (oldState, newState) => {
         return;
     }
 
-    if ((oldState.channel === newState.channel) ||
-        (oldState.channel === afkChannel && !newState.channel) ||
-        (!oldState.channel && newState.channel === afkChannel) ||
-        (oldState.channel && newState.channel && oldState.channel != afkChannel && newState.channel != afkChannel)) {
+    if ((oldState.channel === newState.channel) || // i.e. muted/unmuted/deafen/undeafen
+        (oldState.channel === afkChannel && !newState.channel) || // i.e. left AFK
+        (!oldState.channel && newState.channel === afkChannel) || // i.e. joined AFK from not being in vc
+        (oldState.channel && newState.channel && oldState.channel != afkChannel && newState.channel != afkChannel)) { // moved from one VC to another
         return;
     }
 
@@ -397,7 +423,7 @@ bot.on('voiceStateUpdate', async (oldState, newState) => {
 
         util.sendMessage(logChannel, leavingEmbed);
 
-        if (!newState.member.user.bot) {
+        if (!newState.member.user.bot || config.bots_have_stats) {
             // Awards points for every 5 minutes spent in VC.
             if (userStats.vc_session_started > 0) {
                 let now = Date.now();
@@ -626,10 +652,6 @@ bot.on('guildBanRemove', async (guild, userAffected) => {
     ]));
 });
 
-bot.on('messageReactionRemove', (reaction, user) => { 
-    console.log(`${user.username} unreacted ${reaction.emoji.name} on this message: ${reaction.message.content}`) 
-});
-
 function manageStats(message) {
     const logChannel = message.guild.channels.cache.get(config.log_channel_id);
     var allStats = {};
@@ -678,7 +700,68 @@ function manageStats(message) {
             .setColor(Colors.YELLOW)
             .setTitle("Earned Points")
             .setAuthor(target.displayName, target.user.displayAvatarURL({ dynamic: true }))
-            .setDescription(`Awarded ${target.displayName} ${pointsToAdd} points and ${coinsToAdd} coins${userStats.upgrade_message_earnings ? ` (+${userStats.upgrade_message_earnings} bonus!)` : ''} for sending a message in the Discord.`)
+            .setDescription(`Awarded ${target.displayName} ${pointsToAdd} points and ${coinsToAdd} coins${userStats.upgrade_message_earnings ? ` (+${userStats.upgrade_message_earnings} bonus!)` : ''} for sending a message in the discord.`)
+            .addField('Additional Info', [
+                `Points: ${util.addCommas(previousPoints)} » ${util.addCommas(userStats.points)}`,
+                `Coins: ${util.addCommas(previousCoins)} » ${util.addCommas(userStats.coins)}`,
+                `Messages: ${util.addCommas(userStats.participating_messages)} » ${util.addCommas(userStats.participating_messages + 1)}`
+            ])
+            .setTimestamp());
+        userStats.participating_messages++;
+    }
+
+    jsonFile.writeFileSync(fileLocation, allStats);
+}
+
+function manageGuildStats(message, member) {
+    const logChannel = message.guild.channels.cache.get(config.log_channel_id);
+    var allStats = {};
+    const fileLocation = `${config.resources_folder_file_path}stats.json`;
+
+    // Checks if the stats.json file exists. Syncs all the points if it does exist.
+    if (fs.existsSync(fileLocation)) {
+        allStats = jsonFile.readFileSync(fileLocation);
+    }
+
+    // Checks if this guild is in the stats file. If not, creates a new one.
+    if (!(message.guild.id in allStats)) {
+        allStats[message.guild.id] = {};
+    }
+
+    const guildStats = allStats[message.guild.id];
+    target = member;
+
+    // Checks if the message author is in the guild stats. If not, creates a new object.
+    if (!(member.id in guildStats)) {
+        guildStats[member.id] = {
+            points: 0,
+            coins: 0,
+            last_message: 0,
+            vc_session_started: 0,
+            time_spent_in_vc: 0,
+            participating_messages: 0
+        };
+    }
+
+    const userStats = guildStats[member.id];
+
+    // Adds 3 points if their last message was more than 5 minutes ago.
+    if (Date.now() - userStats.last_message >= 300000) {
+        const pointsToAdd = 3;
+        const coinsToAdd = 3 + (userStats['upgrade_message_earnings'] ? userStats['upgrade_message_earnings'] : 0);
+        let previousPoints = userStats.points ? userStats.points : 0;
+        userStats.points = Math.round((previousPoints + pointsToAdd) * 100) / 100;
+        let previousCoins = userStats.coins ? userStats.coins : 0;
+        userStats.coins = Math.round((previousCoins + coinsToAdd) * 100) / 100;
+        userStats.last_message = Date.now();
+        if (!userStats.participating_messages) {
+            userStats.participating_messages = 0;
+        }
+        util.sendMessage(logChannel, new Discord.MessageEmbed()
+            .setColor(Colors.YELLOW)
+            .setTitle("Earned Points")
+            .setAuthor(target.displayName, target.user.displayAvatarURL({ dynamic: true }))
+            .setDescription(`Awarded ${target.displayName} ${pointsToAdd} points and ${coinsToAdd} coins${userStats.upgrade_message_earnings ? ` (+${userStats.upgrade_message_earnings} bonus!)` : ''} for sending a message in guild chat.`)
             .addField('Additional Info', [
                 `Points: ${util.addCommas(previousPoints)} » ${util.addCommas(userStats.points)}`,
                 `Coins: ${util.addCommas(previousCoins)} » ${util.addCommas(userStats.coins)}`,
@@ -732,5 +815,11 @@ function usageToString(commandName, usage) {
         return [...usage].map((item) => item.length > 0 ? `\`${config.prefix}${commandName} ${item}\`` : `\`${config.prefix}${commandName}\``).join('\n');
     }
 }
+
+function sleep(ms) {
+    return new Promise((resolve) => {
+      setTimeout(resolve, ms);
+    });
+  }
 
 bot.login(config.token);

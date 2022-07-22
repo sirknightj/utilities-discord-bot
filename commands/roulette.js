@@ -379,7 +379,7 @@ function removePoints(message, randNumb, lookingFor, coinsToRemove, savingChance
     if (savingChance > 0) {
         if (Math.random() < savingChance) { // saved by upgrade
             result = { oldPoints: util.getStats(message, message.member, 'coins'), newPoints: util.getStats(message, message.member, 'coins') };
-            safetySaves = util.addStats(message, message.member, 1, 'roulette_safety_net_saves')
+            safetySaves = util.addStats(message, message.member, 1, 'roulette_safety_net_saves');
         }
     }
     if (!result) {

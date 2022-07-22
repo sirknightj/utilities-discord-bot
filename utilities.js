@@ -351,7 +351,7 @@ module.exports = {
             guild = message.guild;
         }
 
-        return allStats[guild.id][target.user.id][stat] ? allStats[guild.id][target.user.id][stat] : 0;
+        return allStats[guild.id][target.id] && allStats[guild.id][target.id][stat] ? allStats[guild.id][target.id][stat] : 0;
     },
 
     /**
@@ -415,8 +415,8 @@ module.exports = {
 
         const guildStats = allStats[message.guild.id];
 
-        if (!(target.user.id in guildStats)) {
-            guildStats[target.user.id] = { // Sets all of the normal stats to 0.
+        if (!(target.id in guildStats)) {
+            guildStats[target.id] = { // Sets all of the normal stats to 0.
                 points: 0,
                 coins: 0,
                 last_message: 0,
@@ -425,13 +425,13 @@ module.exports = {
                 participating_messages: 0
             };
         }
-        guildStats[target.user.id][stat] = guildStats[target.user.id][stat] ? guildStats[target.user.id][stat] : 0;
-        let previousStat = guildStats[target.user.id][stat];
-        guildStats[target.user.id][stat] = Math.round((guildStats[target.user.id][stat] + number) * 100) / 100;
+        guildStats[target.id][stat] = guildStats[target.id][stat] ? guildStats[target.id][stat] : 0;
+        let previousStat = guildStats[target.id][stat];
+        guildStats[target.id][stat] = Math.round((guildStats[target.id][stat] + number) * 100) / 100;
         jsonFile.writeFileSync(fileLocation, allStats);
         return {
             oldPoints: previousStat,
-            newPoints: guildStats[target.user.id][stat]
+            newPoints: guildStats[target.id][stat]
         };
     },
 
@@ -493,7 +493,7 @@ module.exports = {
      * @param {Discord.Guild} guild the guild that this member belongs to.
      * @param {Discord.GuildMember} target the target whose points need updating.
      * @param {string} input the stat to write.
-     * @param {string} stat the property the number is awarded to.
+     * @param {string} stat the name of the stat 'input' will be replacing.
      * @returns {StatTransaction} this transaction.
      */
      writeStats: function (guild, target, input, stat) {
@@ -503,10 +503,7 @@ module.exports = {
         if (!target) {
             throw 'Missing target.';
         }
-        if (typeof input !== 'string') {
-            throw 'Invalid input.';
-        }
-        if (!stat) {
+        if (!stat || typeof stat !== 'string') {
             throw 'Missing stat.';
         }
 
@@ -522,8 +519,8 @@ module.exports = {
 
         const guildStats = allStats[guild.id];
 
-        if (!(target.user.id in guildStats)) {
-            guildStats[target.user.id] = { // Sets all of the normal stats to 0.
+        if (!(target.id in guildStats)) {
+            guildStats[target.id] = { // Sets all of the normal stats to 0.
                 points: 0,
                 coins: 0,
                 last_message: 0,
@@ -532,12 +529,12 @@ module.exports = {
                 participating_messages: 0
             };
         }
-        let previousStat = guildStats[target.user.id][stat];
-        guildStats[target.user.id][stat] = input;
+        let previousStat = guildStats[target.id][stat];
+        guildStats[target.id][stat] = input;
         jsonFile.writeFileSync(fileLocation, allStats);
         return {
             oldPoints: previousStat,
-            newPoints: guildStats[target.user.id][stat]
+            newPoints: guildStats[target.id][stat]
         };
     },
 
@@ -717,7 +714,7 @@ module.exports = {
         if (!number) {
             return "0";
         }
-        return number.toString().replace(/\B(?=(\d{3})+(?!\d))/g, ",");
+        return number.toString().replace(/\B(?<!\.\d*)(?=(\d{3})+(?!\d))/g, ",");
     },
 
     /**
@@ -744,6 +741,75 @@ module.exports = {
             value: '\u200B',
             inline: true
          }
+    },
+
+    /**
+     * Sends the embed in the channel and waits timeLimit time for the user to press yes.
+     * Defaults to no if nothing is pressed after timeLimit milliseconds.
+     * 
+     * @param {Discord.TextChannel} channel the channel to send the embed in
+     * @param {Discord.GuildMember | Discord.User} user the user whose reactions you're looking for 
+     * @param {Discord.MessageEmbed} embed the embed to send 
+     * @param {number} timeLimit the time limit the user has to press yes or no, in milliseconds 
+     * @returns {Promise<boolean>} true if the user pressed yes within timeLimit seconds. false otherwise.
+     */
+    async askUser(channel, user, embed, timeLimit = 60000) {
+        let msg = await this.sendMessage(channel, embed);
+
+        await msg.react('✅');
+        await msg.react('❌');
+
+        let collected = await msg.awaitReactions((rcn, usr) => user.id === usr.id && (rcn.emoji.name === '✅' || rcn.emoji.name ==='❌'), { max: 1, time: timeLimit });
+        await msg.reactions.removeAll();
+        if (collected.first() && collected.first().emoji.name === '✅') {
+            return new Promise((resolve, reject) => resolve(true));
+        } else {
+            return new Promise((resolve, reject) => resolve(false));
+        }
+    },
+
+    /**
+     * Waits timeLimit time for the user to send a message in the specified channel.
+     * Returns the message's content, if the user sent it within the timeLimit. Returns an empty string otherwise.
+     * 
+     * @param {Discord.TextChannel} channel the channel to wait for the message in.
+     * @param {Discord.GuildMember | Discord.User} user the user who you want the message to be from.
+     * @param {number} timeLimit the time limit the user has to send something.
+     * @param {boolean} deleteResponse true if you want the user's message to be deleted afterwards.
+     * @returns the message's content, if the user sent it within the time limit. Empty string otherwise.
+     */
+    async askUserForInput(channel, user, timeLimit = 60000, deleteResponse = false) {
+        let msgs = await channel.awaitMessages((msg) => msg.member.id === user.id, {
+            time: timeLimit,
+            max: 1
+        });
+
+        if (msgs.size === 0) {
+            return new Promise((resolve, reject) => resolve(''));
+        }
+
+        let content = msgs.first().content;
+        if (deleteResponse) {
+            this.safeDelete(msgs.first());
+        }
+        return new Promise((resolve, reject) => resolve(content));
+    },
+
+    async askUserForCharacter(channel, user, timeLimit = 60000, deleteResponse = false) {
+        let msgs = await channel.awaitMessages((msg) => msg.member.id === user.id && msg.content.trim().length === 1, {
+            time: timeLimit,
+            max: 1
+        });
+
+        if (msgs.size === 0) {
+            return new Promise((resolve, reject) => resolve(''));
+        }
+
+        let content = msgs.first().content;
+        if (deleteResponse) {
+            this.safeDelete(msgs.first());
+        }
+        return new Promise((resolve, reject) => resolve(content));
     }
 }
 

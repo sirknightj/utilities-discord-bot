@@ -7,10 +7,11 @@ const { getUsage } = require('../utilities');
 module.exports = {
     name: ['shop', 'store'],
     description: "Lets you purchase items from the store. 'All' purchases as many of that item as you can.",
-    usage: [`<purchase/refund> <ShopItem: ${getAllowedInputs()}> (optional: quantity/all)`, `upgrade`],
+    usage: [`<purchase/refund> <ShopItem: ${getAllowedInputs()}> (optional: quantity/all)`, `upgrade (category) (name) (levels)`],
     requiresArgs: true,
 
-    execute(bot, message, args) {
+    execute(bot, message, args, timesLeft = -1) {
+        let _args = [ ...args ];
         let purchase = true;
         let upgrade = false;
         if (args[0].toLowerCase() !== 'purchase' && args[0].toLowerCase() !== 'refund' && args[0].toLowerCase() !== 'upgrade') {
@@ -27,7 +28,7 @@ module.exports = {
         if (!upgrade) {
             if (/^\d+$/.test(args[2])) {
                 quantity = parseInt(args[2]);
-            } else if (args[2] && args[2].toLowerCase() !== 'all') {
+            } else if (args[2] && args[2].toLowerCase() !== 'all' && args[2].toLowerCase() !== 'max') {
                 util.safeDelete(message);
                 util.sendTimedMessage(message.channel, `Nice try, ${util.fixNameFormat(message.member.displayName)}. That is an invalid quantity.`);
                 return;
@@ -42,14 +43,27 @@ module.exports = {
             args[1] = args[1].toLowerCase();
         }
 
+        if (timesLeft === -1 && args[3]) {
+            timesLeft = util.convertNumber(args[3]);
+            if (!timesLeft && args[3].toLowerCase() === 'all' || args[3].toLowerCase() === 'max') {
+                timesLeft = 2 * UPGRADE_MAX_LEVEL;
+            }
+            if (!timesLeft) {
+                throw `Invalid number of upgrades to purchase: \`${args[3]}\``
+            }
+            timesLeft--;
+        }
+
         let coinBalance = util.getStats(message, message.member, 'coins');
         let discountLv = util.getStats(message, message.member, 'upgrade_ticket_discount');
+        let startingTickets = util.getStats(message, message.member, 'tickets');
+        let ticketLimit = util.getStats(message, message.guild.me, 'ticket_limit');
         let ticketCost = Math.round(config.shop_ticket_cost * (1 - (discountLv*0.02)) * 100) / 100;
 
         try {
-            if (purchase && args[2] && typeof (args[2]) === 'string' && args[2].toLowerCase() === 'all') {
+            if (purchase && args[2] && typeof (args[2]) === 'string' && (args[2].toLowerCase() === 'all' || args[2].toLowerCase() === 'max')) {
                 quantity = Math.floor(coinBalance / ticketCost);
-            } else if (!purchase && typeof (args[2]) === 'string' && args[2].toLowerCase() === 'all') {
+            } else if (!purchase && typeof (args[2]) === 'string' && (args[2].toLowerCase() === 'all' || args[2].toLowerCase() === 'max')) {
                 quantity = util.getStats(message, message.member, 'tickets');
                 if (!quantity) {
                     util.sendTimedMessage(message.channel, `You don't have any tickets to refund.`);
@@ -68,6 +82,14 @@ module.exports = {
                 if (quantity === 0) {
                     util.sendMessage(message.channel, `${util.fixNameFormat(message.member.displayName)}, you have purchased 0 tickets. Congratulations.`);
                     return;
+                }
+                if (purchase && ticketLimit === startingTickets && quantity > 0) {
+                    util.sendMessage(message.channel, `You're already at the ticket limit of ${util.addCommas(ticketLimit)}! You can't purchase any more.`);
+                    return;
+                }
+                if (purchase && ticketLimit > 0 && ticketLimit < startingTickets + quantity) {
+                    util.sendMessage(message.channel, `You cannot purchase that many tickets! The limit is currently ${util.addCommas(ticketLimit)}.`);
+                    quantity = ticketLimit - startingTickets;
                 }
                 let cost = Math.round(ticketCost * quantity * 100) / 100;
                 if (purchase && coinBalance >= cost) {
@@ -111,7 +133,6 @@ module.exports = {
                         let upgradeEmbed = getUpgradesEmbed(message, 'Daily Rewards Cooldown', getDailyCooldownStatus(levelTransaction.newPoints), levelTransaction, coinTransaction);
                         util.sendMessage(message.channel, upgradeEmbed);
                         util.sendMessage(util.getLogChannel(message), upgradeEmbed);
-                        return;
                     } else if (args[0] && args[0].toLowerCase() === 'grace') {
                         let level = util.getStats(message, message.member, 'upgrade_daily_reward_extended_grace');
                         let cost = getNextUpgradeCost(level, -1500, 0.2);
@@ -128,7 +149,6 @@ module.exports = {
                         let upgradeEmbed = getUpgradesEmbed(message, 'Daily Rewards Grace Period', getDailyGraceStatus(levelTransaction.newPoints), levelTransaction, coinTransaction);
                         util.sendMessage(message.channel, upgradeEmbed);
                         util.sendMessage(util.getLogChannel(message), upgradeEmbed);
-                        return;
                     } else if (args[0] && args[0].toLowerCase() === 'bonus') {
                         let level = util.getStats(message, message.member, 'upgrade_daily_reward_coin_bonus');
                         let cost = getNextUpgradeCost(level, -1550, 0.05);
@@ -145,9 +165,8 @@ module.exports = {
                         let upgradeEmbed = getUpgradesEmbed(message, 'Daily Rewards Coin Bonus', getDailyBonusStatus(levelTransaction.newPoints), levelTransaction, coinTransaction);
                         util.sendMessage(message.channel, upgradeEmbed);
                         util.sendMessage(util.getLogChannel(message), upgradeEmbed);
-                        return;
                     } else if (args[0] && args[0].toLowerCase() !== 'help') {
-                        util.sendMessage(message.channel, `Invalid <upgradeName> \`${args[0]}\`\nUsage: \`${config.prefix}shop upgrade daily <help/upgradeName>\``);
+                        util.sendMessage(message.channel, `Invalid <upgradeName> \`${args[0]}\`\nUsage: \`${config.prefix}shop upgrade daily <help/upgradeName> (opt: levels/max)\``);
                     } else {
                         util.sendMessage(message.channel, getDailyUpgradeInfo(message));
                     }
@@ -169,7 +188,6 @@ module.exports = {
                         let upgradeEmbed = getUpgradesEmbed(message, 'Roulette Safety Net', getRouletteSafetyNetStatus(levelTransaction.newPoints), levelTransaction, coinTransaction);
                         util.sendMessage(message.channel, upgradeEmbed);
                         util.sendMessage(util.getLogChannel(message), upgradeEmbed);
-                        return;
                     } else if (args[0] && args[0].toLowerCase() === 'blackjack') {
                         let level = util.getStats(message, message.member, 'upgrade_blackjack_safety_net');
                         let cost = getNextUpgradeCost(level, -1650, 0.45);
@@ -186,7 +204,6 @@ module.exports = {
                         let upgradeEmbed = getUpgradesEmbed(message, 'Blackjack Safety Net', getBlackjackSafetyNetStatus(levelTransaction.newPoints), levelTransaction, coinTransaction);
                         util.sendMessage(message.channel, upgradeEmbed);
                         util.sendMessage(util.getLogChannel(message), upgradeEmbed);
-                        return;
                     } else if (args[0] && args[0].toLowerCase() === 'peek') {
                         let level = util.getStats(message, message.member, 'upgrade_blackjack_sneak_peek_chance');
                         let cost = getNextUpgradeCost(level, -1200, 0.3);
@@ -203,7 +220,6 @@ module.exports = {
                         let upgradeEmbed = getUpgradesEmbed(message, 'Blackjack Sneak Peek Chance', getBlackjackDeckPeekChanceStatus(levelTransaction.newPoints), levelTransaction, coinTransaction);
                         util.sendMessage(message.channel, upgradeEmbed);
                         util.sendMessage(util.getLogChannel(message), upgradeEmbed);
-                        return;
                     } else if (args[0] && args[0].toLowerCase() === 'power') {
                         let level = util.getStats(message, message.member, 'upgrade_blackjack_sneak_peek_power');
                         let cost = getNextUpgradeCost(level, 7000, 1.6);
@@ -220,9 +236,8 @@ module.exports = {
                         let upgradeEmbed = getUpgradesEmbed(message, 'Blackjack Sneak Peek Power', getBlackjackDeckPeekPowerStatus(levelTransaction.newPoints), levelTransaction, coinTransaction);
                         util.sendMessage(message.channel, upgradeEmbed);
                         util.sendMessage(util.getLogChannel(message), upgradeEmbed);
-                        return;
                     } else if (args[0] && args[0].toLowercase() !== 'help') {
-                        util.sendMessage(message.channel, `Invalid <upgradeName> \`${args[0]}\`\nUsage: \`${config.prefix}shop upgrade gambling <help/upgradeName>\``);
+                        util.sendMessage(message.channel, `Invalid <upgradeName> \`${args[0]}\`\nUsage: \`${config.prefix}shop upgrade gambling <help/upgradeName> (opt: levels/max)\``);
                     } else {
                         util.sendMessage(message.channel, getGamblingUpgradeInfo(message));
                     }
@@ -244,7 +259,6 @@ module.exports = {
                         let upgradeEmbed = getUpgradesEmbed(message, 'Additional Message Earnings', getMessageEarningStatus(levelTransaction.newPoints), levelTransaction, coinTransaction);
                         util.sendMessage(message.channel, upgradeEmbed);
                         util.sendMessage(util.getLogChannel(message), upgradeEmbed);
-                        return;
                     } else if (args[0] && args[0].toLowerCase() === 'vc') {
                         let level = util.getStats(message, message.member, 'upgrade_vc_earnings');
                         let cost = getNextUpgradeCost(level, -1951, 0.34);
@@ -261,8 +275,7 @@ module.exports = {
                         let upgradeEmbed = getUpgradesEmbed(message, 'Additional VC Earnings', getVCEarningStatus(levelTransaction.newPoints), levelTransaction, coinTransaction);
                         util.sendMessage(message.channel, upgradeEmbed);
                         util.sendMessage(util.getLogChannel(message), upgradeEmbed);
-                        return;
-                    } else if (args[0] && args[0].toLowerCase() === 'tickets') {
+                    } else if (args[0] && (args[0].toLowerCase() === 'tickets' || args[0].toLowerCase() === 'ticket')) {
                         let level = util.getStats(message, message.member, 'upgrade_ticket_discount');
                         let cost = getNextUpgradeCost(level, -1750, 0.1);
                         if (level >= UPGRADE_MAX_LEVEL) {
@@ -294,14 +307,32 @@ module.exports = {
                             util.sendMessage(message.channel, embed);
                             util.sendMessage(util.getLogChannel(message), embed);
                         }
-                        return;
+                    } else if (args[0] && args[0].toLowerCase() === 'skills') {
+                        let level = util.getStats(message, message.member, 'upgrade_skill_xp');
+                        let cost = getNextUpgradeCost(level, -1733, -0.08);
+                        if (level >= XP_MAX_LEVEL) {
+                            util.sendMessage(message.channel, `This is already at max level!`);
+                            return;
+                        }
+                        if (coinBalance < cost) {
+                            util.sendMessage(message.channel, `Sorry, ${util.fixNameFormat(message.member.displayName)}, you don't have enough coins. It costs ${util.addCommas(cost)} coins, but you only have ${util.addCommas(coinBalance)}.`);
+                            return;
+                        }
+                        let levelTransaction = util.addStats(message, message.member, 1, 'upgrade_skill_xp');
+                        let coinTransaction = util.addStats(message, message.member, -cost, 'coins');
+                        let upgradeEmbed = getUpgradesEmbed(message, 'XP Per Coin Ratio', getMoreCoins(levelTransaction.newPoints), levelTransaction, coinTransaction);
+                        util.sendMessage(message.channel, upgradeEmbed);
+                        util.sendMessage(util.getLogChannel(message), upgradeEmbed);
                     } else if (args[0] && args[0].toLowerCase() !== 'help') {
-                        util.sendMessage(message.channel, `Invalid <upgradeName> \`${args[0]}\`\nUsage: \`${config.prefix}shop upgrade other <help/upgradeName>\``);
+                        util.sendMessage(message.channel, `Invalid <upgradeName> \`${args[0]}\`\nUsage: \`${config.prefix}shop upgrade other <help/upgradeName> (opt: levels/max)\``);
                     } else {
                         util.sendMessage(message.channel, getOtherUpgradeInfo(message));
                     }
                 } else {
                     util.sendMessage(message.channel, getUpgradeCategoryInfo(message));
+                }
+                if (timesLeft > 0) {
+                    this.execute(bot, message, _args, timesLeft - 1);
                 }
             } else {
                 util.safeDelete(message, config.longer_delete_delay);
@@ -440,6 +471,8 @@ function getUpgradesEmbed(message, statName, statInfo, levelTransaction, coinTra
         maxLv = MESSAGE_EARNINGS_MAX_LEVEL;
     } else if (statName === 'Daily Rewards Cooldown') {
         maxLv = DAILY_COOLDOWN_MAX_LEVEL;
+    } else if (statName === 'XP Per Coin Ratio') {
+        maxLv = XP_MAX_LEVEL;
     } else if (statName === 'Blackjack Safety Net') {
         maxLv = BLACKJACK_SAFETY_NET_UPGRADE_MAX_LEVEL;
     } else if (statName === 'Blackjack Sneak Peek Power') {
@@ -462,11 +495,11 @@ function getDailyUpgradeInfo(message) {
         .setTitle('Daily Upgrades Info')
         .setAuthor(message.member.displayName, message.member.user.displayAvatarURL({ dynamic: true }))
         .setColor(Colors.TURQUOISE)
-        .addField(`:fast_forward: Daily Rewards Cooldown`, [`\`${config.prefix}shop upgrade daily cooldown\``,
+        .addField(`:hourglass_flowing_sand: Daily Rewards Cooldown`, [`\`${config.prefix}shop upgrade daily cooldown (opt: levels/max)\``,
         ...getDailyCooldownStatus(util.getStats(message, message.member, 'upgrade_daily_reward_cooldown'), true)])
-        .addField(`:fire: Daily Rewards Streak Grace Period`, [`\`${config.prefix}shop upgrade daily grace\``,
+        .addField(`:fire: Daily Rewards Streak Grace Period`, [`\`${config.prefix}shop upgrade daily grace (opt: levels/max)\``,
         ...getDailyGraceStatus(util.getStats(message, message.member, 'upgrade_daily_reward_extended_grace'), true)])
-        .addField(`:moneybag: Daily Rewards Coin Bonus`, [`\`${config.prefix}shop upgrade daily bonus\``,
+        .addField(`:moneybag: Daily Rewards Coin Bonus`, [`\`${config.prefix}shop upgrade daily bonus (opt: levels/max)\``,
         ...getDailyBonusStatus(util.getStats(message, message.member, 'upgrade_daily_reward_coin_bonus'), true)])
         .setFooter(`You have 💰 ${util.addCommas(util.getStats(message, message.member, 'coins'))} coins.`)
 }
@@ -476,13 +509,13 @@ function getGamblingUpgradeInfo(message) {
         .setTitle('Gambling Upgrades Info')
         .setAuthor(message.member.displayName, message.member.user.displayAvatarURL({ dynamic: true }))
         .setColor(Colors.TURQUOISE)
-        .addField(`:goal: Roulette Safety Net`, [`\`${config.prefix}shop upgrade gambling roulette\``,
+        .addField(`:goal: Roulette Safety Net`, [`\`${config.prefix}shop upgrade gambling roulette (opt: levels/max)\``,
         ...getRouletteSafetyNetStatus(util.getStats(message, message.member, 'upgrade_roulette_safety_net'), true)])
-        .addField(`:goal: Blackjack Safety Net`, [`\`${config.prefix}shop upgrade gambling blackjack\``,
+        .addField(`:goal: Blackjack Safety Net`, [`\`${config.prefix}shop upgrade gambling blackjack (opt: levels/max)\``,
         ...getBlackjackSafetyNetStatus(util.getStats(message, message.member, 'upgrade_blackjack_safety_net'), true)])
-        .addField(`:eyes: Blackjack Sneak Peek Chance`, [`\`${config.prefix}shop upgrade gambling peek\``,
+        .addField(`:eyes: Blackjack Sneak Peek Chance`, [`\`${config.prefix}shop upgrade gambling peek (opt: levels/max)\``,
         ...getBlackjackDeckPeekChanceStatus(util.getStats(message, message.member, 'upgrade_blackjack_sneak_peek_chance'), true)])
-        .addField(`:point_up: Blackjack Sneak Peek Power`, [`\`${config.prefix}shop upgrade gambling power\``,
+        .addField(`:point_up: Blackjack Sneak Peek Power`, [`\`${config.prefix}shop upgrade gambling power (opt: levels/max)\``,
         ...getBlackjackDeckPeekPowerStatus(util.getStats(message, message.member, 'upgrade_blackjack_sneak_peek_power'), true)])
         .setFooter(`You have 💰 ${util.addCommas(util.getStats(message, message.member, 'coins'))} coins.`)
 }
@@ -492,12 +525,14 @@ function getOtherUpgradeInfo(message) {
         .setTitle('Misc Upgrades Info')
         .setAuthor(message.member.displayName, message.member.user.displayAvatarURL({ dynamic: true }))
         .setColor(Colors.TURQUOISE)
-        .addField(`:moneybag: Coins Earned From Messages`, [`\`${config.prefix}shop upgrade other messages\``,
+        .addField(`:moneybag: Coins Earned From Messages`, [`\`${config.prefix}shop upgrade other messages (opt: levels/max)\``,
         ...getMessageEarningStatus(util.getStats(message, message.member, 'upgrade_message_earnings'), true)])
-        .addField(`:moneybag: Coins Earned From VC`, [`\`${config.prefix}shop upgrade other vc\``,
+        .addField(`:moneybag: Coins Earned From VC`, [`\`${config.prefix}shop upgrade other vc (opt: levels/max)\``,
         ...getVCEarningStatus(util.getStats(message, message.member, 'upgrade_vc_earnings'), true)])
-        .addField(`:tickets: Ticket Discount`, [`\`${config.prefix}shop upgrade other tickets\``,
+        .addField(`:tickets: Ticket Discount`, [`\`${config.prefix}shop upgrade other tickets (opt: levels/max)\``,
         ...getCheaperTicketsStatus(util.getStats(message, message.member, 'upgrade_ticket_discount'), true)])
+        .addField(`:moneybag: Point Claim`, [`\`${config.prefix}shop upgrade other skills (opt: levels/max)\``,
+        ...getMoreCoins(util.getStats(message, message.member, 'upgrade_skill_xp'), true)])
         .setFooter(`You have 💰 ${util.addCommas(util.getStats(message, message.member, 'coins'))} coins.`)
 }
 
@@ -560,7 +595,6 @@ function getDailyGraceStatus(level, dontShow = false) {
         for (let dailyType of dailies) {
             info.push(`Current ${util.capitalizeFirstLetter(dailyType)} Grace Period: \`${util.toFormattedTime(Math.floor(config[`${dailyType}_reward_streak_grace_period`] * (1 + (level - 1) * 0.25)))}\` » \`${util.toFormattedTime(Math.floor(config[`${dailyType}_reward_streak_grace_period`] * (1 + level * 0.25)))}\``);
         }
-        info.push(`Current Weekly Grace Period: \`${util.toFormattedTime(Math.floor(config.weekly_reward_streak_grace_period * (1 + (level - 1) * 0.25)))}\` » \`${util.toFormattedTime(Math.floor(config.weekly_reward_streak_grace_period * (1 + level * 0.25)))}\``)
     }
     if (level < UPGRADE_MAX_LEVEL) {
         info.push(`Next Upgrade: ${util.addCommas(getNextUpgradeCost(level, -1500, 0.2))} coins`);
@@ -642,13 +676,13 @@ const BLACKJACK_SAFETY_NET_UPGRADE_MAX_LEVEL = 15;
     }
     info.push();
     if (level === 0 || dontShow) {
-        info.push(`Current Safety Net: \`${level}%\` chance to activate`);
+        info.push(`Current Safety Net: \`${Math.round(level/10 * 100) / 100}%\` chance to activate`);
     } else {
-        info.push(`Current Safety Net: \`${(level - 1)}%\` » \`${level}%\` chance to activate`)
+        info.push(`Current Safety Net: \`${Math.round((level - 1) * 100/10) / 100}%\` » \`${Math.round(level/10 * 100) / 100}%\` chance to activate`)
     }
     if (level < BLACKJACK_SAFETY_NET_UPGRADE_MAX_LEVEL) {
         info.push(`Next Upgrade: ${util.addCommas(getNextUpgradeCost(level, -1650, 0.45))} coins`,
-            `Next Safety Net: \`${(level + 1)}%\` chance to activate`);
+            `Next Safety Net: \`${Math.floor((level + 1)/10 * 100) / 100}%\` chance to activate`);
     }
     return info;
 }
@@ -668,13 +702,13 @@ const BLACKJACK_SAFETY_NET_UPGRADE_MAX_LEVEL = 15;
     }
     info.push();
     if (level === 0 || dontShow) {
-        info.push(`Current Peek Chance: \`${level * 5}%\` chance to activate`);
+        info.push(`Current Peek Chance: \`${level}%\` chance to activate`);
     } else {
-        info.push(`Current Peek Chance: \`${(level - 1) * 5}%\` » \`${level * 5}%\` chance to activate`)
+        info.push(`Current Peek Chance: \`${(level - 1)}%\` » \`${level}%\` chance to activate`)
     }
     if (level < UPGRADE_MAX_LEVEL) {
         info.push(`Next Upgrade: ${util.addCommas(getNextUpgradeCost(level, -1200, 0.3))} coins`,
-            `Next Peek Chance: \`${(level + 1) * 5}%\` chance to activate`);
+            `Next Peek Chance: \`${(level + 1)}%\` chance to activate`);
     }
     return info;
 }
@@ -786,6 +820,34 @@ const MESSAGE_EARNINGS_MAX_LEVEL = 12;
     if (level < UPGRADE_MAX_LEVEL) {
         info.push(`Next Upgrade: ${util.addCommas(getNextUpgradeCost(level, -1750, 0.1))} coins`,
             `Next Bonus: \`+${(level + 1)*2}%\` cheaper tickets.`);
+    }
+    return info;
+}
+
+
+const XP_MAX_LEVEL = 15;
+/**
+ * Each level decreases the XP/coin ratio.
+ * 
+ * @param {number} level 
+ * @param {boolean} dontShow true if you just leveled up. False if not.
+ * @returns {string} description of the daily cooldown upgrade.
+ */
+ function getMoreCoins(level, dontShow = false) {
+    let info = [`Each level reduces the XP required to earn coins by 5% in #point-claim!`];
+    info.push(`XP Ratio Level ${level}/${XP_MAX_LEVEL}`);
+    if (level >= XP_MAX_LEVEL) {
+        info[1] += ' (MAX)';
+    }
+    info.push();
+    if (level === 0 || dontShow) {
+        info.push(`Current Bonus: \`${Math.round(8000 * (1 - 0.05 * level))}\` XP per coin.`);
+    } else {
+        info.push(`Current Bonus: \`${Math.round(8000 * (1 - 0.05 * (level - 1)))}\` » \`${Math.round(8000 * (1 - 0.05 * level))}\` XP per coin.`);
+    }
+    if (level < XP_MAX_LEVEL) {
+        info.push(`Next Upgrade: ${util.addCommas(getNextUpgradeCost(level, -1733, -0.08))} coins`,
+            `Next Bonus: \`${Math.round(8000 * (1 - 0.05 * (level + 1)))}\` XP per coin.`);
     }
     return info;
 }

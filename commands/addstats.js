@@ -5,16 +5,26 @@ const fs = require('fs');
 const Colors = require('../resources/colors.json');
 const Discord = require('discord.js');
 
-const statNames = ["points", "tickets", "coins"];
+var statNames;
 
 module.exports = {
     name: ['addstats', 'addpoints'],
     description: "Adds to a user's points.",
-    usage: `<user> <number> <${getAllowedInputs()}>`,
-    requiresArgs: true,
+    usage: `<user> <number> <stat_name>`,
+    // requiresArgs: true,
     requiredPermissions: 'KICK_MEMBERS',
 
     execute(bot, message, args) {
+        if (!statNames) {
+            statNames = new Set();
+            for (const member of message.guild.members.cache) { // member = [userID, Discord.GuildMember]
+                let stats = util.getMemberStats(message, member[1]);
+                if (stats) {
+                    Object.getOwnPropertyNames(stats).forEach(statName => statNames.add(statName));
+                }
+            }
+        }
+
         let statName = args.pop();
         statName = statName.toLowerCase();
 
@@ -43,7 +53,7 @@ module.exports = {
             return;
         }
 
-        if (!statNames.includes(statName) && !pointsAndCoinsToAdd && util.getStats(message, target, statName) === 0) {
+        if (!statNames.has(statName) && !pointsAndCoinsToAdd && util.getStats(message, target, statName) === 0) {
             throw 'Invalid stat name.';
         }
 
@@ -76,8 +86,4 @@ module.exports = {
             console.log(err);
         }
     }
-}
-
-function getAllowedInputs() {
-    return statNames.toString().replace(/,/g, '/');
 }

@@ -47,5 +47,43 @@ module.exports = {
                     .setDescription(error.message)
                 );
             });
-    }
+    },
+
+    async getUUID(bot, message, name) {
+        return fetch(`https://api.mojang.com/users/profiles/minecraft/${name}`)
+            .then(response => {
+                if (response.ok) {
+                    return response.json().then(data => {
+                        return data.id;
+                    }).catch(error => {
+                        util.sendMessage(message.channel, new Discord.MessageEmbed()
+                            .setTitle('Error!')
+                            .setDescription(error.message + "\n**It's likely that this IGN is outdated and currently not in use by anybody.**")
+                        );
+                        return null;
+                    });
+                } else {
+                    return response.json().then(data => {
+                        util.sendMessage(message.channel, new Discord.MessageEmbed()
+                            .setTitle(`Error ${response.status}: ${response.statusText}`)
+                            .setDescription(data.errorMessage)
+                        );
+                        return null;
+                    }).catch(error => {
+                        util.sendMessage(message.channel, new Discord.MessageEmbed()
+                            .setTitle('Error!')
+                            .setDescription(error.message)
+                        );
+                        return null;
+                    });
+                }
+            })
+            .catch(error => {
+                util.sendMessage(mssage.channel, new Discord.MessageEmbed()
+                    .setTitle('Error!')
+                    .setDescription(error.message)
+                );
+                return null;
+            });
+    },
 }

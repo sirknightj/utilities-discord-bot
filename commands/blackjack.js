@@ -14,15 +14,6 @@ module.exports = {
     requiresArgs: true,
 
     execute(bot, message, args) {
-        if (inGame) {
-            util.sendMessage(message.channel, 'Sorry, I can only handle one blackjack game at a time. Please wait until that finishes.');
-            return;
-        }
-
-        let cards = [...Array(52).keys()];
-        let playerHand = new Array();
-        let computerHand = new Array();
-
         if (args[0].toLowerCase() === 'stats') {
             let target = message.member;
             if (args[1]) {
@@ -33,39 +24,13 @@ module.exports = {
                 throw `Couldn't find user ${args.join(' ')}`;
             }
 
-            let stats = util.getMemberStats(message, target);
-            if (!stats.blackjack_played) {
+            let statsEmbed = this.getStats(message, target);
+            if (!statsEmbed) {
                 util.sendMessage(message.channel, `${util.fixNameFormat(target.displayName)} has not played blackjack yet! Tell them to give it a go!`);
                 return;
             }
 
-            util.sendTimedMessage(message.channel, new Discord.MessageEmbed()
-                .setTitle(`${util.fixNameFormat(target.displayName)}'s Blackjack Stats`)
-                .addField('Blackjack Earnings',
-                    [`Total Coins Bet: ${util.addCommas(stats.coins_bet_in_blackjack)}`,
-                    `Total Coins Earned: ${util.addCommas(stats.coins_earned_in_blackjack)}`,
-                    `Total Coins Lost: ${util.addCommas(stats.coins_lost_in_blackjack)}`,
-                    `Net Earnings: ${util.addCommas(stats.blackjack_net_earnings)}`
-                    ])
-                .addField('Blackjack Winrate',
-                    [`Total Plays: ${util.addCommas(stats.blackjack_played)}`,
-                    `Wins: ${util.addCommas(stats.blackjack_wins)}`,
-                    `Losses: ${util.addCommas(stats.blackjack_losses)}`,
-                    `Win Rate: ${stats.blackjack_wins ? Math.round(stats.blackjack_wins / stats.blackjack_played * 100 * 100) / 100 : 0}%`,
-                    `Blackjacks: ${util.addCommas(stats.blackjack_blackjacks)}`,
-                    `Blackjack Rate: ${stats.blackjack_blackjacks ? Math.round(stats.blackjack_blackjacks / stats.blackjack_played * 100 * 100) / 100 : 0}%`,
-                    `Ties: ${util.addCommas(stats.blackjack_tied)}`,
-                    `Tie Rate: ${stats.blackjack_tied ? Math.round(stats.blackjack_tied / stats.blackjack_played * 100 * 100) / 100 : 0}%`,
-                    `Times saved by Safety Net upgrade: ${util.addCommas(stats.blackjack_safety_net_saves)}`
-                    ])
-                .addField('Streaks',
-                    [`Current ${stats.blackjack_winning_streak > stats.blackjack_losing_streak ? "Winning" : "Losing"} Streak: ${util.addCommas(Math.max(stats.blackjack_winning_streak, stats.blackjack_losing_streak))}`,
-                    `Longest Win Streak: ${util.addCommas(stats.blackjack_longest_win_streak)}`,
-                    `Longest Losing Streak: ${util.addCommas(stats.blackjack_longest_losing_streak)}`
-                    ])
-                .setColor(Colors.GOLD)
-                .setAuthor(target.displayName, target.user.displayAvatarURL({ dynamic: true }))
-                .setFooter(`This message will be automatically deleted in ${config.longest_delete_delay / 1000} seconds.`), config.longest_delete_delay);
+            util.sendTimedMessage(message.channel, statsEmbed, config.longest_delete_delay);
             util.safeDelete(message);
             return;
         } else if (args[0].toLowerCase() === 'statwipe') {
@@ -82,45 +47,22 @@ module.exports = {
                 throw 'Missing target!'
             }
             if (!target) {
-                throw `Could not find user ${args[1]}!`;
+                throw `Could not find user \`${args[1]}\`!`;
             }
 
-            let stats = util.getMemberStats(message, target);
-            if (!stats.coinflip_played) {
-                util.sendMessage(message.channel, `${util.fixNameFormat(target.displayName)} has not played blackjack yet! There are no stats to wipe!`);
+            let statsEmbed = this.getStats(message, target)
+            if (!statsEmbed) {
+                util.sendMessage(message.channel, `\`${util.fixNameFormat(target.displayName)}\` has not played blackjack yet! There are no stats to wipe!`);
             }
             
-            let statEmbed = new Discord.MessageEmbed()
-                .setTitle(`${util.fixNameFormat(message.member.displayName)} has wiped ${util.fixNameFormat(target.displayName)}'s Blackjack Stats!`)
+            statsEmbed.setTitle(`${util.fixNameFormat(message.member.displayName)} has wiped ${util.fixNameFormat(target.displayName)}'s Blackjack Stats!`)
                 .setDescription(`${util.fixNameFormat(target.displayName)}'s Blackjack stats before wiping:`)
-                .addField('Blackjack Earnings',
-                    [`Total Coins Bet: ${util.addCommas(stats.coins_bet_in_blackjack)}`,
-                    `Total Coins Earned: ${util.addCommas(stats.coins_earned_in_blackjack)}`,
-                    `Total Coins Lost: ${util.addCommas(stats.coins_lost_in_blackjack)}`,
-                    `Net Earnings: ${util.addCommas(stats.blackjack_net_earnings)}`
-                    ])
-                .addField('Blackjack Winrate',
-                    [`Total Plays: ${util.addCommas(stats.blackjack_played)}`,
-                    `Wins: ${util.addCommas(stats.blackjack_wins)}`,
-                    `Losses: ${util.addCommas(stats.blackjack_losses)}`,
-                    `Win Rate: ${stats.blackjack_wins ? Math.round(stats.blackjack_wins / stats.blackjack_played * 100 * 100) / 100 : 0}%`,
-                    `Blackjacks: ${util.addCommas(stats.blackjack_blackjacks)}`,
-                    `Blackjack Rate: ${stats.blackjack_blackjacks ? Math.round(stats.blackjack_blackjacks / stats.blackjack_played * 100 * 100) / 100 : 0}%`,
-                    `Ties: ${util.addCommas(stats.blackjack_tied)}`,
-                    `Tie Rate: ${stats.blackjack_tied ? Math.round(stats.blackjack_tied / stats.blackjack_played * 100 * 100) / 100 : 0}%`,
-                    `Times saved by Safety Net upgrade: ${util.addCommas(stats.blackjack_safety_net_saves)}`
-                    ])
-                .addField('Streaks',
-                    [`Current ${stats.blackjack_winning_streak > stats.blackjack_losing_streak ? "Winning" : "Losing"} Streak: ${util.addCommas(Math.max(stats.blackjack_winning_streak, stats.blackjack_losing_streak))}`,
-                    `Longest Win Streak: ${util.addCommas(stats.blackjack_longest_win_streak)}`,
-                    `Longest Losing Streak: ${util.addCommas(stats.blackjack_longest_losing_streak)}`
-                    ])
                 .setColor(Colors.BRIGHT_RED)
                 .setThumbnail(target.user.displayAvatarURL({ dynamic: true }))
                 .setAuthor(message.member.displayName, message.member.user.displayAvatarURL({ dynamic: true }))
                 .setTimestamp();
-            util.sendMessage(message.channel, statEmbed);
-            util.sendMessage(util.getLogChannel(message), statEmbed);
+            util.sendMessage(message.channel, statsEmbed);
+            util.sendMessage(util.getLogChannel(message), statsEmbed);
 
             let blackjackStatNames = ['blackjack_played', 'blackjack_wins', 'blackjack_blackjacks', 'blackjack_tied', 'blackjack_losses',
             'coins_bet_in_blackjack', 'coins_earned_in_blackjack', 'coins_lost_in_blackjack', 'blackjack_net_earnings',
@@ -129,136 +71,18 @@ module.exports = {
             return;
         }
 
+        if (inGame) {
+            util.sendMessage(message.channel, 'Sorry, I can only handle one blackjack game at a time. Please wait until that finishes.');
+            return;
+        }
+
+        let cards = [...Array(52).keys()];
+        let playerHand = new Array();
+        let computerHand = new Array();
+
         const HIT_EMOJI = '⬆️';
         const STAND_EMOJI = '✅';
         const TIMEOUT = 60000;
-
-        /**
-         * Converts the cardValue into the card suit.
-         * 
-         * @param {number} cardNum the cardValue of the card
-         * @returns the suit of the card with this cardNum
-         */
-        this.getCardSuit = (cardNum) => {
-            switch (cardNum % 4) {
-                case 0:
-                    return ':clubs:';
-                case 1:
-                    return ':spades:';
-                case 2:
-                    return ':hearts:';
-                case 3:
-                    return ':diamonds:';
-                default:
-                    throw 'HUGE error!';
-            }
-        }
-
-        /**
-         * Converts the cardValue into the card type.
-         * 
-         * @param {number} cardNum the cardValue of the card
-         * @returns the type of card (A, 2, 3..., J, Q, K)
-         */
-        this.getCardType = (cardNum) => {
-            let value = Math.floor(cardNum / 4);
-            switch (value) {
-                case 0:
-                    return 'A';
-                case 10:
-                    return 'J';
-                case 11:
-                    return 'Q';
-                case 12:
-                    return 'K'
-                default:
-                    return value + 1;
-            }
-        }
-
-        /**
-         * Returns a string representation of the card with this cardValue
-         * 
-         * @param {number} cardNum the cardValue of the card
-         * @returns a string representation of the card with this cardValue
-         */
-        this.cardToString = (cardNum) => {
-            return `${this.getCardSuit(cardNum)} ${this.getCardType(cardNum)}`;
-        }
-
-        /**
-         * Returns a string representation of this hand
-         * 
-         * @param {array} cards the cards in this hand
-         * @param {boolean} isDealer true if the second card should be hidden
-         * @returns a string representation of this hand
-         */
-        this.handToString = (cards, isDealer = false) => {
-            if (isDealer) {
-                return `${this.cardToString(cards[0])} - ?`;
-            }
-            cards = cards.map(cardValue => this.cardToString(cardValue));
-            return cards.join(' - ');
-        }
-
-        /**
-         * Returns how much this card is worth (A is counted as 1)
-         * 
-         * @param {number} card the cardValue of the card
-         * @returns how many points this card is worth
-         */
-        this.cardValue = (card) => {
-            if (Math.floor(card / 4) === 0) {
-                return 11;
-            } else if (card / 4 < 10) {
-                return Math.floor(card / 4) + 1;
-            }
-            return 10;
-        }
-
-        /**
-         * @typedef {Object} HandValue
-         * @property {number} value how much this hand is worth
-         * @property {boolean} isSoft true if the hand is soft (has an ace that is counted as 11)
-         */
-
-        /**
-         * Calculates the value of this hand.
-         * 
-         * @param {array} cards the cards in this hand
-         * @param {boolean} isDealer true if only the value of the first card should be returned
-         * @returns {HandValue} the values of this hand
-         */
-        this.computeValue = (cards, isDealer = false) => {
-            if (isDealer) {
-                return { value: this.cardValue(cards[0]), isSoft: false};
-            }
-            cards = [...cards].sort((a, b) => b - a);
-            let sum = 0;
-            let soft = false;
-            for (let i = 0; i < cards.length; i++) {
-                sum += this.cardValue(cards[i]);
-                if (this.getCardType(cards[i]) === 'A') {
-                    if (sum > 21) {
-                        sum -= 10;
-                    } else {
-                        soft = true;
-                    }   
-                }
-            }
-            return {value: sum, isSoft: soft};
-        }
-
-        /**
-         * Draws a random cardValue from the cards remaining. Takes the
-         * cardValue out of the array, reducing the cardPile size by 1.
-         * 
-         * @param {array} cards the list of cards remaining
-         * @returns a random card value from the array
-         */
-        this.drawRandomCard = (cards) => {
-            return cards.pop();
-        }
 
         this.getBlackJackEmbed = (msg, playerHand, computerHand, isComputerHidden, description, bet, gameDone, isComputerThinking, player) => {
             let embed = new Discord.MessageEmbed()
@@ -300,7 +124,7 @@ module.exports = {
                 } else if (isComputerBlackJack) {
                     let losings = bet;
                     let safetyNetLevel = util.getStats(message, message.member, "upgrade_blackjack_safety_net");
-                    let saved = Math.random() <= safetyNetLevel * 0.01; // 1% per level
+                    let saved = Math.random() <= safetyNetLevel * 0.001; // 0.1% per level
                     let transaction;
                     if (saved) {
                         let c = util.getStats(message, message.member, "coins");
@@ -331,7 +155,7 @@ module.exports = {
                 } else {
                     let losings = bet;
                     let safetyNetLevel = util.getStats(message, message.member, "upgrade_blackjack_safety_net");
-                    let saved = Math.random() <= safetyNetLevel * 0.01; // 1% per level
+                    let saved = Math.random() <= safetyNetLevel * 0.001; // 0.1% per level
                     let transaction;
                     if (saved) {
                         let c = util.getStats(message, message.member, "coins");
@@ -391,30 +215,6 @@ module.exports = {
                 util.setStats(message, player, losingStreak, 'blackjack_longest_losing_streak');
             }
             return {losingStreak: losingStreak, newRecord: newRecord, saved: savedInfo};
-        }
-
-        /**
-         * Checks if the hand is a blackjack.
-         * 
-         * @param {array} cards the hand you want to know
-         * @returns {boolean} true if the hand is 21 points and only contains 2 cards
-         */
-        this.isBlackJack = (cards) => {
-            return this.isTwentyOne(cards) && cards.length === 2;
-        }
-
-        /**
-         * Checks if the hand is worth 21 points.
-         * 
-         * @param {array} cards the hand you want to know
-         * @returns true if the cards are worth 21 points
-         */
-        this.isTwentyOne = (cards) => {
-            return this.computeValue(cards).value === 21;
-        }
-
-        this.isBust = (cards) => {
-            return this.computeValue(cards).value > 21;
         }
 
         this.dealerMove = (msg, message_, cards, playerHand, dealerHand, bet) => {
@@ -482,7 +282,7 @@ module.exports = {
         inGame = true;
 
         let upgrade_level = util.getStats(message, message.member, "upgrade_blackjack_sneak_peek_chance");
-        let upgrade_proc = Math.random() <= 0.05 * upgrade_level; // 5% per level
+        let upgrade_proc = Math.random() <= 0.01 * upgrade_level; // 1% per level
         let cardsToShow = util.getStats(message, message.member, "upgrade_blackjack_sneak_peek_power") + 1;
 
         /* Randomize array in-place using Durstenfeld shuffle algorithm */
@@ -570,5 +370,203 @@ module.exports = {
                         })
                     })
             });
+    },
+
+    /**
+     * Creates and returns an embed with the target's blackjack stats. Returns null if they have no stats.
+     * 
+     * @param {Discord.Message} message any message sent in this discord server
+     * @param {Discord.GuildMember} target whose stats you want
+     */
+    getStats(message, target) {
+        let stats = util.getMemberStats(message, target);
+        if (!stats.blackjack_played) {
+            return null;
+        }
+
+        return new Discord.MessageEmbed()
+            .setTitle(`${util.fixNameFormat(target.displayName)}'s Blackjack Stats`)
+            .addField('Blackjack Earnings',
+                [`Total Coins Bet: ${util.addCommas(stats.coins_bet_in_blackjack)}`,
+                `Total Coins Earned: ${util.addCommas(stats.coins_earned_in_blackjack)}`,
+                `Total Coins Lost: ${util.addCommas(stats.coins_lost_in_blackjack)}`,
+                `Net Earnings: ${util.addCommas(stats.blackjack_net_earnings)}`
+                ])
+            .addField('Blackjack Winrate',
+                [`Total Plays: ${util.addCommas(stats.blackjack_played)}`,
+                `Wins: ${util.addCommas(stats.blackjack_wins)}`,
+                `Losses: ${util.addCommas(stats.blackjack_losses)}`,
+                `Win Rate: ${stats.blackjack_wins ? Math.round(stats.blackjack_wins / stats.blackjack_played * 100 * 100) / 100 : 0}%`,
+                `Blackjacks: ${util.addCommas(stats.blackjack_blackjacks)}`,
+                `Blackjack Rate: ${stats.blackjack_blackjacks ? Math.round(stats.blackjack_blackjacks / stats.blackjack_played * 100 * 100) / 100 : 0}%`,
+                `Ties: ${util.addCommas(stats.blackjack_tied)}`,
+                `Tie Rate: ${stats.blackjack_tied ? Math.round(stats.blackjack_tied / stats.blackjack_played * 100 * 100) / 100 : 0}%`,
+                `Times saved by Safety Net upgrade: ${util.addCommas(stats.blackjack_safety_net_saves)}`
+                ])
+            .addField('Streaks',
+                [`Current ${stats.blackjack_winning_streak > stats.blackjack_losing_streak ? "Winning" : "Losing"} Streak: ${util.addCommas(Math.max(stats.blackjack_winning_streak, stats.blackjack_losing_streak))}`,
+                `Longest Win Streak: ${util.addCommas(stats.blackjack_longest_win_streak)}`,
+                `Longest Losing Streak: ${util.addCommas(stats.blackjack_longest_losing_streak)}`
+                ])
+            .setColor(Colors.GOLD)
+            .setAuthor(target.displayName, target.user.displayAvatarURL({ dynamic: true }))
+            .setFooter(`This message will be automatically deleted in ${config.longest_delete_delay / 1000} seconds.`);
+    },
+
+    /**
+     * Converts the cardValue into the card suit.
+     * 
+     * @param {number} cardNum the cardValue of the card
+     * @returns the suit of the card with this cardNum
+     */
+     getCardSuit(cardNum) {
+        switch (cardNum % 4) {
+            case 0:
+                return ':clubs:';
+            case 1:
+                return ':spades:';
+            case 2:
+                return ':hearts:';
+            case 3:
+                return ':diamonds:';
+            default:
+                throw 'HUGE error!';
+        }
+    },
+
+    /**
+     * Converts the cardValue into the card type.
+     * 
+     * @param {number} cardNum the cardValue of the card
+     * @returns the type of card (A, 2, 3..., J, Q, K)
+     */
+    getCardType(cardNum) {
+        let value = Math.floor(cardNum / 4);
+        switch (value) {
+            case 0:
+                return 'A';
+            case 10:
+                return 'J';
+            case 11:
+                return 'Q';
+            case 12:
+                return 'K'
+            default:
+                return value + 1;
+        }
+    },
+
+    /**
+     * Returns a string representation of the card with this cardValue
+     * 
+     * @param {number} cardNum the cardValue of the card
+     * @returns a string representation of the card with this cardValue
+     */
+    cardToString(cardNum) {
+        return `${this.getCardSuit(cardNum)} ${this.getCardType(cardNum)}`;
+    },
+
+    /**
+     * Returns a string representation of this hand
+     * 
+     * @param {array} cards the cards in this hand
+     * @param {boolean} isDealer true if the second card should be hidden
+     * @returns a string representation of this hand
+     */
+    handToString(cards, isDealer = false) {
+        if (isDealer) {
+            return `${this.cardToString(cards[0])} - ?`;
+        }
+        cards = cards.map(cardValue => this.cardToString(cardValue));
+        return cards.join(' - ');
+    },
+
+    /**
+     * Returns how much this card is worth (A is counted as 1)
+     * 
+     * @param {number} card the cardValue of the card
+     * @returns how many points this card is worth
+     */
+    cardValue(card) {
+        if (Math.floor(card / 4) === 0) {
+            return 11;
+        } else if (card / 4 < 10) {
+            return Math.floor(card / 4) + 1;
+        }
+        return 10;
+    },
+
+    /**
+     * @typedef {Object} HandValue
+     * @property {number} value how much this hand is worth
+     * @property {boolean} isSoft true if the hand is soft (has an ace that is counted as 11)
+     */
+
+    /**
+     * Calculates the value of this hand.
+     * 
+     * @param {array} cards the cards in this hand
+     * @param {boolean} isDealer true if only the value of the first card should be returned
+     * @returns {HandValue} the values of this hand
+     */
+    computeValue(cards, isDealer = false) {
+        if (isDealer) {
+            return { value: this.cardValue(cards[0]), isSoft: false};
+        }
+        cards = [...cards].sort((a, b) => b - a);
+        let sum = 0;
+        let soft = false;
+        for (let i = 0; i < cards.length; i++) {
+            sum += this.cardValue(cards[i]);
+            if (this.getCardType(cards[i]) === 'A') {
+                if (sum > 21 || i !== cards.length - 1) {
+                    sum -= 10;
+                } else {
+                    soft = true;
+                }   
+            }
+        }
+        return {value: sum, isSoft: soft};
+    },
+
+    /**
+     * Draws the top card from the cards remaining (assuming that the deck is shuffled). Takes the
+     * cardValue out of the array, reducing the cardPile size by 1.
+     * 
+     * @param {array} cards the list of cards remaining
+     * @returns a random card value from the array
+     */
+    drawRandomCard(cards) {
+        return cards.pop();
+    },
+
+    /**
+     * Checks if the hand is a blackjack.
+     * 
+     * @param {array} cards the hand you want to know
+     * @returns {boolean} true if the hand is 21 points and contains 2 exactly cards
+     */
+    isBlackJack(cards) {
+        return this.isTwentyOne(cards) && cards.length === 2;
+    },
+
+    /**
+     * Checks if the hand is worth 21 points.
+     * 
+     * @param {array} cards the hand you want to know
+     * @returns true if the cards are worth 21 points
+     */
+    isTwentyOne(cards) {
+        return this.computeValue(cards).value === 21;
+    },
+
+    /**
+     * Checks if the hand is a bust (over 21 points).
+     * 
+     * @param {array} cards the hand you want to know
+     * @returns true if the cards are over 21 points
+     */
+    isBust(cards) {
+        return this.computeValue(cards).value > 21;
     }
 }

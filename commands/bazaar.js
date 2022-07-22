@@ -3,6 +3,9 @@ const config = require('../config.json');
 const Discord = require('discord.js');
 const fetch = require('node-fetch');
 const Colors = require('../resources/colors.json');
+const stringSimilarity = require("string-similarity");
+
+const ALL_BAZAAR_PRODUCTS = [];
 
 module.exports = {
     name: ["bazaar", "bz"],
@@ -28,26 +31,27 @@ module.exports = {
                 .then(response => {
                     if (response.ok) {
                         response.json().then(data => {
+                            if (ALL_BAZAAR_PRODUCTS.length === 0) {
+                                for (const key in data.products) {
+                                    ALL_BAZAAR_PRODUCTS.push(data.products[key].product_id);
+                                }
+                            }
                             if (data.products[args.join('_').toUpperCase()]) {
                                 util.sendMessage(message.channel, new Discord.MessageEmbed()
                                     .setColor(Colors.GOLD)
                                     .setTitle(`${args.join('_').toUpperCase()}`)
                                     .setDescription(`Last updated: <t:${Math.round(data.lastUpdated / 1000)}:F>`)
-                                    .addFields(
-                                        { name: "Instant Sell", value: `${data.products[args.join('_').toUpperCase()].quick_status.sellPrice}`, inline: true },
-                                        { name: "Sell Volume", value: `${util.addCommas(data.products[args.join('_').toUpperCase()].quick_status.sellVolume)}`, inline: true },
-                                        util.embedLineBreak(),
-                                        { name: "Instant Buy", value: `${data.products[args.join('_').toUpperCase()].quick_status.buyPrice}`, inline: true },
-                                        { name: "Buy Volume", value: `${util.addCommas(data.products[args.join('_').toUpperCase()].quick_status.buyVolume)}`, inline: true },
-                                        util.embedLineBreak(),
-                                        { name: "Buy Orders", value: `${this.summaryToString(data.products[args.join('_').toUpperCase()].sell_summary, false).join('\n')}`, inline: true },
-                                        { name: "Sell Orders", value: `${this.summaryToString(data.products[args.join('_').toUpperCase()].buy_summary, true).join('\n')}`, inline: true },
-                                    )
+                                    .addFields(this.getProductEmbedFields(data, args.join('_').toUpperCase()))
                                 );
                             } else {
+                                let attemptedProductName = stringSimilarity.findBestMatch(args.join('_').toUpperCase(), ALL_BAZAAR_PRODUCTS).bestMatch.target;
                                 util.sendMessage(message.channel, new Discord.MessageEmbed()
-                                    .setTitle(`Error!`)
-                                    .setDescription(`There is no product with the name ${args.join('_').toUpperCase()}`)
+                                    .setColor(Colors.GOLD)
+                                    .setTitle(attemptedProductName)
+                                    .setDescription([`There is no product with the name ${args.join('_').toUpperCase()}.`,
+                                        `The closest match is: ${attemptedProductName}`,
+                                        `Last updated: <t:${Math.round(data.lastUpdated / 1000)}:F>`])
+                                    .addFields(this.getProductEmbedFields(data, attemptedProductName))
                                 );
                             }
                         });
@@ -64,6 +68,17 @@ module.exports = {
             util.sendTimedMessage(message, channel, 'Error fetching the API.');
         }
     },
+
+    getProductEmbedFields(data, productName) {
+        return [{ name: "Instant Sell", value: `${data.products[productName].quick_status.sellPrice}`, inline: true },
+        { name: "Sell Volume", value: `${util.addCommas(data.products[productName].quick_status.sellVolume)}`, inline: true },
+        util.embedLineBreak(),
+        { name: "Instant Buy", value: `${data.products[productName].quick_status.buyPrice}`, inline: true },
+        { name: "Buy Volume", value: `${util.addCommas(data.products[productName].quick_status.buyVolume)}`, inline: true },
+        util.embedLineBreak(),
+        { name: "Buy Orders", value: `${this.summaryToString(data.products[productName].sell_summary, false).join('\n')}`, inline: true },
+        { name: "Sell Orders", value: `${this.summaryToString(data.products[productName].buy_summary, false).join('\n')}`, inline: true }];
+    },
     
     summaryToString(summary, ascending) {
         if (summary.length === 0) {
@@ -71,7 +86,7 @@ module.exports = {
         } else {
             let result = [];
             let i = 0;
-            while (summary.length !== 0 && i < 10) {
+            while (summary.length !== 0 && i < 15) {
                 let thisSummary = ascending ? summary.pop() : summary.shift();
                 result.push(`${util.addCommas(thisSummary.amount)} @ ${util.addCommas(thisSummary.pricePerUnit)} (${util.addCommas(thisSummary.orders)} order${thisSummary.orders === 1 ? '' : 's'})`);
                 i++;

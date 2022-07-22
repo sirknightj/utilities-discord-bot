@@ -11,7 +11,7 @@ module.exports = {
 
     execute(bot, message, args, target) {
         if (!config.allow_coin_transfers) {
-            util.sendMessage(message.channel, 'This command is disabled in this server.');
+            util.sendMessage(message.channel, 'This command is currently disabled.');
             return;
         }
 
