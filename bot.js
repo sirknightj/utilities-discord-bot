@@ -63,6 +63,118 @@ bot.once('ready', () => {
 });
 
 bot.on('message', async message => {
+
+    // Manage messages sent in the guild chat channel (discord-minecraft chat bridge)
+    if (message.channel.id === config.guild_chat_channel) {
+        if (!message.author.bot) return;
+        for (const embed of message.embeds) {
+            if (embed.author) {
+                let user = embed.author.name;
+                if (!user.includes(' ')) {
+                    let userr = message.guild.members.cache.find(member => {
+                        return member.displayName.replace(/ *\([^)]*\) */g, "") === user;
+                    });
+                    if (userr) {
+                        manageGuildStats(message, userr);
+                    } else {
+                        let uuid = await getUUID(bot, message, user);
+                        let target = message.guild.members.cache.find(member => {
+                            return !member.user.bot && util.getStats(message, member, 'mc_uuid') === uuid;
+                        });
+                        if (!target) {
+                            util.sendMessage(util.getLogChannel(message), "I can't find any discord accounts verified to `" + user + "`");
+                            return;
+                        }
+                        await updateName.executor(bot, message, [target.user.id]);
+                        util.sendMessage(util.getLogChannel(message), `I updated \`${target.displayName}\`'s nickname to \`${user}\`!`);
+                    }
+                } else if (user.endsWith(' left.')) {
+                    user = user.slice(0, -6);
+                    let userr = message.guild.members.cache.find(member => {
+                        return member.displayName.replace(/ *\([^)]*\) */g, "") === user;
+                    });
+                    if (userr) {
+                        util.setStats(message, userr, 0, 'online_status');
+                    } else {
+                        let uuid = await getUUID(bot, message, user);
+                        let target = message.guild.members.cache.find(member => {
+                            return !member.user.bot && util.getStats(message, member, 'mc_uuid') === uuid;
+                        });
+                        if (!target) {
+                            util.sendMessage(util.getLogChannel(message), "I can't find any discord accounts verified to `" + user + "`");
+                            return;
+                        }
+                        await updateName.executor(bot, message, [target.user.id]);
+                        util.sendMessage(util.getLogChannel(message), `I updated \`${target.displayName}\`'s nickname to \`${user}\`!`);
+                    }
+                    return;
+                } else if (user.endsWith(' joined.')) {
+                    user = user.slice(0, -8);
+                    let userr = message.guild.members.cache.find(member => {
+                        return member.displayName.replace(/ *\([^)]*\) */g, "") === user;
+                    });
+                    if (userr) {
+                        util.setStats(message, userr, 1, 'online_status');
+                    } else {
+                        let uuid = await getUUID(bot, message, user);
+                        let target = message.guild.members.cache.find(member => {
+                            return !member.user.bot && util.getStats(message, member, 'mc_uuid') === uuid;
+                        });
+                        if (!target) {
+                            util.sendMessage(util.getLogChannel(message), "I can't find any discord accounts verified to `" + user + "`");
+                            return;
+                        }
+                        await updateName.executor(bot, message, [target.user.id]);
+                        util.sendMessage(util.getLogChannel(message), `I updated \`${target.displayName}\`'s nickname to \`${user}\`!`);
+                    }
+                    return;
+                } else if (user.endsWith(' Joined')) {
+                    // Joined the guild
+                    user = embed.description.split(' ')[0];
+                    let userr = message.guild.members.cache.find(member => {
+                        return member.displayName.replace(/ *\([^)]*\) */g, "") === user;
+                    });
+                    if (userr) {
+                        util.setStats(message, userr, 1, 'online_status');
+                    } else {
+                        let uuid = await getUUID(bot, message, user);
+                        let target = message.guild.members.cache.find(member => {
+                            return !member.user.bot && util.getStats(message, member, 'mc_uuid') === uuid;
+                        });
+                        if (!target) {
+                            util.sendMessage(util.getLogChannel(message), "I can't find any discord accounts verified to `" + user + "`");
+                            return;
+                        }
+                        await updateName.executor(bot, message, [target.user.id]);
+                        util.sendMessage(util.getLogChannel(message), `I updated \`${target.displayName}\`'s nickname to \`${user}\`!`);
+                    }
+                    return;
+                } else if (user.endsWith(' Left')) {
+                    // Left the guild
+                    user = embed.description.split(' ')[0];
+                    let userr = message.guild.members.cache.find(member => {
+                        return member.displayName.replace(/ *\([^)]*\) */g, "") === user;
+                    });
+                    if (userr) {
+                        util.setStats(message, userr, 0, 'online_status');
+                    } else {
+                        let uuid = await getUUID(bot, message, user);
+                        let target = message.guild.members.cache.find(member => {
+                            return !member.user.bot && util.getStats(message, member, 'mc_uuid') === uuid;
+                        });
+                        if (!target) {
+                            util.sendMessage(util.getLogChannel(message), "I can't find any discord accounts verified to `" + user + "`");
+                            return;
+                        }
+                        await executor(bot, message, [target.user.id]);
+                        util.sendMessage(util.getLogChannel(message), `I updated \`${target.displayName}\`'s nickname to \`${user}\`!`);
+                    }
+                    return;
+                }
+            }
+        }
+    }
+
     // Make sure that the message is not from another bot, and only from a text channel.
     if (message.channel.type !== 'text' || message.author.bot) {
         return;
@@ -418,6 +530,7 @@ bot.on('voiceStateUpdate', async (oldState, newState) => {
                     .setColor(Colors.PURPLE);
                 botStats['vc_disconnect_id'] = newId;
                 botStats['vc_disconnect_number'] = newNum;
+                util.sendMessage(newState.guild.channels.cache.get('768570345996550145'), leavingEmbed);
             }
         }
 
@@ -615,6 +728,8 @@ bot.on('guildBanAdd', async (guild, userAffected) => {
         `User ID: ${userAffected.id}`,
         `Banned: ${new Date(Date.now())}`,
     ]));
+
+    util.sendMessage(guild.channels.cache.get('768570345996550145'), embed); // EE
 });
 
 bot.on('guildBanRemove', async (guild, userAffected) => {
@@ -650,6 +765,8 @@ bot.on('guildBanRemove', async (guild, userAffected) => {
         `User ID: ${userAffected.id}`,
         `Unbanned: ${new Date(Date.now())}`,
     ]));
+
+    util.sendMessage(guild.channels.cache.get('768570345996550145'), embed); // EE
 });
 
 function manageStats(message) {

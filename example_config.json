@@ -113,5 +113,6 @@
     "guild_member_role": "000000000000000000",
     "bridge_role": "000000000000000000",
     "retired_guild_member_role": "000000000000000000",
-    "guest_role": "000000000000000000"
+    "guest_role": "000000000000000000",
+    "guild_chat_channel": "863729031609843742"
 }
