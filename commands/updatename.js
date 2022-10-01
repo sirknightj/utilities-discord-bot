@@ -35,6 +35,7 @@ module.exports = {
         let newName = await name.getName(bot, message, uuid);
         if (!newName) {
             util.sendMessage(message.channel, 'This should never happen, report immediately.');
+            return;
         }
         if (!newName.includes('(')) {
             let custom_nickname = util.getStats(message, target, 'custom_nickname');

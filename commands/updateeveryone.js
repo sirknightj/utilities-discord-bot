@@ -16,7 +16,7 @@ module.exports = {
     },
 
     executor: async function (bot, message, args) {
-        util.sendMessage(message.channel, "Working on it... this may take a while.");
+        util.sendMessage(message.channel, `Working on it... this may take a while (${util.addCommas(message.guild.members.cache.size)} users to check).`);
         let res = [];
         for (const member of message.guild.members.cache) { // member = [userID, Discord.GuildMember]
             let uuid = util.getStats(message, member[1], 'mc_uuid');
@@ -25,6 +25,7 @@ module.exports = {
                 if (result) {
                     res.push(result);
                 }
+                await new Promise(resolve => setTimeout(resolve, 1000));
             }
         }
 

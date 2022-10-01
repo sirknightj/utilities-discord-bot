@@ -30,19 +30,12 @@ module.exports = {
      */
     async getName(bot, message, uuid) {
         console.log(uuid)
-        console.log(`Fetching https://api.mojang.com/user/profiles/${uuid}/names`)
-        return fetch(`https://api.mojang.com/user/profiles/${uuid}/names`)
+        console.log(`Fetching https://api.mojang.com/user/profile/${uuid}`)
+        return fetch(`https://api.mojang.com/user/profile/${uuid}`)
             .then(response => {
                 if (response.ok) {
                     return response.json().then(data => {
-                        let name = data[data.length - 1];
-                        let name2 = data[data.length - 2] ? data[data.length - 2] : null;
-                        if (name2 && name.changedToAt) {
-                            if (name.changedToAt + 1209600000 <= Date.now()) { // 2 weeks
-                                name2 = null;
-                            }
-                        }
-                        return `${name.name}${name2 ? ` (${name2.name})` : ''}`;
+                        return `${data.name}`;
                     }).catch(error => {
                         util.sendMessage(message.channel, new Discord.MessageEmbed()
                             .setTitle('Error!')
