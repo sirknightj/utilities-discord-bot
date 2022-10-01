@@ -102,6 +102,9 @@ With very simple, fun, and useful commands that are very easy-to-use and intuiti
 * Sets up a Tic Tac Toe between you and your target.
 * You can even play against yourself!
 
+#### `!tttt <target>`
+* 5x5 Tic Tac Toe!
+
 #### `!roulette <bet> <guess>`
 * Lets you play around with the coins the bot awards you for Discord participation!
 * `bet` can be a number, `half`, or `all`.
@@ -159,3 +162,18 @@ With very simple, fun, and useful commands that are very easy-to-use and intuiti
 #### `!ghostping <user> <channel-name>`
 * Pings the user, and then deletes the message as fast as possible. Also deletes your command as fast as possible.
 * Note: Requires the message author to have `ADMINISTRATOR` permissions.
+
+## Hypixel Skyblock Role Management!
+* Verification system with `!verify` - everyone's usernames will be set to their current IGN
+** Server nickname will be set to their current `IGN (previousIGN)` if the name was changed within the last 2 weeks.
+** Mods can `!forceverify <user> <IGN>` to forcefully link a Discord account to a Minecraft IGN
+* Create roles in your server and set them in `config.json`.
+** Whenever someone runs `!claim`, skyblock stats are fetched and roles are updated!
+** Run `!updateeveryone` to update everyone's server nicknames.
+
+## Guild Management
+* Use `!guild set <guildName>` to initially set the Hypixel Guild the Discord Server is for.
+* Use `!guild update` to update the bot's knowledge of the guild data.
+* Use `!guild inguild <user>` to check if the user is in the guild or not.
+* Use `!guild updateroles <user>` to update the guild membership roles (bridge role, retired/guild member, guest roles)
+* Use `!guild updateeveryone` to run `!guild updateroles` for each individual verified user.
