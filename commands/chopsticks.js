@@ -85,15 +85,8 @@ nextChopsticksTurn = (gameMessage, state, turn, challenger, target, previousMove
     let attacker = turn ? challenger : target;
     let defender = turn ? target : challenger;
 
-    console.log("Attacker: " + attacker.displayName);
-    console.log("Defender: " + defender.displayName);
-    console.log("turn " + turn);
-    // Perform win check
-
     // Calculate available moves
-    console.log("Calculating moves with " + state);
     let moves = getAvailableChopsticksMoves(state, turn);
-    console.log("Moves calculated.." + moves);
 
     // Update the display
     gameMessage.edit(chopsticksGameEmbed(state, attacker, defender, challenger, target, null, previousMove, moves, turn)).then(message => {
@@ -119,14 +112,37 @@ nextChopsticksTurn = (gameMessage, state, turn, challenger, target, previousMove
                 reaction.users.remove(reaction.users.cache.filter(user => user.id === attacker.id).first().id)
                     .then(() => {
                         if (previousMove && chopSticksWinnerCheck(state)) {
-                            message.edit(new Discord.MessageEmbed()
-                                .setTitle(`Chopsticks game ended!`)
-                                .setDescription(`${util.fixNameFormat(challenger.displayName)} vs. ${util.fixNameFormat(target.displayName)}\n${util.fixNameFormat((turn ? target: challenger).displayName)} has lost chopsticks!`)
-                                .addField(util.fixNameFormat(target.displayName) + "'s hands", numberToHand(state[0], target) + " " + numberToHand(state[1], target))
-                                .addField(util.fixNameFormat(challenger.displayName) + "'s hands", numberToHand(state[2], challenger) + " " + numberToHand(state[3], challenger))
-                                .setColor(Colors.DARK_GREEN))
                             message.reactions.removeAll()
                             ChopsticksGameActive = false;
+
+                            util.addStats(message, attacker, 1, 'chopsticks_played');
+                            util.addStats(message, attacker, 1, 'chopsticks_wins');
+                            util.setStats(message, attacker, 0, 'chopsticks_losing_streak');
+                            let winStreak = util.addStats(message, attacker, 1, 'chopsticks_winning_streak').newPoints;
+                            let newWinRecord = false;
+                            if (winStreak > util.getStats(message, attacker, 'chopsticks_longest_win_streak')) {
+                                newWinRecord = true;
+                                util.setStats(message, attacker, winStreak, 'chopsticks_longest_win_streak');
+                            }
+
+                            util.addStats(message, defender, 1, 'chopsticks_played');
+                            util.addStats(message, defender, 1, 'chopsticks_losses');
+                            util.setStats(message, defender, 0, 'chopsticks_winning_streak');
+                            let losingStreak = util.addStats(message, defender, 1, 'chopsticks_losing_streak').newPoints;
+                            let newLoseRecord = false;
+                            if (losingStreak > util.getStats(message, defender, 'chopsticks_longest_losing_streak')) {
+                                newLoseRecord = true;
+                                util.setStats(message, defender, losingStreak, 'chopsticks_longest_losing_streak');
+                            }
+
+                            message.edit(new Discord.MessageEmbed()
+                                .setTitle(`Chopsticks game ended!`)
+                                .setDescription(`${util.fixNameFormat(challenger.displayName)} vs. ${util.fixNameFormat(target.displayName)}\n${util.fixNameFormat(defender.displayName)} has lost chopsticks!`)
+                                .addField(util.fixNameFormat(target.displayName) + "'s hands", numberToHand(state[0], target) + " " + numberToHand(state[1], target))
+                                .addField(util.fixNameFormat(challenger.displayName) + "'s hands", numberToHand(state[2], challenger) + " " + numberToHand(state[3], challenger))
+                                .addField("Additional info", [`${util.fixNameFormat(attacker.displayName)}'s win streak: ${util.addCommas(winStreak)}${newWinRecord ? ' (new personal best!)' : ''}`, `${util.fixNameFormat(defender.displayName)}'s losing streak: ${util.addCommas(winStreak)}${newWinRecord ? ' (new personal best!)' : ''}`])
+                                .setColor(Colors.DARK_GREEN))
+
                             return;
                         }
                         if (previousMove) {
@@ -194,7 +210,7 @@ makeChopstickMove = (state, moves, moveIndex, attacker, defender, turn) => {
             }
             break;
         case 4:
-            result = state[attackerRHIdx] + state[attackerRHIdx];
+            result = state[attackerRHIdx] + state[defenderRHIdx];
             ret = `${util.fixNameFormat(attacker.displayName)} RH (${state[attackerRHIdx]}) hit ${util.fixNameFormat(defender.displayName)}'s RH (${state[defenderRHIdx]})!`;
             if (result >= 5) {
                 state[attackerRHIdx] = 0;
@@ -335,7 +351,7 @@ chopsticksGameEmbed = (state, attacker, defender, top, bottom, override, previou
     return new Discord.MessageEmbed()
         .setTitle(`Playing Chopsticks`)
         .setThumbnail(attacker ? attacker.user.displayAvatarURL({ dynamic: true }) : '')
-        .setDescription(override ? override : `${previousMove ? `${previousMove}\n` : ""}It is ${util.fixNameFormat(attacker.displayName)}'s ${attacker === defender ? (turn ? "(top) " : "(bottom) ") : ""}turn.`)
+        .setDescription(override ? override : `${previousMove ? `${previousMove}\n` : ""}It is ${util.fixNameFormat(attacker.displayName)}${attacker === defender ? (turn ? " (top)" : " (bottom)") : ""}'s turn.`)
         .addField(util.fixNameFormat(top.displayName) + "'s hands", numberToHand(state[0], top) + " " + numberToHand(state[1], top))
         .addField(util.fixNameFormat(bottom.displayName) + "'s hands", numberToHand(state[2], bottom) + " " + numberToHand(state[3], bottom))
         .addField("Available moves", chopsticksMovesToWords(moves, defender, turn, state))
@@ -358,10 +374,10 @@ chopsticksMovesToWords = (moves, defender, turn, state) => {
     }
     
     let result = "" + 
-    CHOPSTICKS_REACTIONS[1] + ": " + (moves[0] ? `Attack ${opponent}'s LH (${state[defenderLHIdx]}) with your LH (${state[attackerLHIdx]}).` : ":x: Not available.") + "\n" +
-    CHOPSTICKS_REACTIONS[2] + ": " + (moves[1] ? `Attack ${opponent}'s RH (${state[defenderRHIdx]}) with your LH (${state[attackerLHIdx]}).` : ":x: Not available.") + "\n" +
-    CHOPSTICKS_REACTIONS[3] + ": " + (moves[2] ? `Attack ${opponent}'s LH (${state[defenderLHIdx]}) with your RH (${state[attackerRHIdx]}).` : ":x: Not available.") + "\n" +
-    CHOPSTICKS_REACTIONS[4] + ": " + (moves[3] ? `Attack ${opponent}'s RH (${state[defenderRHIdx]}) with your RH (${state[attackerRHIdx]}).` : ":x: Not available.") + "\n";
+    CHOPSTICKS_REACTIONS[1] + ": " + (moves[0] ? `Use your LH (${state[attackerLHIdx]}) to attack ${opponent}'s LH (${state[defenderLHIdx]}).` : ":x: Not available.") + "\n" +
+    CHOPSTICKS_REACTIONS[2] + ": " + (moves[1] ? `Use your LH (${state[attackerLHIdx]}) to attack ${opponent}'s RH (${state[defenderRHIdx]}).` : ":x: Not available.") + "\n" +
+    CHOPSTICKS_REACTIONS[3] + ": " + (moves[2] ? `Use your RH (${state[attackerRHIdx]}) to attack ${opponent}'s LH (${state[defenderLHIdx]}).` : ":x: Not available.") + "\n" +
+    CHOPSTICKS_REACTIONS[4] + ": " + (moves[3] ? `Use your RH (${state[attackerRHIdx]}) to attack ${opponent}'s RH (${state[defenderRHIdx]}).` : ":x: Not available.") + "\n";
 
     // Split moves.
     if (moves[4]) {
@@ -581,21 +597,6 @@ numberToHand = (value, member) => {
             throw 'Unhandled case!!';
     }
 }
-
-// /**
-//  * Gets the game embed.
-//  * @param {Array} board the connect4 board
-//  * @param {String} piece the current player
-//  * @param {Discord.GuildMember} member the current player's guild member object
-//  * @param {String} override optional, to override the description
-//  */
-//  TTTGameEmbed = (board, piece, member, override, previousMove) => {
-//     return new Discord.MessageEmbed()
-//         .setTitle(`Playing Tic Tac Toe`)
-//         .setThumbnail(member ? member.user.displayAvatarURL({ dynamic: true }) : '')
-//         .setDescription(override ? override : `${previousMove ? `${previousMove}\n` : ""}It is ${piece} ${util.fixNameFormat(member.displayName)}'s turn.\n\n${TTTBoardToString(board)}`)
-//         .setColor(Colors.GREEN);
-// }
 
 chopsticksGetSetupEmbed = () => {
     return new Discord.MessageEmbed()
