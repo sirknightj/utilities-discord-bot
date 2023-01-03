@@ -105,13 +105,16 @@ With very simple, fun, and useful commands that are very easy-to-use and intuiti
 #### `!tttt <target>`
 * 5x5 Tic Tac Toe!
 
+#### `!chopsticks <target>`
+* Sets up a game of Chopsticks between you and your target.
+
 #### `!roulette <bet> <guess>`
 * Lets you play around with the coins the bot awards you for Discord participation!
 * `bet` can be a number, `half`, or `all`.
 * `guess` can be even/odd/red/black/high/low/green
 * green (0 or 00) is a 17-to-1 multiplier. Columns and dozens are 2-to-1 multipliers. All the other guesses are a 1-to-1 multiplier.
 
-#### `!blackjack <bet> (optional: dealerMovesInstantly? true/false`
+#### `!blackjack <bet> (optional: dealerMovesInstantly? true/false)`
 * Plays blackjack against the bot!
 * `bet` can be a number, `half`, or `all`. Uses the `coins` you earned from Discord participation.
 * `(dealerMovesInstantly) defaults to false. If true, then the dealer won't wait 3 seconds in between its moves, allowing for faster games. 
